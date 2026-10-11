@@ -31,6 +31,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LeapAtTargetGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -51,6 +52,12 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.server.level.ServerLevel;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.MoverType;
@@ -85,6 +92,29 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     private int transitionTicks;
     private double transitionStartY;
     private double transitionGroundY;
+    // 一阶段技能：当前技能、龙息开关与落点，同步给客户端做表现
+    private static final EntityDataAccessor<Integer> DRAGON_SKILL = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DRAGON_BEAM = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Float> DRAGON_BEAM_X = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DRAGON_BEAM_Y = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DRAGON_BEAM_Z = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.FLOAT);
+    private static final int SKILL_BREATH = 1;
+    private static final int SKILL_FEATHER = 2;
+    private static final int SKILL_METEOR = 3;
+    private static final int SKILL_THUNDER = 4;
+    private static final int SKILL_GALE = 5;
+    // 技能时长与动画一致；冷却以 tick 计
+    private static final int[] SKILL_DURATION = {0, 80, 50, 60, 60, 40};
+    private static final int[] SKILL_COOLDOWN = {0, 220, 70, 280, 180, 120};
+    private static final byte EVENT_FEATHER = 90;
+    private static final byte EVENT_METEOR = 91;
+    private static final byte EVENT_GALE = 92;
+    private final int[] skillCooldowns = new int[6];
+    private int skillTicks;
+    private int skillGap = 40;
+    private double orbitAngle;
+    private Vec3 beamBase = Vec3.ZERO;
+    private Vec3 beamSide = Vec3.ZERO;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private final ServerBossEvent bossInfo = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_10);
 
@@ -98,7 +128,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     @Override
     protected void registerGoals() {
         if (getIdPath().equals("aetherdragon")) {
-            this.goalSelector.addGoal(1, new PanicGoal(this, 1.1D));
             this.goalSelector.addGoal(5, new DragonFlightStrollGoal(this, 0.8D, 20));
             this.goalSelector.addGoal(5, new DragonGroundStrollGoal(this, 1.0D));
         } else {
@@ -117,7 +146,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         if (this.getType().getCategory() == MobCategory.MONSTER || getIdPath().equals("saltcrab")) {
             if (getIdPath().equals("aetherdragon")) {
-                this.goalSelector.addGoal(2, new DragonRangedAttackGoal(this, 1.25D, 25, 150.0F));
+                this.goalSelector.addGoal(2, new DragonSkyCombatGoal(this));
                 this.goalSelector.addGoal(2, new DragonMeleeAttackGoal(this, 1.0D, true));
             } else if (getIdPath().equals("eldershulker")) {
                 this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.25D, 30, 70.0F));
@@ -202,6 +231,28 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 enterDragonPhaseTwo();
             }
         }
+        if (level().isClientSide && getDragonSkill() == SKILL_BREATH) {
+            RandomSource random = getRandom();
+            if (isDragonBeamActive()) {
+                // 光束落点：碎光迸溅与小冲击环
+                Vec3 end = getDragonBeamEnd();
+                for (int i = 0; i < 2; i++) {
+                    level().addParticle(ModParticles.DRAGON_SHARD.get(), end.x, end.y + 0.2D, end.z, random.nextGaussian() * 0.2D, 0.3D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.2D);
+                }
+                level().addParticle(ModParticles.WHITESMOKE.get(), end.x, end.y + 0.3D, end.z, 0.0D, 0.05D, 0.0D);
+                if (this.tickCount % 5 == 0) {
+                    level().addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, end.x, end.y + 0.1D, end.z, 3.0D, 8.0D, 0.0D);
+                }
+            } else {
+                // 蓄力：碎光向口部汇聚
+                Vec3 mouth = getDragonMouth();
+                for (int i = 0; i < 3; i++) {
+                    Vec3 from = mouth.add(random.nextGaussian() * 2.5D, random.nextGaussian() * 2.5D, random.nextGaussian() * 2.5D);
+                    Vec3 velocity = mouth.subtract(from).scale(0.18D);
+                    level().addParticle(ModParticles.DRAGON_SHARD.get(), from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
+                }
+            }
+        }
         if (!level().isClientSide && isDragonTransitioning()) {
             this.transitionTicks++;
             // 俯冲段：按缓动曲线把龙从空中带到地面
@@ -251,6 +302,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         super.defineSynchedData();
         this.entityData.define(DRAGON_PHASE_TWO, false);
         this.entityData.define(DRAGON_TRANSITION, false);
+        this.entityData.define(DRAGON_SKILL, 0);
+        this.entityData.define(DRAGON_BEAM, false);
+        this.entityData.define(DRAGON_BEAM_X, 0.0F);
+        this.entityData.define(DRAGON_BEAM_Y, 0.0F);
+        this.entityData.define(DRAGON_BEAM_Z, 0.0F);
     }
 
     @Override
@@ -495,7 +551,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 default -> "";
             };
             case "aetherdragon" -> switch (action) {
-                case "attack" -> "animation.aether_dragon.attack.air";
                 // 一阶段转二阶段的完整演出
                 case "phase" -> "animation.aether_dragon.phase_transition";
                 default -> "";
@@ -535,6 +590,18 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     }
 
     private PlayState movementPredicate(AnimationState<RebornMobEntity> state) {
+        // 一阶段技能动画以飞行待机为底，放在移动控制器里与待机平滑过渡
+        String skill = switch (getDragonSkill()) {
+            case SKILL_BREATH -> "animation.aether_dragon.skill_breath";
+            case SKILL_FEATHER -> "animation.aether_dragon.skill_feather";
+            case SKILL_METEOR -> "animation.aether_dragon.skill_meteor";
+            case SKILL_THUNDER -> "animation.aether_dragon.skill_thunder";
+            case SKILL_GALE -> "animation.aether_dragon.skill_gale";
+            default -> "";
+        };
+        if (!skill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(skill));
+        }
         String animation = getMovementAnimation(state.isMoving());
         return animation.isEmpty() ? PlayState.STOP : state.setAndContinue(RawAnimation.begin().thenLoop(animation));
     }
@@ -725,6 +792,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             return;
         }
         this.entityData.set(DRAGON_PHASE_TWO, true);
+        stopDragonSkill();
         applyDragonPhaseTwoAttributes();
         setHealth(300.0F);
         setTarget(null);
@@ -763,22 +831,311 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         }
     }
 
-    private static final class DragonRangedAttackGoal extends RangedAttackGoal {
+    public int getDragonSkill() {
+        if (!getIdPath().equals("aetherdragon")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    public boolean isDragonBeamActive() {
+        return getIdPath().equals("aetherdragon") && this.entityData.get(DRAGON_BEAM);
+    }
+
+    public Vec3 getDragonBeamEnd() {
+        return new Vec3(this.entityData.get(DRAGON_BEAM_X), this.entityData.get(DRAGON_BEAM_Y), this.entityData.get(DRAGON_BEAM_Z));
+    }
+
+    // 口部大致位置：前 5 格、上 3.2 格（来自 BB 中龙息姿态的下颚坐标）
+    private Vec3 getDragonMouth() {
+        float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+        return position().add(-Mth.sin(yaw) * 5.0D, 3.2D, Mth.cos(yaw) * 5.0D);
+    }
+
+    private void faceDragonTowards(double x, double z, float maxStep) {
+        float yaw = (float) (Mth.atan2(z - getZ(), x - getX()) * Mth.RAD_TO_DEG) - 90.0F;
+        setYRot(Mth.approachDegrees(getYRot(), yaw, maxStep));
+        this.yBodyRot = getYRot();
+        this.yHeadRot = getYRot();
+    }
+
+    // 向下寻找地面高度，找不到时返回 fallback
+    private double findGroundY(double x, double fromY, double z, double depth, double fallback) {
+        Vec3 from = new Vec3(x, fromY, z);
+        BlockHitResult hit = level().clip(new ClipContext(from, from.subtract(0.0D, depth, 0.0D), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, this));
+        if (hit.getType() == HitResult.Type.BLOCK) {
+            return hit.getLocation().y;
+        }
+        return fallback;
+    }
+
+    private void stopDragonSkill() {
+        this.skillTicks = 0;
+        this.entityData.set(DRAGON_SKILL, 0);
+        this.entityData.set(DRAGON_BEAM, false);
+    }
+
+    private boolean canDragonSkillHit(LivingEntity entity) {
+        return entity != this && entity.isAlive() && !(entity instanceof RebornMobEntity);
+    }
+
+    // 一阶段空战：绕目标盘旋，按冷却挑选技能并执行时间轴
+    private void tickSkyCombat(LivingEntity target) {
+        for (int i = 1; i < this.skillCooldowns.length; i++) {
+            if (this.skillCooldowns[i] > 0) {
+                this.skillCooldowns[i]--;
+            }
+        }
+        int skill = getDragonSkill();
+        if (skill != SKILL_BREATH) {
+            faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+        }
+        if (skill == 0) {
+            // 盘旋：目标上方 10 格、半径 16 格
+            this.orbitAngle += 0.012D;
+            Vec3 hover = new Vec3(target.getX() + Math.cos(this.orbitAngle) * 16.0D, target.getY() + 10.0D, target.getZ() + Math.sin(this.orbitAngle) * 16.0D);
+            Vec3 want = hover.subtract(position());
+            double distance = want.length();
+            Vec3 velocity = Vec3.ZERO;
+            if (distance > 0.5D) {
+                velocity = want.scale(Math.min(0.45D, distance * 0.05D) / distance);
+            }
+            setDeltaMovement(getDeltaMovement().lerp(velocity, 0.12D));
+            if (this.skillGap > 0) {
+                this.skillGap--;
+                return;
+            }
+            // 选技能：贴脸优先飓风，其余在就绪技能中随机
+            int chosen = 0;
+            if (distanceTo(target) < 10.0D && this.skillCooldowns[SKILL_GALE] <= 0) {
+                chosen = SKILL_GALE;
+            } else {
+                List<Integer> ready = new ArrayList<>();
+                for (int i = SKILL_BREATH; i <= SKILL_THUNDER; i++) {
+                    if (this.skillCooldowns[i] <= 0) {
+                        ready.add(i);
+                    }
+                }
+                if (!ready.isEmpty()) {
+                    chosen = ready.get(getRandom().nextInt(ready.size()));
+                }
+            }
+            if (chosen == 0) {
+                return;
+            }
+            this.skillCooldowns[chosen] = SKILL_COOLDOWN[chosen];
+            this.skillTicks = 0;
+            this.entityData.set(DRAGON_SKILL, chosen);
+            if (chosen == SKILL_BREATH) {
+                // 龙息扫射基准：目标脚下，横扫方向垂直于龙到目标的连线
+                this.beamBase = target.position().add(0.0D, 0.5D, 0.0D);
+                Vec3 toward = target.position().subtract(position());
+                this.beamSide = new Vec3(-toward.z, 0.0D, toward.x).normalize();
+            }
+            LOGGER.debug("Aether dragon {} casts skill {} at distance {}", getId(), chosen, distanceTo(target));
+            return;
+        }
+        // 施法时减速悬停
+        setDeltaMovement(getDeltaMovement().scale(0.8D));
+        this.skillTicks++;
+        if (!(level() instanceof ServerLevel server)) {
+            return;
+        }
+        float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+        Vec3 forward = new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
+        switch (skill) {
+            case SKILL_BREATH -> {
+                // 天穹龙息：0-20 蓄力，20-68 横扫光束
+                if (this.skillTicks == 1) {
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 3.0F, 0.5F);
+                }
+                if (this.skillTicks < 20) {
+                    faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+                }
+                if (this.skillTicks == 20) {
+                    this.entityData.set(DRAGON_BEAM, true);
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_SHOOT, SoundSource.HOSTILE, 4.0F, 0.7F);
+                }
+                if (this.skillTicks >= 20 && this.skillTicks <= 68) {
+                    this.beamBase = this.beamBase.lerp(target.position().add(0.0D, 0.5D, 0.0D), 0.06D);
+                    double sweep = (this.skillTicks - 20) / 48.0D * 2.0D - 1.0D;
+                    Vec3 aim = this.beamBase.add(this.beamSide.scale(sweep * 7.0D));
+                    faceDragonTowards(aim.x, aim.z, 4.0F);
+                    Vec3 mouth = getDragonMouth();
+                    Vec3 far = mouth.add(aim.subtract(mouth).scale(1.6D));
+                    BlockHitResult hit = level().clip(new ClipContext(mouth, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+                    Vec3 end = far;
+                    if (hit.getType() != HitResult.Type.MISS) {
+                        end = hit.getLocation();
+                    }
+                    this.entityData.set(DRAGON_BEAM_X, (float) end.x);
+                    this.entityData.set(DRAGON_BEAM_Y, (float) end.y);
+                    this.entityData.set(DRAGON_BEAM_Z, (float) end.z);
+                    // 每 4 tick 结算一次光束沿线伤害
+                    if (this.skillTicks % 4 == 0) {
+                        Vec3 segment = end.subtract(mouth);
+                        double lengthSqr = Math.max(1.0E-4D, segment.lengthSqr());
+                        for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, new AABB(mouth, end).inflate(1.6D), this::canDragonSkillHit)) {
+                            Vec3 center = living.getBoundingBox().getCenter();
+                            double t = Mth.clamp(center.subtract(mouth).dot(segment) / lengthSqr, 0.0D, 1.0D);
+                            if (mouth.add(segment.scale(t)).distanceToSqr(center) < 2.6D) {
+                                living.hurt(damageSources().indirectMagic(this, this), 5.0F);
+                            }
+                        }
+                    }
+                    if (this.skillTicks % 12 == 0) {
+                        server.playSound(null, end.x, end.y, end.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.0F, 0.7F);
+                    }
+                }
+                if (this.skillTicks == 69) {
+                    this.entityData.set(DRAGON_BEAM, false);
+                }
+            }
+            case SKILL_FEATHER -> {
+                // 风暴羽刃：双翼前扫时射出 9 片扇形羽刃
+                if (this.skillTicks == 18) {
+                    Vec3 origin = position().add(0.0D, 2.5D, 0.0D).add(forward.scale(2.5D));
+                    Vec3 aim = target.getEyePosition().subtract(origin).normalize();
+                    for (int i = -4; i <= 4; i++) {
+                        Vec3 velocity = aim.yRot(i * 8.0F * Mth.DEG_TO_RAD).scale(1.3D);
+                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.FEATHER, origin, velocity, 0.0D, target);
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 4.0F, 0.8F);
+                    level().broadcastEntityEvent(this, EVENT_FEATHER);
+                }
+            }
+            case SKILL_METEOR -> {
+                // 苍穹陨晶：咆哮后在目标周围依次落下 7 根晶矛
+                if (this.skillTicks == 12) {
+                    var roar = ModSounds.ALL.get("drw");
+                    if (roar != null) {
+                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 4.0F, 0.7F);
+                    }
+                    level().broadcastEntityEvent(this, EVENT_METEOR);
+                }
+                if (this.skillTicks >= 20 && this.skillTicks <= 56 && (this.skillTicks - 20) % 6 == 0) {
+                    double x = target.getX() + target.getDeltaMovement().x * 10.0D;
+                    double z = target.getZ() + target.getDeltaMovement().z * 10.0D;
+                    if (this.skillTicks > 20) {
+                        x = target.getX() + (getRandom().nextDouble() * 2.0D - 1.0D) * 7.0D;
+                        z = target.getZ() + (getRandom().nextDouble() * 2.0D - 1.0D) * 7.0D;
+                    }
+                    double groundY = findGroundY(x, target.getY() + 6.0D, z, 30.0D, target.getY());
+                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.CRYSTAL, new Vec3(x, groundY + 26.0D, z), Vec3.ZERO, groundY, target);
+                }
+            }
+            case SKILL_THUNDER -> {
+                // 天雷审判：连续三次标记目标当前位置
+                if (this.skillTicks == 12 || this.skillTicks == 24 || this.skillTicks == 36) {
+                    double groundY = findGroundY(target.getX(), target.getY() + 1.0D, target.getZ(), 12.0D, target.getY());
+                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(target.getX(), groundY, target.getZ()), Vec3.ZERO, groundY, target);
+                    server.playSound(null, target.getX(), groundY, target.getZ(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.5F, 1.8F);
+                }
+            }
+            case SKILL_GALE -> {
+                // 龙翼飓风：下拍瞬间击退并造成少量伤害
+                if (this.skillTicks == 14) {
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(12.0D), this::canDragonSkillHit)) {
+                        Vec3 push = living.position().subtract(position()).multiply(1.0D, 0.0D, 1.0D);
+                        if (push.lengthSqr() < 1.0E-4D || living.distanceToSqr(this) > 144.0D) {
+                            continue;
+                        }
+                        push = push.normalize();
+                        living.hurt(damageSources().mobAttack(this), 4.0F);
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 2.2D, 0.7D, push.z * 2.2D));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 5.0F, 0.5F);
+                    level().broadcastEntityEvent(this, EVENT_GALE);
+                }
+            }
+            default -> {
+            }
+        }
+        if (this.skillTicks >= SKILL_DURATION[skill]) {
+            stopDragonSkill();
+            this.skillGap = 25;
+        }
+    }
+
+    @Override
+    public void handleEntityEvent(byte id) {
+        if (id != EVENT_FEATHER && id != EVENT_METEOR && id != EVENT_GALE) {
+            super.handleEntityEvent(id);
+            return;
+        }
+        RandomSource random = getRandom();
+        float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+        double fx = -Mth.sin(yaw);
+        double fz = Mth.cos(yaw);
+        Level level = level();
+        switch (id) {
+            case EVENT_FEATHER -> {
+                // 羽刃齐射：胸前冲击环 + 向前喷散的碎鳞
+                double cx = getX() + fx * 2.5D;
+                double cy = getY() + 2.5D;
+                double cz = getZ() + fz * 2.5D;
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, cx, cy, cz, 5.0D, 10.0D, 0.0D);
+                for (int i = 0; i < 20; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), cx, cy, cz, fx * 0.6D + random.nextGaussian() * 0.2D, 0.1D + random.nextDouble() * 0.2D, fz * 0.6D + random.nextGaussian() * 0.2D);
+                }
+            }
+            case EVENT_METEOR -> {
+                // 陨晶召唤：头顶天空展开三层金环，碎光冲天
+                for (int i = 0; i < 3; i++) {
+                    level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() + 10.0D + i * 5.0D, getZ(), 8.0D + i * 4.0D, 20.0D + i * 6.0D, 0.0D);
+                }
+                for (int i = 0; i < 24; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), getX() + random.nextGaussian(), getY() + 6.0D, getZ() + random.nextGaussian(), random.nextGaussian() * 0.15D, 0.9D + random.nextDouble() * 0.5D, random.nextGaussian() * 0.15D);
+                }
+            }
+            default -> {
+                // 龙翼飓风：三层冲击波 + 径向风痕
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() - 1.5D, getZ(), 14.0D, 16.0D, 0.0D);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() + 1.0D, getZ(), 12.0D, 14.0D, 0.0D);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() + 3.5D, getZ(), 10.0D, 12.0D, 0.0D);
+                for (int i = 0; i < 40; i++) {
+                    double angle = Math.PI * 2.0D * i / 40.0D;
+                    double dx = Math.cos(angle);
+                    double dz = Math.sin(angle);
+                    level.addParticle(ModParticles.WHITESMOKE.get(), getX() + dx * 2.0D, getY() + 1.0D + random.nextDouble() * 2.0D, getZ() + dz * 2.0D, dx * 0.9D, 0.0D, dz * 0.9D);
+                }
+            }
+        }
+    }
+
+    private static final class DragonSkyCombatGoal extends Goal {
         private final RebornMobEntity dragon;
 
-        private DragonRangedAttackGoal(RebornMobEntity dragon, double speed, int interval, float range) {
-            super(dragon, speed, interval, range);
+        private DragonSkyCombatGoal(RebornMobEntity dragon) {
             this.dragon = dragon;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
 
         @Override
         public boolean canUse() {
-            return dragon.isDragonPhaseOne() && super.canUse();
+            LivingEntity target = dragon.getTarget();
+            return dragon.isDragonPhaseOne() && !dragon.isDragonTransitioning() && target != null && target.isAlive();
         }
 
         @Override
         public boolean canContinueToUse() {
-            return dragon.isDragonPhaseOne() && super.canContinueToUse();
+            return canUse();
+        }
+
+        @Override
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void stop() {
+            dragon.stopDragonSkill();
+        }
+
+        @Override
+        public void tick() {
+            dragon.tickSkyCombat(dragon.getTarget());
         }
     }
 
