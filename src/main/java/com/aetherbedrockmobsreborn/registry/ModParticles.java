@@ -40,6 +40,7 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> SALT_RING = PARTICLES.register("salt_ring", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> SALT_WARNING = PARTICLES.register("salt_warning", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> SALT_SHARD = PARTICLES.register("salt_shard", () -> new SimpleParticleType(true));
+    public static final RegistryObject<SimpleParticleType> SALT_SPRAY = PARTICLES.register("salt_spray", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> CRAB_PINCH = PARTICLES.register("crab_pinch", () -> new SimpleParticleType(true));
     // 远古潜影贝：金青冲击环、预警环、金色碎光
     public static final RegistryObject<SimpleParticleType> SHULKER_RING = PARTICLES.register("shulker_ring", () -> new SimpleParticleType(true));

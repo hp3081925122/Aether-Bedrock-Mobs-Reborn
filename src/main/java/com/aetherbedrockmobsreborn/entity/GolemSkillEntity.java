@@ -124,11 +124,11 @@ public class GolemSkillEntity extends Entity {
     private void erupt(float scale) {
         int kind = getKind();
         if (kind == CORE) {
-            damageAround(3.0D, scale, 14.0F, 1.2D);
+            damageAround(3.0D, scale, 14.0F, 0.6D);
         } else if (kind == CAGE) {
-            damageAround(0.9D, scale, 6.0F, 0.5D);
+            damageAround(0.9D, scale, 6.0F, 0.25D);
         } else {
-            damageAround(0.8D + scale * 0.5D, scale, 10.0F, 0.8D);
+            damageAround(0.8D + scale * 0.5D, scale, 10.0F, 0.4D);
         }
         if (!this.silent) {
             ModSounds.play(level(), "golem_spike", getX(), getY(), getZ(), 1.0F + scale * 0.5F, 1.2F - scale * 0.2F);
@@ -146,8 +146,7 @@ public class GolemSkillEntity extends Entity {
                 continue;
             }
             if (living.hurt(skillDamage(), amount) && lift > 0.0D) {
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, lift, 0.0D));
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, lift, 0.0D));
             }
         }
     }

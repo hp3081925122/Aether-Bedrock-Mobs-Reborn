@@ -106,6 +106,7 @@ public final class RebornClientEvents {
         event.registerSpriteSet(ModParticles.SALT_RING.get(), DragonShockwaveParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SALT_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
         event.registerSpriteSet(ModParticles.SALT_SHARD.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SALT_SPRAY.get(), DragonShardParticle.ShortProvider::new);
         event.registerSpriteSet(ModParticles.CRAB_PINCH.get(), JawParticle.PinchProvider::new);
         // 远古潜影贝技能特效
         event.registerSpriteSet(ModParticles.SHULKER_RING.get(), DragonShockwaveParticle.Provider::new);

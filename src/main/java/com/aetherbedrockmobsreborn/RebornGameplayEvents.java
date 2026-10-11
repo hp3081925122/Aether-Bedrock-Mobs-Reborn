@@ -1,6 +1,7 @@
 package com.aetherbedrockmobsreborn;
 
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
+import com.aetherbedrockmobsreborn.block.SpecialSpawnerBlock;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -23,6 +24,7 @@ import net.minecraftforge.event.entity.EntityStruckByLightningEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -59,6 +61,20 @@ public final class RebornGameplayEvents {
         Consumer<RebornMobEntity> handler = JOIN_HANDLERS.get(entity.getIdPath());
         if (handler != null) {
             handler.accept(entity);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide || event.player.tickCount % 20 != 0
+                || !(event.player.level() instanceof ServerLevel server)) {
+            return;
+        }
+        BlockPos center = event.player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-8, -8, -8), center.offset(8, 8, 8))) {
+            if (server.getBlockState(pos).getBlock() instanceof SpecialSpawnerBlock spawner) {
+                spawner.checkPlayerProximity(server, pos, event.player);
+            }
         }
     }
 
@@ -157,7 +173,7 @@ public final class RebornGameplayEvents {
     }
 
     private static void handleSaltCrabHurt(RebornMobEntity entity) {
-        entity.triggerAction("jump");
+        entity.triggerSaltCrabHurtSound();
     }
 
     @SubscribeEvent

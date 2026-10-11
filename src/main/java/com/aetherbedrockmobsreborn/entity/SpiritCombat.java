@@ -2,7 +2,6 @@ package com.aetherbedrockmobsreborn.entity;
 
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
@@ -15,7 +14,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -25,7 +23,6 @@ import java.util.Set;
 
 // 灵魂 boss 战斗：技能选择、服务端时间轴与客户端特效
 final class SpiritCombat {
-    private static final Logger LOGGER = LogUtils.getLogger();
     static final int SLASH = 1;
     static final int CLEAVE = 2;
     static final int RUNES = 3;
@@ -209,7 +206,6 @@ final class SpiritCombat {
         }
         this.spirit.getNavigation().stop();
         this.spirit.setBossSkill(chosen);
-        LOGGER.debug("Spirit {} casts skill {} at distance {}", this.spirit.getId(), chosen, distance);
     }
 
     // 灵刃连斩：第 11 tick 右往左横斩，第 18 tick 回身反斩
@@ -255,9 +251,8 @@ final class SpiritCombat {
             }
             if (living.hurt(source(), amount)) {
                 landed = true;
-                Vec3 push = side.scale(0.6D).add(forward.scale(0.5D));
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.3D, push.z));
-                living.hurtMarked = true;
+                Vec3 push = side.scale(0.3D).add(forward.scale(0.25D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.15D, push.z));
             }
         }
         if (landed) {
@@ -282,14 +277,14 @@ final class SpiritCombat {
             this.cleaveDir = forward;
             this.cleaveOrigin = this.spirit.position().add(forward.scale(2.5D));
             // 剑落点：范围重击
-            damageCircle(this.cleaveOrigin, 3.0D, damage(1.3F), 0.4D, null);
+            damageCircle(this.cleaveOrigin, 3.0D, damage(1.3F), 0.2D, null);
             ModSounds.play(this.spirit.level(), "spirit_impact", this.cleaveOrigin.x, this.cleaveOrigin.y, this.cleaveOrigin.z, 3.0F, 1.0F);
             this.spirit.level().broadcastEntityEvent(this.spirit, EVENT_CLEAVE);
         }
         if (t > 20 && t <= 20 + CLEAVE_LENGTH) {
             // 裂地魂焰：每 tick 向前推进 1 格
             Vec3 point = this.cleaveOrigin.add(this.cleaveDir.scale(t - 20));
-            damageCircle(point, 1.6D, damage(0.9F), 0.7D, this.hits);
+            damageCircle(point, 1.6D, damage(0.9F), 0.35D, this.hits);
             if ((t - 20) % 3 == 1) {
                 ModSounds.play(this.spirit.level(), "spirit_erupt", point.x, point.y, point.z, 1.5F, 1.0F);
             }
@@ -308,8 +303,7 @@ final class SpiritCombat {
                 continue;
             }
             if (living.hurt(source(), amount)) {
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, lift, 0.0D));
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, lift, 0.0D));
             }
         }
     }
@@ -365,7 +359,7 @@ final class SpiritCombat {
                     if (offset.dot(side) < 0.0D) {
                         side = side.reverse();
                     }
-                    living.setDeltaMovement(living.getDeltaMovement().add(side.x * 1.0D, 0.4D, side.z * 1.0D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(side.x * 0.5D, 0.2D, side.z * 0.5D));
                     living.hurtMarked = true;
                     ModSounds.play(this.spirit.level(), "spirit_slash_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.9F);
                 }
@@ -388,7 +382,7 @@ final class SpiritCombat {
                 double dx = offset.x - path.x * along;
                 double dz = offset.z - path.z * along;
                 if (dx * dx + dz * dz <= 2.0D * 2.0D && living.hurt(source(), damage(0.9F))) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.7D, 0.0D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                     living.hurtMarked = true;
                 }
             }
@@ -463,8 +457,8 @@ final class SpiritCombat {
                 }
                 if (living.hurt(source(), damage(0.8F))) {
                     living.setSecondsOnFire(3);
-                    double scale = 0.8D / Math.max(0.5D, distance);
-                    living.setDeltaMovement(living.getDeltaMovement().add(dx * scale, 0.35D, dz * scale));
+                    double scale = 0.4D / Math.max(0.5D, distance);
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(dx * scale, 0.175D, dz * scale));
                     living.hurtMarked = true;
                 }
             }
@@ -480,13 +474,11 @@ final class SpiritCombat {
             AABB box = this.spirit.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
             for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.spirit.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.4D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.5D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
             }
             ModSounds.play(this.spirit.level(), "spirit_enrage", this.spirit.getX(), this.spirit.getY() + 2.0D, this.spirit.getZ(), 4.0F, 1.0F);
             this.spirit.level().broadcastEntityEvent(this.spirit, EVENT_ENRAGE);
-            LOGGER.debug("Spirit {} enraged at health {}", this.spirit.getId(), this.spirit.getHealth());
         }
     }
 

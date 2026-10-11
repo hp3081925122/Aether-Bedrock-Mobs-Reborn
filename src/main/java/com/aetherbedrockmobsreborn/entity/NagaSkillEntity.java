@@ -125,8 +125,7 @@ public class NagaSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.3D, 0.0D, 1.3D).expandTowards(0.0D, 3.0D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 10.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.5D, 0.0D));
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
             }
             ModSounds.play(level(), "naga_pillar", getX(), getY(), getZ(), 1.2F, 0.9F + this.random.nextFloat() * 0.2F);
             level().broadcastEntityEvent(this, (byte) 1);
@@ -186,9 +185,8 @@ public class NagaSkillEntity extends Entity {
             if (living.position().distanceToSqr(at) <= 3.0D * 3.0D) {
                 living.hurt(skillDamage(), 10.0F);
                 Vec3 push = living.position().subtract(at);
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.6D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.4D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.3D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
             }
         }
         ModSounds.play(level(), "naga_boulder_impact", at.x, at.y, at.z, 2.5F, 1.0F);

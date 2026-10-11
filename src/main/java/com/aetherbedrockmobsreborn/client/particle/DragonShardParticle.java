@@ -53,6 +53,22 @@ public class DragonShardParticle extends TextureSheetParticle {
         return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
     }
 
+    // 短寿命版本：细小颗粒一溅即逝，用于替代原版水花
+    public static final class ShortProvider implements ParticleProvider<SimpleParticleType> {
+        private final SpriteSet sprites;
+
+        public ShortProvider(SpriteSet sprites) {
+            this.sprites = sprites;
+        }
+
+        @Override
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+            DragonShardParticle particle = new DragonShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
+            particle.setLifetime(10 + level.random.nextInt(8));
+            return particle;
+        }
+    }
+
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
 
