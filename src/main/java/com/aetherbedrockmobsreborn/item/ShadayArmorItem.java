@@ -19,6 +19,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
+
 public final class ShadayArmorItem extends ArmorItem {
     private static final ArmorMaterial MATERIAL = new ArmorMaterial() {
         @Override

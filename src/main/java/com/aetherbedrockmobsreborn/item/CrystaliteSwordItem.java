@@ -11,14 +11,25 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+
+import java.util.List;
 
 public final class CrystaliteSwordItem extends SwordItem {
     public CrystaliteSwordItem() {
         super(new AetherTier(500, 2.0F, 6.0F, 3, 20), 3, -2.4F, new Item.Properties());
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.crystalitesword").withStyle(ChatFormatting.AQUA));
+        super.appendHoverText(stack, level, tooltip, flag);
     }
 
     @Override

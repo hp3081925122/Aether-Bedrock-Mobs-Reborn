@@ -2,7 +2,10 @@ package com.aetherbedrockmobsreborn.entity;
 
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -33,12 +36,17 @@ public class DragonSkillEntity extends Entity {
     public static final int FEATHER = 1;
     public static final int CRYSTAL = 2;
     public static final int THUNDER = 3;
+    public static final int SPIKE = 4;
+    // 晶棘：突起后停留与收回的时间
+    public static final int SPIKE_HOLD = 14;
+    public static final int SPIKE_END = 22;
     // 雷击：预警时长与雷柱持续时间
     public static final int THUNDER_DELAY = 24;
     public static final int THUNDER_FLASH = 8;
     public static final double CRYSTAL_FALL_SPEED = 1.0D;
     private static final EntityDataAccessor<Integer> KIND = SynchedEntityData.defineId(DragonSkillEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> GROUND_Y = SynchedEntityData.defineId(DragonSkillEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DELAY = SynchedEntityData.defineId(DragonSkillEntity.class, EntityDataSerializers.INT);
     private int ownerId = -1;
     private int targetId = -1;
 
@@ -48,13 +56,14 @@ public class DragonSkillEntity extends Entity {
     }
 
     // 生成技能实体并加入世界
-    public static DragonSkillEntity spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, double groundY, LivingEntity target) {
+    public static DragonSkillEntity spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, double groundY, int delay, LivingEntity target) {
         DragonSkillEntity entity = ModEntities.DRAGON_SKILL.get().create(level);
         if (entity == null) {
             return null;
         }
         entity.entityData.set(KIND, kind);
         entity.entityData.set(GROUND_Y, (float) groundY);
+        entity.entityData.set(DELAY, delay);
         entity.ownerId = owner.getId();
         if (target != null) {
             entity.targetId = target.getId();
@@ -70,6 +79,7 @@ public class DragonSkillEntity extends Entity {
     protected void defineSynchedData() {
         this.entityData.define(KIND, FEATHER);
         this.entityData.define(GROUND_Y, 0.0F);
+        this.entityData.define(DELAY, 0);
     }
 
     public int getKind() {
@@ -80,12 +90,17 @@ public class DragonSkillEntity extends Entity {
         return this.entityData.get(GROUND_Y);
     }
 
+    public int getDelay() {
+        return this.entityData.get(DELAY);
+    }
+
     @Override
     public void tick() {
         super.tick();
         switch (getKind()) {
             case FEATHER -> tickFeather();
             case CRYSTAL -> tickCrystal();
+            case SPIKE -> tickSpike();
             default -> tickThunder();
         }
     }
@@ -169,6 +184,107 @@ public class DragonSkillEntity extends Entity {
         }
     }
 
+    private void tickSpike() {
+        int delay = getDelay();
+        if (level().isClientSide) {
+            // 预警：小范围橙红收缩环，收到最小即突起
+            if (this.tickCount == 1) {
+                level().addAlwaysVisibleParticle(ModParticles.DRAGON_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.6D, Math.max(4, delay), 0.0D);
+            }
+            return;
+        }
+        if (this.tickCount == delay) {
+            // 晶棘突起：伤害并挑飞
+            AABB box = new AABB(position(), position()).inflate(1.5D, 3.0D, 1.5D);
+            for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
+                living.hurt(skillDamage(), 9.0F);
+                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
+                living.hurtMarked = true;
+            }
+            level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.HOSTILE, 2.0F, 0.6F);
+            level().broadcastEntityEvent(this, (byte) 4);
+        }
+        if (this.tickCount > delay + SPIKE_END) {
+            discard();
+        }
+    }
+
+    // 震起环带内的地面方块（客户端调用）：只取顶部露天的完整方块
+    public static void spawnQuakeRing(Level level, double cx, double cy, double cz, double inner, double outer, double lift, RandomSource random) {
+        int range = Mth.ceil(outer);
+        int baseY = Mth.floor(cy - 0.5D);
+        int bx0 = Mth.floor(cx);
+        int bz0 = Mth.floor(cz);
+        for (int bx = bx0 - range; bx <= bx0 + range; bx++) {
+            for (int bz = bz0 - range; bz <= bz0 + range; bz++) {
+                double dx = bx + 0.5D - cx;
+                double dz = bz + 0.5D - cz;
+                double distance = Math.sqrt(dx * dx + dz * dz);
+                if (distance < inner || distance > outer) {
+                    continue;
+                }
+                quakeColumn(level, bx, baseY, bz, lift, random);
+            }
+        }
+    }
+
+    // 震起一条线段两侧 halfWidth 范围内的地面方块（客户端调用）
+    public static void spawnQuakeLine(Level level, double x0, double y, double z0, double x1, double z1, double halfWidth, double lift, RandomSource random) {
+        int baseY = Mth.floor(y - 0.5D);
+        int minX = Mth.floor(Math.min(x0, x1) - halfWidth);
+        int maxX = Mth.floor(Math.max(x0, x1) + halfWidth);
+        int minZ = Mth.floor(Math.min(z0, z1) - halfWidth);
+        int maxZ = Mth.floor(Math.max(z0, z1) + halfWidth);
+        double sx = x1 - x0;
+        double sz = z1 - z0;
+        double lengthSqr = Math.max(1.0E-4D, sx * sx + sz * sz);
+        for (int bx = minX; bx <= maxX; bx++) {
+            for (int bz = minZ; bz <= maxZ; bz++) {
+                double px = bx + 0.5D - x0;
+                double pz = bz + 0.5D - z0;
+                double t = Mth.clamp((px * sx + pz * sz) / lengthSqr, 0.0D, 1.0D);
+                double dx = px - sx * t;
+                double dz = pz - sz * t;
+                if (dx * dx + dz * dz > halfWidth * halfWidth) {
+                    continue;
+                }
+                // 越靠尾尖弹得越高
+                quakeColumn(level, bx, baseY, bz, lift * (0.7D + 0.5D * t), random);
+            }
+        }
+    }
+
+    // 在一列中找到顶部露天的完整方块并震起
+    private static void quakeColumn(Level level, int bx, int baseY, int bz, double lift, RandomSource random) {
+        for (int y = baseY + 1; y >= baseY - 2; y--) {
+            BlockPos pos = new BlockPos(bx, y, bz);
+            BlockState state = level.getBlockState(pos);
+            if (state.isAir() || !state.isCollisionShapeFullBlock(level, pos)) {
+                continue;
+            }
+            if (level.getBlockState(pos.above()).isCollisionShapeFullBlock(level, pos.above())) {
+                return;
+            }
+            level.addParticle(new BlockParticleOption(ModParticles.DRAGON_QUAKE_BLOCK.get(), state), bx, y, bz, 0.0D, lift * (0.8D + random.nextDouble() * 0.4D), 0.0D);
+            return;
+        }
+    }
+
+    // 晶棘高度比例：3 tick 冒出，停留后收回
+    public float getSpikeHeight(float partialTicks) {
+        float age = this.tickCount + partialTicks - getDelay();
+        if (age <= 0.0F) {
+            return 0.0F;
+        }
+        if (age < 3.0F) {
+            return age / 3.0F;
+        }
+        if (age < SPIKE_HOLD) {
+            return 1.0F;
+        }
+        return Math.max(0.0F, 1.0F - (age - SPIKE_HOLD) / (SPIKE_END - SPIKE_HOLD));
+    }
+
     // 雷柱渲染进度：0 未落下，1 刚落下，逐渐衰减
     public float getThunderFlash(float partialTicks) {
         float age = this.tickCount + partialTicks - THUNDER_DELAY;
@@ -234,6 +350,13 @@ public class DragonSkillEntity extends Entity {
                 for (int i = 0; i < 18; i++) {
                     double angle = random.nextDouble() * Math.PI * 2.0D;
                     level().addParticle(ModParticles.DRAGON_SHARD.get(), getX(), getY() + 0.3D, getZ(), Math.cos(angle) * 0.25D, 0.5D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.25D);
+                }
+            }
+            case 4 -> {
+                // 晶棘突起：周围地面方块被顶起 + 碎晶上溅
+                spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 1.6D, 0.25D, random);
+                for (int i = 0; i < 8; i++) {
+                    level().addParticle(ModParticles.DRAGON_SHARD.get(), getX(), getY() + 0.5D, getZ(), random.nextGaussian() * 0.15D, 0.4D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.15D);
                 }
             }
             case 3 -> {

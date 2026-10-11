@@ -14,12 +14,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
+
+import java.util.List;
 
 public final class PyreSpearItem extends Item {
     public PyreSpearItem() {
         super(new Item.Properties().durability(400).rarity(Rarity.EPIC));
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.pyrespear").withStyle(ChatFormatting.AQUA));
+        super.appendHoverText(stack, level, tooltip, flag);
     }
 
     @Override

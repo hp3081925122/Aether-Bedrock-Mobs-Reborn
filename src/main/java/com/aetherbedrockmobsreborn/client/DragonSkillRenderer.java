@@ -49,6 +49,19 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
                 drawCross(poseStack, consumer, -0.9F, 0.9F, 0.0F, 3.6F, false);
                 poseStack.popPose();
             }
+            case DragonSkillEntity.SPIKE -> {
+                // 晶棘：尖端朝上从地面冒出，高度按进度缩放
+                float height = entity.getSpikeHeight(partialTicks);
+                if (height > 0.0F) {
+                    poseStack.pushPose();
+                    poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() * 37.0F));
+                    poseStack.translate(0.0D, 3.0F * height, 0.0D);
+                    poseStack.scale(1.0F, -height, 1.0F);
+                    VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(CRYSTAL));
+                    drawCross(poseStack, consumer, -0.8F, 0.8F, 0.0F, 3.0F, false);
+                    poseStack.popPose();
+                }
+            }
             default -> {
                 // 雷柱：落下瞬间最宽，随后收细消失
                 float flash = entity.getThunderFlash(partialTicks);

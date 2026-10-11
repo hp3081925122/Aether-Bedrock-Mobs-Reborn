@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -57,6 +58,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.server.level.ServerLevel;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
@@ -103,13 +106,41 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     private static final int SKILL_METEOR = 3;
     private static final int SKILL_THUNDER = 4;
     private static final int SKILL_GALE = 5;
+    // 二阶段技能
+    private static final int SKILL_CLAW_RIGHT = 6;
+    private static final int SKILL_CLAW_LEFT = 7;
+    private static final int SKILL_STOMP = 8;
+    private static final int SKILL_CHARGE = 9;
+    private static final int SKILL_TAIL = 10;
+    private static final int SKILL_SPIKE = 11;
+    private static final int SKILL_ROAR = 12;
+    private static final int SKILL_TAIL_SLAM = 13;
+    private static final int SKILL_QUAKE_BREATH = 14;
+    // 震息：五道震荡波的外半径
+    private static final double[] RIPPLE_RADII = {3.0D, 6.0D, 9.0D, 12.0D, 15.0D};
+    // 重踏三圈地震波的内外半径
+    private static final double[] STOMP_WAVES = {0.0D, 5.0D, 9.5D, 14.0D};
     // 技能时长与动画一致；冷却以 tick 计
-    private static final int[] SKILL_DURATION = {0, 80, 50, 60, 60, 40};
-    private static final int[] SKILL_COOLDOWN = {0, 220, 70, 280, 180, 120};
+    private static final int[] SKILL_DURATION = {0, 80, 50, 60, 60, 40, 35, 35, 85, 50, 30, 32, 60, 44, 72};
+    private static final int[] SKILL_COOLDOWN = {0, 220, 70, 280, 180, 120, 30, 30, 200, 160, 90, 140, 360, 120, 260};
     private static final byte EVENT_FEATHER = 90;
     private static final byte EVENT_METEOR = 91;
     private static final byte EVENT_GALE = 92;
-    private final int[] skillCooldowns = new int[6];
+    private static final byte EVENT_CLAW_RIGHT = 93;
+    private static final byte EVENT_CLAW_LEFT = 94;
+    private static final byte EVENT_STOMP = 95;
+    private static final byte EVENT_TAIL = 98;
+    private static final byte EVENT_ROAR = 99;
+    private static final byte EVENT_SPIKE_SLAM = 100;
+    private static final byte EVENT_CHARGE_HIT = 101;
+    private static final byte EVENT_TAIL_SLAM = 102;
+    private static final byte EVENT_RIPPLE = 103;
+    private final int[] skillCooldowns = new int[15];
+    private final Set<Integer> chargeHits = new HashSet<>();
+    private Vec3 chargeDir = Vec3.ZERO;
+    private Vec3 quakeCenter = Vec3.ZERO;
+    private int clientSkill;
+    private int clientSkillTicks;
     private int skillTicks;
     private int skillGap = 40;
     private double orbitAngle;
@@ -117,6 +148,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     private Vec3 beamSide = Vec3.ZERO;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private final ServerBossEvent bossInfo = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_10);
+    private float lastBossBarProgress = -1.0F;
 
     public RebornMobEntity(EntityType<? extends RebornMobEntity> type, Level level) {
         super(type, level);
@@ -147,7 +179,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         if (this.getType().getCategory() == MobCategory.MONSTER || getIdPath().equals("saltcrab")) {
             if (getIdPath().equals("aetherdragon")) {
                 this.goalSelector.addGoal(2, new DragonSkyCombatGoal(this));
-                this.goalSelector.addGoal(2, new DragonMeleeAttackGoal(this, 1.0D, true));
+                this.goalSelector.addGoal(2, new DragonGroundCombatGoal(this));
             } else if (getIdPath().equals("eldershulker")) {
                 this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.25D, 30, 70.0F));
             } else {
@@ -231,7 +263,43 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 enterDragonPhaseTwo();
             }
         }
-        if (level().isClientSide && getDragonSkill() == SKILL_BREATH) {
+        if (level().isClientSide) {
+            // 客户端技能计时，用于蓄力与冲锋表现
+            int current = getDragonSkill();
+            if (current != this.clientSkill) {
+                this.clientSkill = current;
+                this.clientSkillTicks = 0;
+            }
+            this.clientSkillTicks++;
+            RandomSource random = getRandom();
+            float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+            double fx = -Mth.sin(yaw);
+            double fz = Mth.cos(yaw);
+            if (current == SKILL_CHARGE && this.clientSkillTicks <= 16 && this.clientSkillTicks % 4 == 0) {
+                // 冲撞蓄力：前方冲锋路线预警
+                for (double d = 4.0D; d <= 18.0D; d += 3.5D) {
+                    level().addAlwaysVisibleParticle(ModParticles.DRAGON_WARNING.get(), true, getX() + fx * d, getY() + 0.1D, getZ() + fz * d, 1.4D, 6.0D, 0.0D);
+                }
+            }
+            if (current == SKILL_CHARGE && this.clientSkillTicks > 16 && this.clientSkillTicks <= 38) {
+                // 冲锋：两侧扬尘与碎鳞
+                double sx = -fz * 2.0D;
+                double sz = fx * 2.0D;
+                level().addParticle(ModParticles.WHITESMOKE.get(), getX() + sx, getY() + 0.3D, getZ() + sz, -fx * 0.2D, 0.05D, -fz * 0.2D);
+                level().addParticle(ModParticles.WHITESMOKE.get(), getX() - sx, getY() + 0.3D, getZ() - sz, -fx * 0.2D, 0.05D, -fz * 0.2D);
+                level().addParticle(ModParticles.DRAGON_SHARD.get(), getX() + fx * 3.0D, getY() + 1.5D, getZ() + fz * 3.0D, random.nextGaussian() * 0.1D, 0.2D, random.nextGaussian() * 0.1D);
+            }
+            if (current == SKILL_STOMP && this.clientSkillTicks >= 20 && this.clientSkillTicks < 62 && this.clientSkillTicks % 2 == 0) {
+                // 重踏蓄力：碎光向高举的前爪汇聚
+                Vec3 claw = position().add(fx * 3.0D, 5.0D, fz * 3.0D);
+                for (int i = 0; i < 2; i++) {
+                    Vec3 from = claw.add(random.nextGaussian() * 2.5D, random.nextGaussian() * 2.0D, random.nextGaussian() * 2.5D);
+                    Vec3 velocity = claw.subtract(from).scale(0.18D);
+                    level().addParticle(ModParticles.DRAGON_SHARD.get(), from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
+                }
+            }
+        }
+        if (level().isClientSide && (getDragonSkill() == SKILL_BREATH || getDragonSkill() == SKILL_QUAKE_BREATH)) {
             RandomSource random = getRandom();
             if (isDragonBeamActive()) {
                 // 光束落点：碎光迸溅与小冲击环
@@ -244,8 +312,12 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     level().addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, end.x, end.y + 0.1D, end.z, 3.0D, 8.0D, 0.0D);
                 }
             } else {
-                // 蓄力：碎光向口部汇聚
+                // 蓄力：碎光向口部汇聚；震息为低头姿态，口部在前 3.2 格、上 3.3 格
                 Vec3 mouth = getDragonMouth();
+                if (getDragonSkill() == SKILL_QUAKE_BREATH) {
+                    float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+                    mouth = position().add(-Mth.sin(yaw) * 3.2D, 3.3D, Mth.cos(yaw) * 3.2D);
+                }
                 for (int i = 0; i < 3; i++) {
                     Vec3 from = mouth.add(random.nextGaussian() * 2.5D, random.nextGaussian() * 2.5D, random.nextGaussian() * 2.5D);
                     Vec3 velocity = mouth.subtract(from).scale(0.18D);
@@ -313,6 +385,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     public void startSeenByPlayer(ServerPlayer player) {
         super.startSeenByPlayer(player);
         if (isBossEntity()) {
+            updateBossBarProgress();
             bossInfo.addPlayer(player);
         }
     }
@@ -328,8 +401,25 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
-        if (isBossEntity()) {
-            bossInfo.setProgress(getHealth() / getMaxHealth());
+        updateBossBarProgress();
+    }
+
+    @Override
+    public void setHealth(float health) {
+        super.setHealth(health);
+        updateBossBarProgress();
+    }
+
+    private void updateBossBarProgress() {
+        if (bossInfo == null || level().isClientSide || !isBossEntity()) {
+            return;
+        }
+        float maxHealth = getMaxHealth();
+        float progress = maxHealth > 0.0F ? Mth.clamp(getHealth() / maxHealth, 0.0F, 1.0F) : 0.0F;
+        if (Math.abs(progress - lastBossBarProgress) > 1.0E-6F) {
+            bossInfo.setProgress(progress);
+            lastBossBarProgress = progress;
+            LOGGER.debug("Boss bar progress synchronized for {}: health={}, maxHealth={}, progress={}", getId(), getHealth(), maxHealth, progress);
         }
     }
 
@@ -597,6 +687,15 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             case SKILL_METEOR -> "animation.aether_dragon.skill_meteor";
             case SKILL_THUNDER -> "animation.aether_dragon.skill_thunder";
             case SKILL_GALE -> "animation.aether_dragon.skill_gale";
+            case SKILL_CLAW_RIGHT -> "animation.aether_dragon.standing_attack_right";
+            case SKILL_CLAW_LEFT -> "animation.aether_dragon.standing_attack_left";
+            case SKILL_STOMP -> "animation.aether_dragon.attack.land";
+            case SKILL_CHARGE -> "animation.aether_dragon.skill_charge";
+            case SKILL_TAIL -> "animation.aether_dragon.skill_tail_spin";
+            case SKILL_SPIKE -> "animation.aether_dragon.skill_spike_slam";
+            case SKILL_ROAR -> "animation.aether_dragon.standing_roar";
+            case SKILL_TAIL_SLAM -> "animation.aether_dragon.skill_tail_slam";
+            case SKILL_QUAKE_BREATH -> "animation.aether_dragon.skill_quake_breath";
             default -> "";
         };
         if (!skill.isEmpty()) {
@@ -820,6 +919,8 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     }
 
     private void applyDragonPhaseTwoAttributes() {
+        // 体型巨大，可直接跨过 1 格高的地形
+        setMaxUpStep(1.5F);
         if (getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3D);
         }
@@ -998,7 +1099,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     Vec3 aim = target.getEyePosition().subtract(origin).normalize();
                     for (int i = -4; i <= 4; i++) {
                         Vec3 velocity = aim.yRot(i * 8.0F * Mth.DEG_TO_RAD).scale(1.3D);
-                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.FEATHER, origin, velocity, 0.0D, target);
+                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.FEATHER, origin, velocity, 0.0D, 0, target);
                     }
                     server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 4.0F, 0.8F);
                     level().broadcastEntityEvent(this, EVENT_FEATHER);
@@ -1021,14 +1122,14 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         z = target.getZ() + (getRandom().nextDouble() * 2.0D - 1.0D) * 7.0D;
                     }
                     double groundY = findGroundY(x, target.getY() + 6.0D, z, 30.0D, target.getY());
-                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.CRYSTAL, new Vec3(x, groundY + 26.0D, z), Vec3.ZERO, groundY, target);
+                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.CRYSTAL, new Vec3(x, groundY + 26.0D, z), Vec3.ZERO, groundY, 0, target);
                 }
             }
             case SKILL_THUNDER -> {
                 // 天雷审判：连续三次标记目标当前位置
                 if (this.skillTicks == 12 || this.skillTicks == 24 || this.skillTicks == 36) {
                     double groundY = findGroundY(target.getX(), target.getY() + 1.0D, target.getZ(), 12.0D, target.getY());
-                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(target.getX(), groundY, target.getZ()), Vec3.ZERO, groundY, target);
+                    DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(target.getX(), groundY, target.getZ()), Vec3.ZERO, groundY, 0, target);
                     server.playSound(null, target.getX(), groundY, target.getZ(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.5F, 1.8F);
                 }
             }
@@ -1060,7 +1161,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
 
     @Override
     public void handleEntityEvent(byte id) {
-        if (id != EVENT_FEATHER && id != EVENT_METEOR && id != EVENT_GALE) {
+        if (id < EVENT_FEATHER || id > EVENT_RIPPLE + RIPPLE_RADII.length - 1) {
             super.handleEntityEvent(id);
             return;
         }
@@ -1089,7 +1190,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     level.addParticle(ModParticles.DRAGON_SHARD.get(), getX() + random.nextGaussian(), getY() + 6.0D, getZ() + random.nextGaussian(), random.nextGaussian() * 0.15D, 0.9D + random.nextDouble() * 0.5D, random.nextGaussian() * 0.15D);
                 }
             }
-            default -> {
+            case EVENT_GALE -> {
                 // 龙翼飓风：三层冲击波 + 径向风痕
                 level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() - 1.5D, getZ(), 14.0D, 16.0D, 0.0D);
                 level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() + 1.0D, getZ(), 12.0D, 14.0D, 0.0D);
@@ -1100,6 +1201,106 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     double dz = Math.sin(angle);
                     level.addParticle(ModParticles.WHITESMOKE.get(), getX() + dx * 2.0D, getY() + 1.0D + random.nextDouble() * 2.0D, getZ() + dz * 2.0D, dx * 0.9D, 0.0D, dz * 0.9D);
                 }
+            }
+            case EVENT_CLAW_RIGHT, EVENT_CLAW_LEFT -> {
+                // 爪击：前方贴地三道爪痕刀光 + 前喷碎鳞
+                double mirror = 0.0D;
+                if (id == EVENT_CLAW_LEFT) {
+                    mirror = 1.0D;
+                }
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SLASH.get(), true, getX() + fx * 3.5D, getY() + 1.2D, getZ() + fz * 3.5D, 4.5D, this.yBodyRot, mirror);
+                for (int i = 0; i < 12; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), getX() + fx * 4.0D, getY() + 1.0D, getZ() + fz * 4.0D, fx * 0.5D + random.nextGaussian() * 0.2D, 0.2D + random.nextDouble() * 0.2D, fz * 0.5D + random.nextGaussian() * 0.2D);
+                }
+            }
+            case EVENT_STOMP, EVENT_STOMP + 1, EVENT_STOMP + 2 -> {
+                // 重踏地震波：每圈冲击环 + 环带上的地面方块被震起 + 少量方块碎屑
+                int wave = id - EVENT_STOMP;
+                double radius = STOMP_WAVES[wave + 1];
+                double gy = getY() + 0.15D;
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), gy, getZ(), radius + 1.0D, 10.0D, 0.0D);
+                DragonSkillEntity.spawnQuakeRing(level, getX(), getY(), getZ(), radius - 1.3D, radius, 0.36D - wave * 0.04D, random);
+                for (int i = 0; i < 8; i++) {
+                    double angle = random.nextDouble() * Math.PI * 2.0D;
+                    double x = getX() + Math.cos(angle) * radius;
+                    double z = getZ() + Math.sin(angle) * radius;
+                    BlockState ground = level.getBlockState(BlockPos.containing(x, getY() - 0.5D, z));
+                    if (!ground.isAir()) {
+                        level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, ground), x, gy + 0.2D, z, 0.0D, 0.4D, 0.0D);
+                    }
+                }
+                if (wave == 0) {
+                    DragonSkillEntity.spawnQuakeRing(level, getX() + fx * 3.0D, getY(), getZ() + fz * 3.0D, 0.0D, 2.5D, 0.45D, random);
+                    for (int i = 0; i < 20; i++) {
+                        double angle = random.nextDouble() * Math.PI * 2.0D;
+                        level.addParticle(ModParticles.DRAGON_SHARD.get(), getX() + fx * 3.0D, gy + 0.3D, getZ() + fz * 3.0D, Math.cos(angle) * 0.3D, 0.5D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.3D);
+                    }
+                }
+            }
+            case EVENT_TAIL -> {
+                // 尾刃回旋：两道相对的大刀光拼成一整圈 + 旋涡风痕
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SLASH.get(), true, getX(), getY() + 1.0D, getZ(), 8.5D, this.yBodyRot, 0.0D);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SLASH.get(), true, getX(), getY() + 1.0D, getZ(), 8.5D, this.yBodyRot + 180.0F, 0.0D);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, getX(), getY() + 0.15D, getZ(), 9.0D, 10.0D, 0.0D);
+                for (int i = 0; i < 24; i++) {
+                    double angle = Math.PI * 2.0D * i / 24.0D;
+                    double dx = Math.cos(angle);
+                    double dz = Math.sin(angle);
+                    level.addParticle(ModParticles.WHITESMOKE.get(), getX() + dx * 6.0D, getY() + 1.0D, getZ() + dz * 6.0D, -dz * 0.6D + dx * 0.2D, 0.02D, dx * 0.6D + dz * 0.2D);
+                }
+            }
+            case EVENT_ROAR -> spawnDragonPhaseEffect("phase_roar");
+            case EVENT_SPIKE_SLAM -> {
+                // 晶棘拍地：前爪落点震起方块 + 冲击环
+                double cx = getX() + fx * 4.5D;
+                double cz = getZ() + fz * 4.5D;
+                DragonSkillEntity.spawnQuakeRing(level, cx, getY(), cz, 0.0D, 2.2D, 0.35D, random);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, cx, getY() + 0.15D, cz, 4.0D, 8.0D, 0.0D);
+                for (int i = 0; i < 12; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), cx, getY() + 0.4D, cz, random.nextGaussian() * 0.2D, 0.4D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.2D);
+                }
+            }
+            case EVENT_CHARGE_HIT -> {
+                // 冲撞命中：龙首前方碎鳞爆散 + 小冲击环
+                double cx = getX() + fx * 4.0D;
+                double cz = getZ() + fz * 4.0D;
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, cx, getY() + 1.5D, cz, 3.0D, 8.0D, 0.0D);
+                for (int i = 0; i < 16; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), cx, getY() + 1.5D, cz, random.nextGaussian() * 0.3D, 0.2D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.3D);
+                }
+            }
+            case EVENT_TAIL_SLAM -> {
+                // 尾击：尾巴落线上的方块整排震起，尾尖冲击环 + 碎鳞 + 扬尘
+                double x0 = getX() - fx * 2.0D;
+                double z0 = getZ() - fz * 2.0D;
+                double x1 = getX() - fx * 9.0D;
+                double z1 = getZ() - fz * 9.0D;
+                DragonSkillEntity.spawnQuakeLine(level, x0, getY(), z0, x1, z1, 1.6D, 0.42D, random);
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, x1, getY() + 0.15D, z1, 4.5D, 10.0D, 0.0D);
+                for (int i = 0; i < 18; i++) {
+                    level.addParticle(ModParticles.DRAGON_SHARD.get(), x1, getY() + 0.5D, z1, random.nextGaussian() * 0.25D, 0.4D + random.nextDouble() * 0.4D, random.nextGaussian() * 0.25D);
+                }
+                for (int i = 0; i < 10; i++) {
+                    double t = i / 9.0D;
+                    level.addParticle(ModParticles.WHITESMOKE.get(), Mth.lerp(t, x0, x1), getY() + 0.4D, Mth.lerp(t, z0, z1), -fz * 0.15D, 0.04D, fx * 0.15D);
+                    level.addParticle(ModParticles.WHITESMOKE.get(), Mth.lerp(t, x0, x1), getY() + 0.4D, Mth.lerp(t, z0, z1), fz * 0.15D, 0.04D, -fx * 0.15D);
+                }
+            }
+            case EVENT_RIPPLE, EVENT_RIPPLE + 1, EVENT_RIPPLE + 2, EVENT_RIPPLE + 3, EVENT_RIPPLE + 4 -> {
+                // 震荡波：以吐息落点为圆心，一圈冲击环 + 一圈震起的方块；第一道带中心爆发
+                int ring = id - EVENT_RIPPLE;
+                Vec3 center = getDragonBeamEnd();
+                double outer = RIPPLE_RADII[ring];
+                level.addAlwaysVisibleParticle(ModParticles.DRAGON_SHOCKWAVE.get(), true, center.x, center.y + 0.15D, center.z, outer + 0.5D, 9.0D, 0.0D);
+                DragonSkillEntity.spawnQuakeRing(level, center.x, center.y, center.z, outer - 1.2D, outer, 0.4D - ring * 0.04D, random);
+                if (ring == 0) {
+                    for (int i = 0; i < 24; i++) {
+                        double angle = random.nextDouble() * Math.PI * 2.0D;
+                        level.addParticle(ModParticles.DRAGON_SHARD.get(), center.x, center.y + 0.3D, center.z, Math.cos(angle) * 0.3D, 0.6D + random.nextDouble() * 0.5D, Math.sin(angle) * 0.3D);
+                    }
+                }
+            }
+            default -> {
             }
         }
     }
@@ -1139,27 +1340,388 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         }
     }
 
-    private static final class DragonMeleeAttackGoal extends MeleeAttackGoal {
+    // 二阶段地面战：靠近目标，按距离、方位与冷却挑选技能并执行时间轴
+    private void tickGroundCombat(LivingEntity target) {
+        for (int i = 1; i < this.skillCooldowns.length; i++) {
+            if (this.skillCooldowns[i] > 0) {
+                this.skillCooldowns[i]--;
+            }
+        }
+        int skill = getDragonSkill();
+        double distance = distanceTo(target);
+        float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+        Vec3 forward = new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
+        Vec3 right = new Vec3(-Mth.cos(yaw), 0.0D, -Mth.sin(yaw));
+        Vec3 toTarget = target.position().subtract(position()).multiply(1.0D, 0.0D, 1.0D);
+        if (toTarget.lengthSqr() > 1.0E-4D) {
+            toTarget = toTarget.normalize();
+        }
+        if (skill == 0) {
+            // 追击：超出 6 格就寻路靠近
+            faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            if (distance > 6.0D) {
+                if (this.tickCount % 10 == 0) {
+                    getNavigation().moveTo(target, 1.0D);
+                }
+            } else {
+                getNavigation().stop();
+            }
+            if (this.skillGap > 0) {
+                this.skillGap--;
+                return;
+            }
+            double front = toTarget.dot(forward);
+            int chosen = 0;
+            if (distance < 6.5D && front < -0.3D && this.skillCooldowns[SKILL_TAIL] <= 0) {
+                // 被贴背优先甩尾
+                chosen = SKILL_TAIL;
+            } else if (distance >= 5.0D && distance <= 12.0D && front < -0.2D && this.skillCooldowns[SKILL_TAIL_SLAM] <= 0) {
+                // 身后稍远处：转身用尾巴砸
+                chosen = SKILL_TAIL_SLAM;
+            } else {
+                List<Integer> ready = new ArrayList<>();
+                if (distance <= 7.5D && front > 0.5D && this.skillCooldowns[SKILL_CLAW_RIGHT] <= 0) {
+                    ready.add(SKILL_CLAW_RIGHT);
+                    ready.add(SKILL_CLAW_RIGHT);
+                    ready.add(SKILL_CLAW_RIGHT);
+                }
+                if (distance <= 10.0D && this.skillCooldowns[SKILL_STOMP] <= 0) {
+                    ready.add(SKILL_STOMP);
+                }
+                if (distance >= 8.0D && distance <= 24.0D && this.skillCooldowns[SKILL_CHARGE] <= 0) {
+                    ready.add(SKILL_CHARGE);
+                }
+                if (distance >= 11.0D && this.skillCooldowns[SKILL_SPIKE] <= 0) {
+                    ready.add(SKILL_SPIKE);
+                }
+                if (distance >= 6.0D && distance <= 16.0D && this.skillCooldowns[SKILL_QUAKE_BREATH] <= 0) {
+                    ready.add(SKILL_QUAKE_BREATH);
+                }
+                if (distance >= 6.0D && this.skillCooldowns[SKILL_ROAR] <= 0) {
+                    ready.add(SKILL_ROAR);
+                }
+                if (!ready.isEmpty()) {
+                    chosen = ready.get(getRandom().nextInt(ready.size()));
+                }
+            }
+            if (chosen == 0) {
+                return;
+            }
+            // 爪击按目标所在一侧选择左右爪，两侧共用冷却
+            if (chosen == SKILL_CLAW_RIGHT) {
+                this.skillCooldowns[SKILL_CLAW_LEFT] = SKILL_COOLDOWN[SKILL_CLAW_LEFT];
+                if (toTarget.dot(right) < 0.0D) {
+                    chosen = SKILL_CLAW_LEFT;
+                }
+            }
+            this.skillCooldowns[chosen] = SKILL_COOLDOWN[chosen];
+            this.skillCooldowns[SKILL_CLAW_RIGHT] = Math.max(this.skillCooldowns[SKILL_CLAW_RIGHT], this.skillCooldowns[SKILL_CLAW_LEFT]);
+            this.skillTicks = 0;
+            this.chargeHits.clear();
+            getNavigation().stop();
+            this.entityData.set(DRAGON_SKILL, chosen);
+            LOGGER.debug("Aether dragon {} casts ground skill {} at distance {}", getId(), chosen, distance);
+            return;
+        }
+        getNavigation().stop();
+        this.skillTicks++;
+        if (!(level() instanceof ServerLevel server)) {
+            return;
+        }
+        switch (skill) {
+            case SKILL_CLAW_RIGHT, SKILL_CLAW_LEFT -> {
+                // 裂空爪击：后仰蓄力，1.15 秒扑下，前方 120° 扇形
+                if (this.skillTicks < 18) {
+                    faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+                }
+                if (this.skillTicks == 23) {
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(7.5D, 3.0D, 7.5D), this::canDragonSkillHit)) {
+                        Vec3 to = living.position().subtract(position()).multiply(1.0D, 0.0D, 1.0D);
+                        double reach = to.length();
+                        if (reach > 8.0D) {
+                            continue;
+                        }
+                        if (reach > 3.0D && to.normalize().dot(forward) < 0.5D) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 14.0F);
+                        Vec3 push = forward;
+                        if (reach > 0.1D) {
+                            push = to.normalize();
+                        }
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.2D, 0.4D, push.z * 1.2D));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 3.0F, 0.5F);
+                    if (skill == SKILL_CLAW_RIGHT) {
+                        level().broadcastEntityEvent(this, EVENT_CLAW_RIGHT);
+                    } else {
+                        level().broadcastEntityEvent(this, EVENT_CLAW_LEFT);
+                    }
+                }
+            }
+            case SKILL_STOMP -> {
+                // 天坠重踏：人立 3 秒后砸地，三圈地震波依次外扩，只命中地面目标
+                if (this.skillTicks < 60) {
+                    faceDragonTowards(target.getX(), target.getZ(), 3.0F);
+                }
+                int wave = -1;
+                if (this.skillTicks == 64) {
+                    wave = 0;
+                } else if (this.skillTicks == 70) {
+                    wave = 1;
+                } else if (this.skillTicks == 76) {
+                    wave = 2;
+                }
+                if (wave >= 0) {
+                    double inner = STOMP_WAVES[wave];
+                    double outer = STOMP_WAVES[wave + 1];
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(outer + 1.0D, 3.0D, outer + 1.0D), this::canDragonSkillHit)) {
+                        Vec3 to = living.position().subtract(position()).multiply(1.0D, 0.0D, 1.0D);
+                        double reach = to.length();
+                        if (!living.onGround() || reach < inner - 1.0D || reach > outer + 1.0D) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 10.0F);
+                        Vec3 push = Vec3.ZERO;
+                        if (reach > 0.1D) {
+                            push = to.normalize().scale(0.6D);
+                        }
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.8D, push.z));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F - wave * 0.6F, 0.6F + wave * 0.1F);
+                    level().broadcastEntityEvent(this, (byte) (EVENT_STOMP + wave));
+                }
+            }
+            case SKILL_CHARGE -> {
+                // 龙首冲撞：0-16 蓄力瞄准，17-38 直线冲锋，撞到墙提前收招
+                if (this.skillTicks <= 16) {
+                    faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+                }
+                if (this.skillTicks == 16) {
+                    this.chargeDir = forward;
+                    var roar = ModSounds.ALL.get("drw");
+                    if (roar != null) {
+                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 3.0F, 0.9F);
+                    }
+                }
+                if (this.skillTicks > 16 && this.skillTicks <= 38) {
+                    setDeltaMovement(this.chargeDir.x * 0.8D, getDeltaMovement().y, this.chargeDir.z * 0.8D);
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(1.2D), this::canDragonSkillHit)) {
+                        if (!this.chargeHits.add(living.getId())) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 12.0F);
+                        living.setDeltaMovement(living.getDeltaMovement().add(this.chargeDir.x * 1.8D, 0.6D, this.chargeDir.z * 1.8D));
+                        living.hurtMarked = true;
+                        server.playSound(null, living.getX(), living.getY(), living.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.HOSTILE, 2.0F, 0.6F);
+                        level().broadcastEntityEvent(this, EVENT_CHARGE_HIT);
+                    }
+                    if (this.horizontalCollision && this.skillTicks > 19) {
+                        this.skillTicks = 38;
+                        server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 1.2F);
+                        level().broadcastEntityEvent(this, EVENT_CHARGE_HIT);
+                    }
+                }
+            }
+            case SKILL_TAIL -> {
+                // 尾刃回旋：0.7 秒尾巴扫过一整圈
+                if (this.skillTicks == 14) {
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(8.5D, 2.0D, 8.5D), this::canDragonSkillHit)) {
+                        Vec3 to = living.position().subtract(position()).multiply(1.0D, 0.0D, 1.0D);
+                        if (to.length() > 9.0D) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 10.0F);
+                        Vec3 push = forward;
+                        if (to.lengthSqr() > 0.01D) {
+                            push = to.normalize();
+                        }
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.6D, 0.5D, push.z * 1.6D));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 3.0F, 0.4F);
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 3.0F, 0.7F);
+                    level().broadcastEntityEvent(this, EVENT_TAIL);
+                }
+            }
+            case SKILL_SPIKE -> {
+                // 晶棘潮涌：拍地后朝目标方向依次冒出 14 根晶棘
+                if (this.skillTicks < 15) {
+                    faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+                }
+                if (this.skillTicks == 15) {
+                    Vec3 dir = toTarget;
+                    if (dir.lengthSqr() < 0.5D) {
+                        dir = forward;
+                    }
+                    Vec3 start = position().add(dir.scale(4.0D));
+                    for (int i = 0; i < 14; i++) {
+                        Vec3 p = start.add(dir.scale(1.7D * i));
+                        double groundY = findGroundY(p.x, getY() + 4.0D, p.z, 10.0D, getY());
+                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.SPIKE, new Vec3(p.x, groundY, p.z), Vec3.ZERO, groundY, 8 + i * 2, target);
+                    }
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 1.2F);
+                    level().broadcastEntityEvent(this, EVENT_SPIKE_SLAM);
+                }
+            }
+            case SKILL_ROAR -> {
+                // 雷霆咆哮：咆哮后在身边召唤内外两圈落雷，远处目标脚下追加一道
+                if (this.skillTicks == 18) {
+                    var roar = ModSounds.ALL.get("drw");
+                    if (roar != null) {
+                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 5.0F, 0.6F);
+                    }
+                    level().broadcastEntityEvent(this, EVENT_ROAR);
+                }
+                if (this.skillTicks == 22 || this.skillTicks == 34) {
+                    int count = 6;
+                    double radius = 7.0D;
+                    double offset = 0.0D;
+                    if (this.skillTicks == 34) {
+                        count = 10;
+                        radius = 13.0D;
+                        offset = Math.PI / 10.0D;
+                    }
+                    for (int i = 0; i < count; i++) {
+                        double angle = offset + Math.PI * 2.0D * i / count;
+                        double x = getX() + Math.cos(angle) * radius;
+                        double z = getZ() + Math.sin(angle) * radius;
+                        double groundY = findGroundY(x, getY() + 4.0D, z, 12.0D, getY());
+                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(x, groundY, z), Vec3.ZERO, groundY, 0, target);
+                    }
+                    if (this.skillTicks == 34 && distance > 15.0D) {
+                        double groundY = findGroundY(target.getX(), target.getY() + 1.0D, target.getZ(), 12.0D, target.getY());
+                        DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(target.getX(), groundY, target.getZ()), Vec3.ZERO, groundY, 0, target);
+                    }
+                }
+            }
+            case SKILL_TAIL_SLAM -> {
+                // 天尾坠击：转身让尾巴对准目标，0.95 秒整条尾巴砸下，命中身后 2~9 格的直线
+                if (this.skillTicks <= 15) {
+                    faceDragonTowards(getX() * 2.0D - target.getX(), getZ() * 2.0D - target.getZ(), 9.0F);
+                }
+                if (this.skillTicks == 19) {
+                    Vec3 from = position().subtract(forward.scale(2.0D));
+                    Vec3 to = position().subtract(forward.scale(9.0D));
+                    Vec3 segment = to.subtract(from);
+                    double lengthSqr = segment.lengthSqr();
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, new AABB(from, to).inflate(2.5D, 3.0D, 2.5D), this::canDragonSkillHit)) {
+                        Vec3 flat = new Vec3(living.getX(), from.y, living.getZ());
+                        double t = Mth.clamp(flat.subtract(from).dot(segment) / lengthSqr, 0.0D, 1.0D);
+                        Vec3 nearest = from.add(segment.scale(t));
+                        if (nearest.distanceToSqr(flat) > 2.2D * 2.2D) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 13.0F);
+                        Vec3 push = flat.subtract(nearest);
+                        if (push.lengthSqr() > 0.01D) {
+                            push = push.normalize();
+                        }
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 0.8D, 0.6D, push.z * 0.8D));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, to.x, to.y, to.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.5F, 0.7F);
+                    server.playSound(null, to.x, to.y, to.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 3.0F, 0.5F);
+                    level().broadcastEntityEvent(this, EVENT_TAIL_SLAM);
+                }
+            }
+            case SKILL_QUAKE_BREATH -> {
+                // 天穹震息：1.0~2.2 秒向前下方地面喷吐，2.3 秒起从落点外扩五道震荡波
+                if (this.skillTicks < 20) {
+                    faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+                }
+                if (this.skillTicks == 1) {
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 3.0F, 0.4F);
+                }
+                if (this.skillTicks == 20) {
+                    double px = getX() + forward.x * 3.5D;
+                    double pz = getZ() + forward.z * 3.5D;
+                    this.quakeCenter = new Vec3(px, findGroundY(px, getY() + 3.0D, pz, 8.0D, getY()), pz);
+                    this.entityData.set(DRAGON_BEAM_X, (float) this.quakeCenter.x);
+                    this.entityData.set(DRAGON_BEAM_Y, (float) this.quakeCenter.y);
+                    this.entityData.set(DRAGON_BEAM_Z, (float) this.quakeCenter.z);
+                    this.entityData.set(DRAGON_BEAM, true);
+                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_SHOOT, SoundSource.HOSTILE, 4.0F, 0.6F);
+                }
+                if (this.skillTicks > 20 && this.skillTicks <= 44 && this.skillTicks % 4 == 0) {
+                    // 吐息落点持续伤害
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, new AABB(this.quakeCenter, this.quakeCenter).inflate(3.0D, 3.0D, 3.0D), this::canDragonSkillHit)) {
+                        if (living.position().distanceToSqr(this.quakeCenter) <= 9.0D) {
+                            living.hurt(damageSources().indirectMagic(this, this), 5.0F);
+                        }
+                    }
+                    server.playSound(null, this.quakeCenter.x, this.quakeCenter.y, this.quakeCenter.z, SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.HOSTILE, 2.0F, 0.5F);
+                }
+                if (this.skillTicks == 45) {
+                    this.entityData.set(DRAGON_BEAM, false);
+                }
+                int ring = (this.skillTicks - 46) / 4;
+                if (this.skillTicks >= 46 && (this.skillTicks - 46) % 4 == 0 && ring < RIPPLE_RADII.length) {
+                    // 震荡波：命中当前环带内站在地面的目标
+                    double outer = RIPPLE_RADII[ring];
+                    double inner = outer - 3.0D;
+                    for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, new AABB(this.quakeCenter, this.quakeCenter).inflate(outer + 1.0D, 3.0D, outer + 1.0D), this::canDragonSkillHit)) {
+                        Vec3 to = living.position().subtract(this.quakeCenter).multiply(1.0D, 0.0D, 1.0D);
+                        double reach = to.length();
+                        if (!living.onGround() || reach < inner - 0.5D || reach > outer + 0.8D) {
+                            continue;
+                        }
+                        living.hurt(damageSources().mobAttack(this), 8.0F);
+                        Vec3 push = Vec3.ZERO;
+                        if (reach > 0.1D) {
+                            push = to.normalize().scale(0.4D);
+                        }
+                        living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.7D, push.z));
+                        living.hurtMarked = true;
+                    }
+                    server.playSound(null, this.quakeCenter.x, this.quakeCenter.y, this.quakeCenter.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.5F - ring * 0.35F, 0.5F + ring * 0.08F);
+                    level().broadcastEntityEvent(this, (byte) (EVENT_RIPPLE + ring));
+                }
+            }
+            default -> {
+            }
+        }
+        if (this.skillTicks >= SKILL_DURATION[skill]) {
+            stopDragonSkill();
+            this.skillGap = 15;
+        }
+    }
+
+    private static final class DragonGroundCombatGoal extends Goal {
         private final RebornMobEntity dragon;
 
-        private DragonMeleeAttackGoal(RebornMobEntity dragon, double speed, boolean followTarget) {
-            super(dragon, speed, followTarget);
+        private DragonGroundCombatGoal(RebornMobEntity dragon) {
             this.dragon = dragon;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
         }
 
         @Override
         public boolean canUse() {
-            return dragon.isDragonPhaseTwo() && super.canUse();
+            LivingEntity target = dragon.getTarget();
+            return dragon.isDragonPhaseTwo() && !dragon.isDragonTransitioning() && target != null && target.isAlive();
         }
 
         @Override
         public boolean canContinueToUse() {
-            return dragon.isDragonPhaseTwo() && super.canContinueToUse();
+            return canUse();
         }
 
         @Override
-        protected double getAttackReachSqr(net.minecraft.world.entity.LivingEntity target) {
-            return Math.max(9.0D, dragon.getBbWidth() * dragon.getBbWidth() + target.getBbWidth());
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void stop() {
+            dragon.stopDragonSkill();
+            dragon.getNavigation().stop();
+        }
+
+        @Override
+        public void tick() {
+            dragon.tickGroundCombat(dragon.getTarget());
         }
     }
 
