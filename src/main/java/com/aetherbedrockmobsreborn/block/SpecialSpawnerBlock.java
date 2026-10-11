@@ -41,27 +41,30 @@ public class SpecialSpawnerBlock extends Block {
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moving) {
-        super.neighborChanged(state, level, pos, block, fromPos, moving);
-        if (!level.isClientSide && isRedstoneAction()) {
-            boolean powered = level.getBestNeighborSignal(pos) > 0;
-            if (powered != state.getValue(POWERED)) {
-                if (!powered) {
-                    level.setBlock(pos, state.setValue(POWERED, powered), 3);
-                } else if (!activate(level, pos, null)) {
-                    level.setBlock(pos, state, 3);
-                    level.scheduleTick(pos, this, 20);
-                }
-            }
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!level.isClientSide && isProximityAction()) {
+            level.scheduleTick(pos, this, 20);
         }
     }
 
     @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moving) {
+        super.neighborChanged(state, level, pos, block, fromPos, moving);
+    }
+
+    @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!state.getValue(POWERED) && level.getBestNeighborSignal(pos) > 0) {
-            if (!activate(level, pos, null)) {
+        if (isProximityAction()) {
+            Player player = level.getNearestPlayer(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 8.0D, candidate -> !candidate.isSpectator());
+            if (player != null) {
+                if (!activate(level, pos, player)) {
+                    level.scheduleTick(pos, this, 20);
+                }
+            } else {
                 level.scheduleTick(pos, this, 20);
             }
+            return;
         }
     }
 
@@ -74,8 +77,8 @@ public class SpecialSpawnerBlock extends Block {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    private boolean isRedstoneAction() {
-        return action.equals("elder") || action.equals("crystalite") || action.equals("salt") || action.equals("labyrinth");
+    private boolean isProximityAction() {
+        return action.equals("crystalite") || action.equals("elder") || action.equals("salt") || action.equals("labyrinth");
     }
 
     private boolean activate(Level level, BlockPos pos, Player player) {

@@ -32,8 +32,8 @@
 - 模组 ID 冻结为 `aether_bedrock_mobs_reborn`；不承诺旧存档的原注册 ID 兼容。
 - Java 根包冻结为 `com.aetherbedrockmobsreborn`。
 - 资源命名空间与模组 ID 一致。
-- 原版 Aether 与 GeckoLib 为硬依赖，版本冻结为 Aether 文件 6134920 与 GeckoLib 4.8.4。
-- 可选依赖不写入模组依赖声明；需要兼容时使用隔离的检测和接线。
+- GeckoLib 为硬依赖，版本冻结为 4.8.4；Aether 已改为可选依赖，资源通过本模组的可选 Aether 生物群系标签接入。
+- 可选依赖不写入模组依赖声明；缺失 Aether 时相关生物群系生成与结构生成自动跳过。
 
 ### 3.2 内容流
 

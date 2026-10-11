@@ -45,8 +45,7 @@ public final class ModItems {
         register("shaday_leggings", () -> new ShadayArmorItem(net.minecraft.world.item.ArmorItem.Type.LEGGINGS));
         register("spiritsword", SpiritSwordItem::new);
         String[] spawnEggs = {
-                "aether_naga", "aetherdragon", "buterfly_10", "buterfly_11", "buterfly_12", "buterfly_13",
-                "buterfly_2", "buterfly_3", "buterfly_4", "buterfly_5", "buterfly_6", "buterfly_8", "buterfly_9", "buterfly7",
+                "aether_naga", "aetherdragon", "buterfly",
                 "crystalitegolem", "crystaliteminion", "eldershulker", "guardianangel", "mutatedcritter", "percipitus", "saltcrab",
                 "saltcrabking", "shimaenaga", "spirit", "twinkler"
         };
@@ -62,7 +61,7 @@ public final class ModItems {
     private static int[] spawnEggColors(String id) {
         return switch (id) {
             case "shimaenaga" -> new int[]{-1908244, -8350532};
-            case "twinkler", "buterfly_2", "buterfly_3", "buterfly_4", "buterfly_5", "buterfly_6", "buterfly_8", "buterfly_9", "buterfly_10", "buterfly_11", "buterfly_12", "buterfly_13", "buterfly7" -> new int[]{-1252895, -4423552};
+            case "twinkler", "buterfly" -> new int[]{-1252895, -4423552};
             case "crystalitegolem" -> new int[]{-14755911, -1450953};
             case "percipitus" -> new int[]{-8482125, -2164745};
             case "crystaliteminion" -> new int[]{-15532088, -14887803};

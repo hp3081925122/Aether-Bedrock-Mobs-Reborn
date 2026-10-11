@@ -20651,11 +20651,6 @@
 						]
 					}
 				}
-			},
-			"sound_effects": {
-				"0.0": {
-					"effect": "attack"
-				}
 			}
 		},
 		"animation.aether_dragon.standing_attack_left": {
@@ -35176,6 +35171,9 @@
 				},
 				"8.5000": {
 					"effect": "phase_roar"
+				},
+				"5.5600": {
+					"effect": "phase_slam"
 				}
 			},
 			"particle_effects": {
