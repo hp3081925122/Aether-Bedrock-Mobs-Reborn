@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -19,7 +20,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 
 // 水晶石傀儡技能实体：晶刺、晶笼、晶核，从地面破土后停留并碎裂
 public class GolemSkillEntity extends Entity {
@@ -55,10 +56,10 @@ public class GolemSkillEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(KIND, SPIKE);
-        this.entityData.define(DELAY, 0);
-        this.entityData.define(SCALE, 1.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(KIND, SPIKE);
+        builder.define(DELAY, 0);
+        builder.define(SCALE, 1.0F);
     }
 
     public int getKind() {
@@ -124,11 +125,11 @@ public class GolemSkillEntity extends Entity {
     private void erupt(float scale) {
         int kind = getKind();
         if (kind == CORE) {
-            damageAround(3.0D, scale, 14.0F, 1.2D);
+            damageAround(3.0D, scale, 14.0F, 0.6D);
         } else if (kind == CAGE) {
-            damageAround(0.9D, scale, 6.0F, 0.5D);
+            damageAround(0.9D, scale, 6.0F, 0.25D);
         } else {
-            damageAround(0.8D + scale * 0.5D, scale, 10.0F, 0.8D);
+            damageAround(0.8D + scale * 0.5D, scale, 10.0F, 0.4D);
         }
         if (!this.silent) {
             ModSounds.play(level(), "golem_spike", getX(), getY(), getZ(), 1.0F + scale * 0.5F, 1.2F - scale * 0.2F);
@@ -146,8 +147,7 @@ public class GolemSkillEntity extends Entity {
                 continue;
             }
             if (living.hurt(skillDamage(), amount) && lift > 0.0D) {
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, lift, 0.0D));
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, lift, 0.0D));
             }
         }
     }
@@ -217,7 +217,8 @@ public class GolemSkillEntity extends Entity {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

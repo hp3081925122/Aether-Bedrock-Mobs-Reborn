@@ -3,7 +3,6 @@ package com.aetherbedrockmobsreborn.entity;
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -26,7 +24,6 @@ import java.util.Set;
 
 // 盐蟹王 boss 战斗：技能选择、服务端时间轴与客户端特效
 final class CrabCombat {
-    private static final Logger LOGGER = LogUtils.getLogger();
     static final int PINCER = 1;
     static final int SLAM = 2;
     static final int RUSH = 3;
@@ -201,7 +198,6 @@ final class CrabCombat {
         this.hits.clear();
         this.crab.getNavigation().stop();
         this.crab.setBossSkill(chosen);
-        LOGGER.debug("Salt crab king {} casts skill {} at distance {}", this.crab.getId(), chosen, distance);
     }
 
     // 钳击连剪：第 9 tick 左钳、第 18 tick 右钳向前剪合
@@ -223,7 +219,7 @@ final class CrabCombat {
                 }
                 if (living.hurt(source(), 12.0F)) {
                     landed = true;
-                    living.setDeltaMovement(living.getDeltaMovement().add(forward.x * 0.7D, 0.3D, forward.z * 0.7D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(forward.x * 0.35D, 0.15D, forward.z * 0.35D));
                     living.hurtMarked = true;
                 }
             }
@@ -251,7 +247,7 @@ final class CrabCombat {
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurt(source(), 15.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.8D, 0.0D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.4D, 0.0D));
                     living.hurtMarked = true;
                 }
             }
@@ -301,7 +297,7 @@ final class CrabCombat {
                     continue;
                 }
                 if (living.hurt(source(), 13.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(this.rushDir.x * 1.4D, 0.45D, this.rushDir.z * 1.4D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(this.rushDir.x * 0.7D, 0.225D, this.rushDir.z * 0.7D));
                     living.hurtMarked = true;
                     ModSounds.play(server, "crab_snap_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
                     server.broadcastEntityEvent(this.crab, EVENT_RUSH_HIT);
@@ -402,8 +398,8 @@ final class CrabCombat {
             AABB box = this.crab.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.crab.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.4D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.5D, push.z));
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
                 living.hurtMarked = true;
             }
             for (int i = 0; i < 3; i++) {
@@ -418,7 +414,6 @@ final class CrabCombat {
                 CrabSkillEntity.spawn(server, this.crab, CrabSkillEntity.GEYSER, new Vec3(x, ground(x, z, this.crab.getY()), z), Vec3.ZERO, 0.0F, 0, null, true);
             }
             server.broadcastEntityEvent(this.crab, EVENT_ENRAGE);
-            LOGGER.debug("Salt crab king {} enraged at health {}", this.crab.getId(), this.crab.getHealth());
         }
     }
 
@@ -461,14 +456,14 @@ final class CrabCombat {
                 Vec3 claw = pos.add(right.scale(1.6D * side)).add(0.0D, 3.6D, 0.0D);
                 Vec3 from = claw.add(random.nextGaussian() * 1.5D, random.nextGaussian() * 1.5D, random.nextGaussian() * 1.5D);
                 Vec3 velocity = claw.subtract(from).scale(0.18D);
-                level.addParticle(ParticleTypes.BUBBLE_POP, from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
+                level.addParticle(ParticleTypes.END_ROD, from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
             }
         }
         if (skill == TIDAL && t < 22) {
-            // 蓄浪：身前地面涌出水花
+            // 蓄浪：身前地面涌出盐沫与光点
             Vec3 at = pos.add(forward.scale(2.0D + random.nextDouble() * 2.0D)).add(right.scale(random.nextGaussian() * 2.5D));
-            level.addParticle(ParticleTypes.SPLASH, at.x, pos.y + 0.2D, at.z, 0.0D, 0.15D, 0.0D);
-            level.addParticle(ParticleTypes.BUBBLE_COLUMN_UP, at.x, pos.y + 0.1D, at.z, 0.0D, 0.1D, 0.0D);
+            level.addParticle(ModParticles.SALT_SPRAY.get(), at.x, pos.y + 0.2D, at.z, 0.0D, 0.15D, 0.0D);
+            level.addParticle(ParticleTypes.END_ROD, at.x, pos.y + 0.1D, at.z, 0.0D, 0.1D, 0.0D);
         }
         if (skill == GEYSER && t % 3 == 0) {
             // 王冠上浮旋转：盐粒绕冠
@@ -477,9 +472,9 @@ final class CrabCombat {
             level.addParticle(ModParticles.SALT_SHARD.get(), crown.x + Math.cos(angle) * 1.2D, crown.y, crown.z + Math.sin(angle) * 1.2D, 0.0D, 0.05D, 0.0D);
         }
         if (this.crab.isCrabEnraged() && this.crab.tickCount % 3 == 0) {
-            // 狂暴：身周持续冒出水汽与泡泡
-            level.addParticle(ParticleTypes.BUBBLE_POP, pos.x + random.nextGaussian() * 1.5D, pos.y + 0.5D + random.nextDouble() * 1.5D, pos.z + random.nextGaussian() * 1.5D, 0.0D, 0.05D, 0.0D);
-            level.addParticle(ParticleTypes.SPLASH, pos.x + random.nextGaussian() * 1.5D, pos.y + 0.3D, pos.z + random.nextGaussian() * 1.5D, 0.0D, 0.1D, 0.0D);
+            // 狂暴：身周持续冒出光点与盐沫
+            level.addParticle(ParticleTypes.END_ROD, pos.x + random.nextGaussian() * 1.5D, pos.y + 0.5D + random.nextDouble() * 1.5D, pos.z + random.nextGaussian() * 1.5D, 0.0D, 0.05D, 0.0D);
+            level.addParticle(ModParticles.SALT_SPRAY.get(), pos.x + random.nextGaussian() * 1.5D, pos.y + 0.3D, pos.z + random.nextGaussian() * 1.5D, 0.0D, 0.1D, 0.0D);
         }
     }
 
@@ -491,7 +486,7 @@ final class CrabCombat {
         Vec3 forward = forward();
         float yaw = this.crab.yBodyRot;
         if (id == EVENT_PINCER_LEFT || id == EVENT_PINCER_RIGHT) {
-            // 钳夹：一对盐白钳齿左右合拢 + 水花
+            // 钳夹：一对盐白钳齿左右合拢 + 盐沫
             double side = 1.0D;
             if (id == EVENT_PINCER_RIGHT) {
                 side = -1.0D;
@@ -502,20 +497,20 @@ final class CrabCombat {
             level.addAlwaysVisibleParticle(ModParticles.CRAB_PINCH.get(), true, claw.x, claw.y, claw.z, 1.1D, yaw, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.CRAB_PINCH.get(), true, claw.x, claw.y, claw.z, 1.1D, yaw, 1.0D);
             for (int i = 0; i < 10; i++) {
-                level.addParticle(ParticleTypes.SPLASH, center.x, center.y, center.z, random.nextGaussian() * 0.2D, random.nextDouble() * 0.25D, random.nextGaussian() * 0.2D);
+                level.addParticle(ModParticles.SALT_SPRAY.get(), center.x, center.y, center.z, random.nextGaussian() * 0.2D, random.nextDouble() * 0.25D, random.nextGaussian() * 0.2D);
                 level.addParticle(ModParticles.SALT_SHARD.get(), center.x, center.y, center.z, random.nextGaussian() * 0.15D, random.nextDouble() * 0.3D, random.nextGaussian() * 0.15D);
             }
             return;
         }
         if (id == EVENT_SLAM) {
-            // 震地：双层冲击环 + 震起地面 + 水花与盐粒冲天
+            // 震地：双层冲击环 + 震起地面 + 盐沫与盐粒冲天
             Vec3 center = pos.add(forward.scale(2.6D));
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, center.x, center.y + 0.15D, center.z, 7.0D, 14.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, center.x, center.y + 0.2D, center.z, 4.0D, 10.0D, 0.0D);
             DragonSkillEntity.spawnQuakeRing(level, center.x, center.y, center.z, 0.0D, 3.2D, 0.38D, random);
             for (int i = 0; i < 24; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
-                level.addParticle(ParticleTypes.SPLASH, center.x + Math.cos(angle) * 1.5D, center.y + 0.3D, center.z + Math.sin(angle) * 1.5D, Math.cos(angle) * 0.3D, 0.4D, Math.sin(angle) * 0.3D);
+                level.addParticle(ModParticles.SALT_SPRAY.get(), center.x + Math.cos(angle) * 1.5D, center.y + 0.3D, center.z + Math.sin(angle) * 1.5D, Math.cos(angle) * 0.3D, 0.4D, Math.sin(angle) * 0.3D);
                 level.addParticle(ModParticles.SALT_SHARD.get(), center.x, center.y + 0.3D, center.z, Math.cos(angle) * 0.35D, 0.4D + random.nextDouble() * 0.3D, Math.sin(angle) * 0.35D);
             }
             return;
@@ -529,30 +524,30 @@ final class CrabCombat {
             return;
         }
         if (id == EVENT_DRUM) {
-            // 敲地：钳下水花
+            // 敲地：钳下盐沫
             Vec3 at = pos.add(forward.scale(2.4D));
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, at.x, at.y + 0.15D, at.z, 2.5D, 8.0D, 0.0D);
             for (int i = 0; i < 8; i++) {
-                level.addParticle(ParticleTypes.SPLASH, at.x + random.nextGaussian(), at.y + 0.2D, at.z + random.nextGaussian(), 0.0D, 0.3D, 0.0D);
+                level.addParticle(ModParticles.SALT_SPRAY.get(), at.x + random.nextGaussian(), at.y + 0.2D, at.z + random.nextGaussian(), 0.0D, 0.3D, 0.0D);
             }
             return;
         }
         if (id == EVENT_TIDAL) {
-            // 合砸：身前水花爆开
+            // 合砸：身前盐沫爆开
             Vec3 at = pos.add(forward.scale(2.5D));
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, at.x, at.y + 0.15D, at.z, 5.0D, 10.0D, 0.0D);
             for (int i = 0; i < 30; i++) {
-                level.addParticle(ParticleTypes.SPLASH, at.x + random.nextGaussian() * 2.0D, at.y + 0.3D, at.z + random.nextGaussian() * 2.0D, forward.x * 0.3D, 0.4D, forward.z * 0.3D);
+                level.addParticle(ModParticles.SALT_SPRAY.get(), at.x + random.nextGaussian() * 2.0D, at.y + 0.3D, at.z + random.nextGaussian() * 2.0D, forward.x * 0.3D, 0.4D, forward.z * 0.3D);
             }
             return;
         }
         if (id == EVENT_ENRAGE) {
-            // 盐潮怒号：三层冲击环 + 水花与盐粒爆发
+            // 盐潮怒号：三层冲击环 + 盐沫与盐粒爆发
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, pos.x, pos.y + 0.15D, pos.z, 9.0D, 16.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, pos.x, pos.y + 1.5D, pos.z, 6.0D, 12.0D, 0.0D);
             for (int i = 0; i < 40; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
-                level.addParticle(ParticleTypes.SPLASH, pos.x, pos.y + 1.0D, pos.z, Math.cos(angle) * 0.4D, 0.4D, Math.sin(angle) * 0.4D);
+                level.addParticle(ModParticles.SALT_SPRAY.get(), pos.x, pos.y + 1.0D, pos.z, Math.cos(angle) * 0.4D, 0.4D, Math.sin(angle) * 0.4D);
                 level.addParticle(ModParticles.SALT_SHARD.get(), pos.x, pos.y + 1.5D, pos.z, Math.cos(angle) * 0.3D, 0.3D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.3D);
             }
         }

@@ -5,16 +5,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class ModSounds {
-    public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, AetherBedrockMobsReborn.MOD_ID);
-    public static final Map<String, RegistryObject<SoundEvent>> ALL = new LinkedHashMap<>();
+    public static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(Registries.SOUND_EVENT, AetherBedrockMobsReborn.MOD_ID);
+    public static final Map<String, DeferredHolder<SoundEvent, SoundEvent>> ALL = new LinkedHashMap<>();
 
     static {
         String[] ids = {
@@ -45,13 +45,13 @@ public final class ModSounds {
                 "shulker_beam_loop", "shulker_vine", "shulker_vanish", "shulker_impact", "shulker_pulse", "shulker_burst", "shulker_enrage"
         };
         for (String id : ids) {
-            ALL.put(id, SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, id))));
+            ALL.put(id, SOUNDS.register(id, () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, id))));
         }
     }
 
     // 服务端在指定位置播放本模组音效，附近玩家都能听到
     public static void play(Level level, String id, double x, double y, double z, float volume, float pitch) {
-        RegistryObject<SoundEvent> sound = ALL.get(id);
+        DeferredHolder<SoundEvent, SoundEvent> sound = ALL.get(id);
         if (sound != null) {
             level.playSound(null, x, y, z, sound.get(), SoundSource.HOSTILE, volume, pitch);
         }
@@ -60,3 +60,4 @@ public final class ModSounds {
     private ModSounds() {
     }
 }
+

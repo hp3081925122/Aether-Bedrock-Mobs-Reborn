@@ -18,13 +18,13 @@ import java.util.List;
 
 public final class DungeonDaggerItem extends SwordItem {
     public DungeonDaggerItem() {
-        super(new AetherTier(500, 2.0F, 2.0F, 3, 20), 3, -1.5F, new Item.Properties());
+        super(new AetherTier(500, 2.0F, 2.0F, 3, 20), new Item.Properties().attributes(SwordItem.createAttributes(new AetherTier(500, 2.0F, 2.0F, 3, 20), 3.0F, -1.5F)));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.dungeondagger").withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override
@@ -40,3 +40,4 @@ public final class DungeonDaggerItem extends SwordItem {
         return result;
     }
 }
+

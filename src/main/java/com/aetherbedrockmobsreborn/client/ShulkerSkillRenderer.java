@@ -18,9 +18,9 @@ import org.joml.Matrix4f;
 
 // 远古潜影贝技能实体渲染：潜影弹为面向相机的发光圆盘，碎刃为沿速度旋转的十字面片，缠藤为三根摇摆的藤蔓
 public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
-    private static final ResourceLocation ORB = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_orb.png");
-    private static final ResourceLocation SHARD = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_shard.png");
-    private static final ResourceLocation VINE = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_vine.png");
+    private static final ResourceLocation ORB = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_orb.png");
+    private static final ResourceLocation SHARD = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_shard.png");
+    private static final ResourceLocation VINE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_vine.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public ShulkerSkillRenderer(EntityRendererProvider.Context context) {
@@ -91,7 +91,7 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float u, float v, int light, float alpha) {
-        consumer.vertex(pose, x, y, 0.0F).color(1.0F, 1.0F, 1.0F, alpha).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, 0.0F).setColor(1.0F, 1.0F, 1.0F, alpha).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -104,3 +104,4 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
         return ORB;
     }
 }
+

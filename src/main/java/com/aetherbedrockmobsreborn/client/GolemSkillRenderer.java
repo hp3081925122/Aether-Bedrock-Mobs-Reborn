@@ -17,7 +17,7 @@ import org.joml.Matrix4f;
 
 // 水晶石傀儡晶体渲染：主晶刺 + 两根斜生小晶刺组成晶簇，按破土进度从地下顶出
 public class GolemSkillRenderer extends EntityRenderer<GolemSkillEntity> {
-    private static final ResourceLocation CRYSTAL = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/golem_skill/golem_crystal.png");
+    private static final ResourceLocation CRYSTAL = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/golem_skill/golem_crystal.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public GolemSkillRenderer(EntityRendererProvider.Context context) {
@@ -68,7 +68,7 @@ public class GolemSkillRenderer extends EntityRenderer<GolemSkillEntity> {
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float u, float v) {
-        consumer.vertex(pose, x, y, 0.0F).color(255, 255, 255, 255).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(FULL_BRIGHT).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, 0.0F).setColor(255, 255, 255, 255).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -81,3 +81,4 @@ public class GolemSkillRenderer extends EntityRenderer<GolemSkillEntity> {
         return CRYSTAL;
     }
 }
+

@@ -1,6 +1,7 @@
 package com.aetherbedrockmobsreborn;
 
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
+import com.aetherbedrockmobsreborn.block.SpecialSpawnerBlock;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -18,18 +19,19 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.EntityStruckByLightningEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityStruckByLightningEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID)
 public final class RebornGameplayEvents {
     private static final Map<String, Consumer<RebornMobEntity>> JOIN_HANDLERS = Map.of(
             "crystalitegolem", RebornGameplayEvents::handleGolemJoin,
@@ -63,6 +65,21 @@ public final class RebornGameplayEvents {
     }
 
     @SubscribeEvent
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (player.level().isClientSide || player.tickCount % 20 != 0
+                || !(player.level() instanceof ServerLevel server)) {
+            return;
+        }
+        BlockPos center = player.blockPosition();
+        for (BlockPos pos : BlockPos.betweenClosed(center.offset(-8, -8, -8), center.offset(8, 8, 8))) {
+            if (server.getBlockState(pos).getBlock() instanceof SpecialSpawnerBlock spawner) {
+                spawner.checkPlayerProximity(server, pos, player);
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof RebornMobEntity entity) || !(entity.level() instanceof ServerLevel server)) {
             return;
@@ -75,7 +92,7 @@ public final class RebornGameplayEvents {
     }
 
     @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent event) {
+    public static void onLivingHurt(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof RebornMobEntity entity) || entity.level().isClientSide) {
             return;
         }
@@ -157,7 +174,7 @@ public final class RebornGameplayEvents {
     }
 
     private static void handleSaltCrabHurt(RebornMobEntity entity) {
-        entity.triggerAction("jump");
+        entity.triggerSaltCrabHurtSound();
     }
 
     @SubscribeEvent

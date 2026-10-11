@@ -1,32 +1,31 @@
 package com.aetherbedrockmobsreborn.entity;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
-import org.slf4j.Logger;
 
 public final class NagaEntity extends RebornMobEntity {
-    private static final Logger LOGGER = LogUtils.getLogger();
     private static final EntityDataAccessor<Long> ANIMATION_START = SynchedEntityData.defineId(NagaEntity.class, EntityDataSerializers.LONG);
     private final NagaPart[] parts;
     private int hitboxSkill = -1;
+    // 客户端：转身时尾部的拖拽弯曲角度（度），平滑跟随转身速度
+    private float tailBend;
+    private float tailBendO;
 
     public NagaEntity(EntityType<? extends RebornMobEntity> type, Level level) {
         super(type, level);
         this.parts = NagaHitboxes.createParts(this);
         setId(ENTITY_COUNTER.getAndAdd(this.parts.length + 1) + 1);
         updateParts();
-        LOGGER.debug("Naga multipart initialized: entity={}, parts={}, bodyBox={}, tailBox={}",
-                getId(), this.parts.length, this.parts[0].getBoundingBox(), this.parts[this.parts.length - 1].getBoundingBox());
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(ANIMATION_START, 0L);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ANIMATION_START, 0L);
     }
 
     @Override
@@ -66,6 +65,18 @@ public final class NagaEntity extends RebornMobEntity {
             this.entityData.set(ANIMATION_START, level().getGameTime() - getNagaCombat().getSkillTicks());
         }
         updateParts();
+        if (level().isClientSide) {
+            // 尾部拖拽：转得越快甩得越开，停止转身后缓慢回正
+            float turn = Mth.wrapDegrees(this.yBodyRot - this.yBodyRotO);
+            float target = Mth.clamp(turn * 3.0F, -40.0F, 40.0F);
+            this.tailBendO = this.tailBend;
+            this.tailBend += (target - this.tailBend) * 0.12F;
+        }
+    }
+
+    // 尾部拖拽弯曲角度（度），按帧插值
+    public float getTailBend(float partialTicks) {
+        return Mth.lerp(partialTicks, this.tailBendO, this.tailBend);
     }
 
     private void updateParts() {

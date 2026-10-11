@@ -19,9 +19,9 @@ import org.joml.Matrix4f;
 
 // 艾瑟龙技能实体渲染：羽刃、陨晶、雷柱
 public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
-    private static final ResourceLocation FEATHER = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_feather.png");
-    private static final ResourceLocation CRYSTAL = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_crystal.png");
-    private static final ResourceLocation LIGHTNING = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_lightning.png");
+    private static final ResourceLocation FEATHER = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_feather.png");
+    private static final ResourceLocation CRYSTAL = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_crystal.png");
+    private static final ResourceLocation LIGHTNING = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_lightning.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public DragonSkillRenderer(EntityRendererProvider.Context context) {
@@ -129,7 +129,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
 
     // 全亮顶点，龙息光束也复用
     static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float z, float u, float v) {
-        consumer.vertex(pose, x, y, z).color(255, 255, 255, 255).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(FULL_BRIGHT).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, z).setColor(255, 255, 255, 255).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -142,3 +142,4 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
         return FEATHER;
     }
 }
+

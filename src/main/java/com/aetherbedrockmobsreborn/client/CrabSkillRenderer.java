@@ -18,10 +18,10 @@ import org.joml.Matrix4f;
 
 // 盐蟹王技能实体渲染：泡泡为面向相机的半透明球面，水柱与浪墙为滚动 UV 的半透明面片，盐晶为阶梯晶簇
 public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
-    private static final ResourceLocation BUBBLE = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
-    private static final ResourceLocation WATER = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_water.png");
-    private static final ResourceLocation WAVE = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_wave.png");
-    private static final ResourceLocation SALT = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_salt.png");
+    private static final ResourceLocation BUBBLE = ，ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
+    private static final ResourceLocation WATER = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_water.png");
+    private static final ResourceLocation WAVE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_wave.png");
+    private static final ResourceLocation SALT = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_salt.png");
     private static final int FULL_BRIGHT = 15728880;
     // 浪墙沿宽度切成的段数
     private static final int WAVE_SEGMENTS = 12;
@@ -148,7 +148,7 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
 
     // 全亮顶点，带透明度
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float z, float u, float v, float alpha) {
-        consumer.vertex(pose, x, y, z).color(1.0F, 1.0F, 1.0F, alpha).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(FULL_BRIGHT).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, z).setColor(1.0F, 1.0F, 1.0F, alpha).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -161,3 +161,4 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
         return BUBBLE;
     }
 }
+

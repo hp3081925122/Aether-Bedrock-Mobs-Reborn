@@ -2,6 +2,9 @@ package com.aetherbedrockmobsreborn.item;
 
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
 
 public final class AetherTier implements Tier {
     private final int uses;
@@ -34,8 +37,8 @@ public final class AetherTier implements Tier {
     }
 
     @Override
-    public int getLevel() {
-        return level;
+    public TagKey<Block> getIncorrectBlocksForDrops() {
+        return BlockTags.INCORRECT_FOR_DIAMOND_TOOL;
     }
 
     @Override

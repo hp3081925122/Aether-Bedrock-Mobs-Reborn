@@ -8,6 +8,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -25,7 +26,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 
 // 天境娜迦技能实体：迷宫石柱、巨石
 public class NagaSkillEntity extends Entity {
@@ -82,12 +83,12 @@ public class NagaSkillEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(KIND, PILLAR);
-        this.entityData.define(DELAY, 0);
-        this.entityData.define(TARGET_X, 0.0F);
-        this.entityData.define(TARGET_Y, 0.0F);
-        this.entityData.define(TARGET_Z, 0.0F);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(KIND, PILLAR);
+        builder.define(DELAY, 0);
+        builder.define(TARGET_X, 0.0F);
+        builder.define(TARGET_Y, 0.0F);
+        builder.define(TARGET_Z, 0.0F);
     }
 
     public int getKind() {
@@ -125,8 +126,7 @@ public class NagaSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.3D, 0.0D, 1.3D).expandTowards(0.0D, 3.0D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 10.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.5D, 0.0D));
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
             }
             ModSounds.play(level(), "naga_pillar", getX(), getY(), getZ(), 1.2F, 0.9F + this.random.nextFloat() * 0.2F);
             level().broadcastEntityEvent(this, (byte) 1);
@@ -186,9 +186,8 @@ public class NagaSkillEntity extends Entity {
             if (living.position().distanceToSqr(at) <= 3.0D * 3.0D) {
                 living.hurt(skillDamage(), 10.0F);
                 Vec3 push = living.position().subtract(at);
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.6D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.4D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.3D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
             }
         }
         ModSounds.play(level(), "naga_boulder_impact", at.x, at.y, at.z, 2.5F, 1.0F);
@@ -255,7 +254,8 @@ public class NagaSkillEntity extends Entity {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

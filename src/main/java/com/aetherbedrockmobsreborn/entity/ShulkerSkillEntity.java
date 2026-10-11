@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -27,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 
 // 远古潜影贝技能实体：追踪潜影弹、壳片碎刃、缠藤
 public class ShulkerSkillEntity extends Entity {
@@ -68,9 +69,9 @@ public class ShulkerSkillEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(KIND, ORB);
-        this.entityData.define(DELAY, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(KIND, ORB);
+        builder.define(DELAY, 0);
     }
 
     public int getKind() {
@@ -258,7 +259,8 @@ public class ShulkerSkillEntity extends Entity {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

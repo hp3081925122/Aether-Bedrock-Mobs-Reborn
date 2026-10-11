@@ -5,6 +5,7 @@ import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.server.level.ServerLevel;
@@ -28,9 +29,9 @@ public final class PyreSpearItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.pyrespear").withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override
@@ -39,7 +40,7 @@ public final class PyreSpearItem extends Item {
     }
 
     @Override
-    public int getUseDuration(ItemStack stack) {
+    public int getUseDuration(ItemStack stack, LivingEntity entity) {
         return 60;
     }
 
@@ -78,7 +79,7 @@ public final class PyreSpearItem extends Item {
         if (!player.getAbilities().instabuild) {
             ammo.shrink(1);
         }
-        stack.hurtAndBreak(1, player, living -> living.broadcastBreakEvent(player.getUsedItemHand()));
+        stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         if (level instanceof ServerLevel server) {
             server.playSound(null, player.blockPosition(), ModSounds.ALL.get("sword").get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
             player.getCooldowns().addCooldown(this, 60);
@@ -100,6 +101,7 @@ public final class PyreSpearItem extends Item {
         return ItemStack.EMPTY;
     }
 }
+
 
 
 

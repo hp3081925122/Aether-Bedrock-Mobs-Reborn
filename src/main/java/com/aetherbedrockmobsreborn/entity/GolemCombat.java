@@ -3,7 +3,6 @@ package com.aetherbedrockmobsreborn.entity;
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -26,7 +24,6 @@ import java.util.Set;
 
 // 水晶石傀儡 boss 战斗：技能选择、服务端时间轴与客户端特效
 final class GolemCombat {
-    private static final Logger LOGGER = LogUtils.getLogger();
     static final int COMBO = 1;
     static final int SLAM = 2;
     static final int CHARGE = 3;
@@ -212,7 +209,6 @@ final class GolemCombat {
         this.hits.clear();
         this.golem.getNavigation().stop();
         this.golem.setBossSkill(chosen);
-        LOGGER.debug("Crystalite golem {} casts skill {} at distance {}", this.golem.getId(), chosen, distance);
     }
 
     // 晶拳连击：第 11 tick 右勾拳，第 22 tick 左勾拳
@@ -242,8 +238,7 @@ final class GolemCombat {
                 }
                 if (living.hurt(source(), amount)) {
                     landed = true;
-                    living.setDeltaMovement(living.getDeltaMovement().add(forward.x * 1.0D, 0.4D, forward.z * 1.0D));
-                    living.hurtMarked = true;
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(forward.x * 0.5D, 0.2D, forward.z * 0.5D));
                 }
             }
             if (landed) {
@@ -269,8 +264,7 @@ final class GolemCombat {
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurt(source(), 16.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
-                    living.hurtMarked = true;
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 }
             }
             ModSounds.play(server, "golem_impact", center.x, center.y, center.z, 3.0F, 1.0F);
@@ -321,8 +315,7 @@ final class GolemCombat {
                     continue;
                 }
                 if (living.hurt(source(), 14.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(this.chargeDir.x * 1.5D, 0.5D, this.chargeDir.z * 1.5D));
-                    living.hurtMarked = true;
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(this.chargeDir.x * 0.75D, 0.25D, this.chargeDir.z * 0.75D));
                     ModSounds.play(server, "golem_punch_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
                     server.broadcastEntityEvent(this.golem, EVENT_CHARGE_HIT);
                 }
@@ -422,7 +415,6 @@ final class GolemCombat {
                 server.addFreshEntity(minion);
             }
             ModSounds.play(server, "golem_impact", this.golem.getX(), this.golem.getY(), this.golem.getZ(), 2.0F, 1.2F);
-            LOGGER.debug("Crystalite golem {} summoned {} minions", this.golem.getId(), count);
         }
     }
 
@@ -450,9 +442,8 @@ final class GolemCombat {
             AABB box = this.golem.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.golem.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.4D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.5D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
             }
             for (int i = 0; i < 12; i++) {
                 double angle = Math.PI * 2.0D * i / 12.0D;
@@ -460,7 +451,6 @@ final class GolemCombat {
             }
             ModSounds.play(server, "golem_charge", this.golem.getX(), this.golem.getY() + 2.0D, this.golem.getZ(), 3.0F, 0.7F);
             server.broadcastEntityEvent(this.golem, EVENT_ENRAGE);
-            LOGGER.debug("Crystalite golem {} enraged at health {}", this.golem.getId(), this.golem.getHealth());
         }
     }
 

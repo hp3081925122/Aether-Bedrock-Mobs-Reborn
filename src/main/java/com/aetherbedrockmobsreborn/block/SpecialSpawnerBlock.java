@@ -5,17 +5,19 @@ import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.RandomSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -23,14 +25,16 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class SpecialSpawnerBlock extends Block {
     private static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     private final String action;
 
     public SpecialSpawnerBlock(String action) {
-        super(BlockBehaviour.Properties.of().strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
+        super(action.equals("lamp")
+                ? BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4).noOcclusion()
+                : BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
         this.action = action;
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
     }
@@ -40,41 +44,25 @@ public class SpecialSpawnerBlock extends Block {
         builder.add(POWERED);
     }
 
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!level.isClientSide && isProximityAction()) {
-            level.scheduleTick(pos, this, 20);
-        }
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moving) {
-        super.neighborChanged(state, level, pos, block, fromPos, moving);
-    }
-
-    @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (isProximityAction()) {
-            Player player = level.getNearestPlayer(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 8.0D, candidate -> !candidate.isSpectator());
-            if (player != null) {
-                if (!activate(level, pos, player)) {
-                    level.scheduleTick(pos, this, 20);
-                }
-            } else {
-                level.scheduleTick(pos, this, 20);
-            }
+    public void checkPlayerProximity(ServerLevel level, BlockPos pos, Player player) {
+        if (!isProximityAction() || player.isSpectator()) {
             return;
         }
+        double dx = player.getX() - (pos.getX() + 0.5D);
+        double dy = player.getY() - (pos.getY() + 0.5D);
+        double dz = player.getZ() - (pos.getZ() + 0.5D);
+        if (dx * dx + dy * dy + dz * dz <= 64.0D) {
+            activate(level, pos, player);
+        }
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND || (!action.equals("dragon") && !action.equals("lamp"))) {
-            return InteractionResult.PASS;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         activate(level, pos, player);
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return ItemInteractionResult.sidedSuccess(level.isClientSide);
     }
 
     private boolean isProximityAction() {
@@ -86,7 +74,7 @@ public class SpecialSpawnerBlock extends Block {
             return false;
         }
         if (action.equals("dragon") && player != null) {
-            RegistryObject<net.minecraft.world.item.Item> key = ModItems.ALL.get("finalkey");
+            DeferredHolder<net.minecraft.world.item.Item, net.minecraft.world.item.Item> key = ModItems.ALL.get("finalkey");
             if (key == null || !player.getMainHandItem().is(key.get())) {
                 player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
                 return false;
@@ -110,7 +98,7 @@ public class SpecialSpawnerBlock extends Block {
         if (entityId == null) {
             return false;
         }
-        RegistryObject<EntityType<RebornMobEntity>> type = ModEntities.MOBS.get(entityId);
+        DeferredHolder<EntityType<?>, EntityType<RebornMobEntity>> type = ModEntities.MOBS.get(entityId);
         if (type == null) {
             return false;
         }

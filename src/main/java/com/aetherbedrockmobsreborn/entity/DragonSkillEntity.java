@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -30,7 +31,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 
 // 艾瑟龙技能实体：羽刃、陨晶、雷击标记共用
 public class DragonSkillEntity extends Entity {
@@ -77,10 +78,10 @@ public class DragonSkillEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(KIND, FEATHER);
-        this.entityData.define(GROUND_Y, 0.0F);
-        this.entityData.define(DELAY, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(KIND, FEATHER);
+        builder.define(GROUND_Y, 0.0F);
+        builder.define(DELAY, 0);
     }
 
     public int getKind() {
@@ -198,7 +199,7 @@ public class DragonSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.5D, 3.0D, 1.5D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 9.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 living.hurtMarked = true;
             }
             ModSounds.play(level(), "dragon_spike_erupt", getX(), getY(), getZ(), 2.0F, 1.0F);
@@ -388,7 +389,8 @@ public class DragonSkillEntity extends Entity {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

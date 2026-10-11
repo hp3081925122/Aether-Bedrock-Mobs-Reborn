@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#aether_bedrock_mobs_reborn:aether_biomes",
+  "spawners": {
+    "type": "aether_bedrock_mobs_reborn:percipitus",
+    "weight": 22,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

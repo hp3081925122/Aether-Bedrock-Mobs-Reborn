@@ -7,6 +7,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -27,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -81,9 +82,9 @@ public class CrabSkillEntity extends Entity {
     }
 
     @Override
-    protected void defineSynchedData() {
-        this.entityData.define(KIND, BUBBLE);
-        this.entityData.define(DELAY, 0);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(KIND, BUBBLE);
+        builder.define(DELAY, 0);
     }
 
     public int getKind() {
@@ -134,7 +135,7 @@ public class CrabSkillEntity extends Entity {
                 return;
             }
         } else if (this.tickCount % 3 == 0) {
-            level().addParticle(ParticleTypes.BUBBLE_POP, getX(), getY(), getZ(), 0.0D, 0.0D, 0.0D);
+            level().addParticle(ParticleTypes.END_ROD, getX(), getY(), getZ(), 0.0D, 0.0D, 0.0D);
         }
         setPos(getX() + velocity.x, getY() + velocity.y, getZ() + velocity.z);
     }
@@ -151,20 +152,20 @@ public class CrabSkillEntity extends Entity {
         int end = delay + GEYSER_HOLD;
         if (level().isClientSide) {
             if (this.tickCount == 1) {
-                // 预警：海青收缩环 + 地面冒泡
+                // 预警：金色收缩环 + 地面冒出光点
                 level().addAlwaysVisibleParticle(ModParticles.SALT_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 2.2D, Math.max(4, delay), 0.0D);
             }
             if (this.tickCount < delay && this.tickCount % 2 == 0) {
-                level().addParticle(ParticleTypes.BUBBLE_COLUMN_UP, getX() + (this.random.nextDouble() - 0.5D) * 2.0D, getY() + 0.1D, getZ() + (this.random.nextDouble() - 0.5D) * 2.0D, 0.0D, 0.1D, 0.0D);
-                level().addParticle(ParticleTypes.SPLASH, getX() + (this.random.nextDouble() - 0.5D) * 2.0D, getY() + 0.1D, getZ() + (this.random.nextDouble() - 0.5D) * 2.0D, 0.0D, 0.1D, 0.0D);
+                level().addParticle(ParticleTypes.END_ROD, getX() + (this.random.nextDouble() - 0.5D) * 2.0D, getY() + 0.1D, getZ() + (this.random.nextDouble() - 0.5D) * 2.0D, 0.0D, 0.1D, 0.0D);
+                level().addParticle(ModParticles.SALT_SPRAY.get(), getX() + (this.random.nextDouble() - 0.5D) * 2.0D, getY() + 0.1D, getZ() + (this.random.nextDouble() - 0.5D) * 2.0D, 0.0D, 0.1D, 0.0D);
             }
             if (this.tickCount >= delay && this.tickCount < end) {
-                // 喷发：柱顶水花四溅
+                // 喷发：柱顶盐沫四溅
                 float height = getGeyserHeight(0.0F);
                 for (int i = 0; i < 4; i++) {
-                    level().addParticle(ParticleTypes.SPLASH, getX() + this.random.nextGaussian() * 0.5D, getY() + height, getZ() + this.random.nextGaussian() * 0.5D, this.random.nextGaussian() * 0.2D, 0.3D, this.random.nextGaussian() * 0.2D);
+                    level().addParticle(ModParticles.SALT_SPRAY.get(), getX() + this.random.nextGaussian() * 0.5D, getY() + height, getZ() + this.random.nextGaussian() * 0.5D, this.random.nextGaussian() * 0.2D, 0.3D, this.random.nextGaussian() * 0.2D);
                 }
-                level().addParticle(ParticleTypes.FALLING_WATER, getX() + this.random.nextGaussian() * 0.8D, getY() + height, getZ() + this.random.nextGaussian() * 0.8D, 0.0D, 0.0D, 0.0D);
+                level().addParticle(ModParticles.SALT_SPRAY.get(), getX() + this.random.nextGaussian() * 0.8D, getY() + height, getZ() + this.random.nextGaussian() * 0.8D, 0.0D, 0.0D, 0.0D);
             }
             return;
         }
@@ -173,7 +174,7 @@ public class CrabSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.6D, 0.0D, 1.6D).expandTowards(0.0D, GEYSER_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 9.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 1.3D, 0.0D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.65D, 0.0D));
                 living.hurtMarked = true;
             }
             if (!this.silent) {
@@ -185,7 +186,7 @@ public class CrabSkillEntity extends Entity {
             // 水柱持续期间把柱内目标往上推
             AABB box = new AABB(position(), position()).inflate(1.3D, 0.0D, 1.3D).expandTowards(0.0D, GEYSER_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.35D, 0.0D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.175D, 0.0D));
                 living.hurtMarked = true;
             }
         }
@@ -218,14 +219,17 @@ public class CrabSkillEntity extends Entity {
     private void tickWave() {
         Vec3 dir = getWaveDirection();
         if (level().isClientSide) {
-            // 浪尖水花与泡沫
+            // 浪尖盐沫与光点
             Vec3 side = new Vec3(-dir.z, 0.0D, dir.x);
             for (int i = 0; i < 6; i++) {
                 double l = (this.random.nextDouble() * 2.0D - 1.0D) * WAVE_HALF_WIDTH;
                 double back = l * l / (WAVE_HALF_WIDTH * WAVE_HALF_WIDTH) * 1.2D;
                 Vec3 at = position().add(side.scale(l)).subtract(dir.scale(back));
-                level().addParticle(ParticleTypes.SPLASH, at.x, at.y + getWaveHeight(0.0F), at.z, dir.x * 0.3D, 0.2D, dir.z * 0.3D);
-                level().addParticle(ParticleTypes.BUBBLE_POP, at.x, at.y + 0.2D, at.z, 0.0D, 0.0D, 0.0D);
+                level().addParticle(ModParticles.SALT_SPRAY.get(), at.x, at.y + getWaveHeight(0.0F), at.z, dir.x * 0.3D, 0.2D, dir.z * 0.3D);
+                if (i == 0) {
+                    // 光点存在时间长，每 tick 只冒一个
+                    level().addParticle(ParticleTypes.END_ROD, at.x, at.y + 0.2D, at.z, 0.0D, 0.0D, 0.0D);
+                }
             }
         } else {
             // 推进：命中浪前的目标，每个目标只结算一次
@@ -243,7 +247,7 @@ public class CrabSkillEntity extends Entity {
                     continue;
                 }
                 living.hurt(skillDamage(), 10.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(dir.x * 1.6D, 0.5D, dir.z * 1.6D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(dir.x * 0.8D, 0.25D, dir.z * 0.8D));
                 living.hurtMarked = true;
             }
             if (this.tickCount % 8 == 0) {
@@ -291,7 +295,7 @@ public class CrabSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.2D, 0.0D, 1.2D).expandTowards(0.0D, 2.5D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 9.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.7D, 0.0D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                 living.hurtMarked = true;
             }
             if (!this.silent) {
@@ -327,12 +331,12 @@ public class CrabSkillEntity extends Entity {
         RandomSource random = this.random;
         switch (id) {
             case 1 -> {
-                // 泡泡破裂：水花 + 小冲击环
+                // 泡泡破裂：盐沫 + 小冲击环
                 level().addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, getX(), getY(), getZ(), 1.8D, 6.0D, 0.0D);
                 for (int i = 0; i < 12; i++) {
-                    level().addParticle(ParticleTypes.SPLASH, getX(), getY(), getZ(), random.nextGaussian() * 0.25D, random.nextDouble() * 0.3D, random.nextGaussian() * 0.25D);
+                    level().addParticle(ModParticles.SALT_SPRAY.get(), getX(), getY(), getZ(), random.nextGaussian() * 0.25D, random.nextDouble() * 0.3D, random.nextGaussian() * 0.25D);
                 }
-                level().addParticle(ParticleTypes.BUBBLE_POP, getX(), getY(), getZ(), 0.0D, 0.0D, 0.0D);
+                level().addParticle(ParticleTypes.END_ROD, getX(), getY(), getZ(), 0.0D, 0.0D, 0.0D);
             }
             case 2 -> {
                 // 盐泉喷发：冲击环 + 震起地面 + 盐粒
@@ -378,7 +382,8 @@ public class CrabSkillEntity extends Entity {
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

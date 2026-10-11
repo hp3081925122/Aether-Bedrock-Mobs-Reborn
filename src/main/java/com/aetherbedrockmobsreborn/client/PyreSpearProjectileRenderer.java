@@ -18,7 +18,7 @@ import org.joml.Matrix4f;
 
 // 燔祭长矛投射物渲染：使用物品栏贴图，沿飞行方向摆放（十字交叉面片，绕枪身自转）
 public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProjectileEntity> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/item/pyre_spear.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/item/pyre_spear.png");
     // 贴图半边长；物品贴图中长矛沿对角线，矛尖在右上角
     private static final float HALF = 0.6F;
     // 整体向后偏移，让矛尖贴近实体位置
@@ -67,7 +67,7 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
     }
 
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float u, float v, int light) {
-        consumer.vertex(pose, x, y, 0.0F).color(255, 255, 255, 255).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, 0.0F).setColor(255, 255, 255, 255).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -80,3 +80,4 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
         return TEXTURE;
     }
 }
+

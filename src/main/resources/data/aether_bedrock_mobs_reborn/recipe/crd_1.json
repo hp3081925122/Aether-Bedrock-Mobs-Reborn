@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": {
+    "item": "aether_bedrock_mobs_reborn:crystalitebricks"
+  },
+  "result": {
+    "id": "aether_bedrock_mobs_reborn:crystalitecapstone",
+    "count": 1
+  }
+}

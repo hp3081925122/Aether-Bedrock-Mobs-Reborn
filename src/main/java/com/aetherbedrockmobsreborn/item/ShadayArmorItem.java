@@ -1,70 +1,26 @@
 package com.aetherbedrockmobsreborn.item;
 
 import com.aetherbedrockmobsreborn.client.model.ShadayArmorModel;
+import com.aetherbedrockmobsreborn.registry.ModArmorMaterials;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 
 public final class ShadayArmorItem extends ArmorItem {
-    private static final ArmorMaterial MATERIAL = new ArmorMaterial() {
-        @Override
-        public int getDurabilityForType(Type type) {
-            return new int[]{13, 15, 16, 11}[type.getSlot().getIndex()] * 50;
-        }
-
-        @Override
-        public int getDefenseForType(Type type) {
-            return new int[]{4, 7, 9, 4}[type.getSlot().getIndex()];
-        }
-
-        @Override
-        public int getEnchantmentValue() {
-            return 30;
-        }
-
-        @Override
-        public SoundEvent getEquipSound() {
-            return SoundEvents.ARMOR_EQUIP_GENERIC;
-        }
-
-        @Override
-        public Ingredient getRepairIngredient() {
-            return Ingredient.EMPTY;
-        }
-
-        @Override
-        public String getName() {
-            return "shaday";
-        }
-
-        @Override
-        public float getToughness() {
-            return 4.0F;
-        }
-
-        @Override
-        public float getKnockbackResistance() {
-            return 0.1F;
-        }
-    };
-
     public ShadayArmorItem(Type type) {
-        super(MATERIAL, type, new Item.Properties().rarity(Rarity.RARE));
+        super(ModArmorMaterials.SHADAY, type, new Item.Properties().rarity(Rarity.RARE).durability(type.getDurability(50)));
     }
 
     @Override
@@ -126,7 +82,7 @@ public final class ShadayArmorItem extends ArmorItem {
     }
 
     @Override
-    public String getArmorTexture(ItemStack stack, net.minecraft.world.entity.Entity entity, EquipmentSlot slot, String type) {
-        return "aether_bedrock_mobs_reborn:textures/entities/valkyrie_armor.png";
+    public ResourceLocation getArmorTexture(ItemStack stack, net.minecraft.world.entity.Entity entity, EquipmentSlot slot, net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        return ResourceLocation.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "textures/entities/valkyrie_armor.png");
     }
 }

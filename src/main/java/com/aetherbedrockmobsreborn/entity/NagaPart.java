@@ -1,6 +1,5 @@
 package com.aetherbedrockmobsreborn.entity;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -8,11 +7,10 @@ import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.entity.PartEntity;
-import org.slf4j.Logger;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.neoforged.neoforge.entity.PartEntity;
 
 public final class NagaPart extends PartEntity<NagaEntity> {
-    private static final Logger LOGGER = LogUtils.getLogger();
     private final String bone;
 
     NagaPart(NagaEntity parent, String bone) {
@@ -43,7 +41,6 @@ public final class NagaPart extends PartEntity<NagaEntity> {
             return false;
         }
         boolean accepted = getParent().hurt(source, amount);
-        LOGGER.debug("Naga multipart hit: entity={}, part={}, damage={}, accepted={}", getParent().getId(), this.bone, amount, accepted);
         return accepted;
     }
 
@@ -68,11 +65,6 @@ public final class NagaPart extends PartEntity<NagaEntity> {
     }
 
     @Override
-    public void setSecondsOnFire(int seconds) {
-        getParent().setSecondsOnFire(seconds);
-    }
-
-    @Override
     public ItemStack getPickResult() {
         return getParent().getPickResult();
     }
@@ -88,7 +80,7 @@ public final class NagaPart extends PartEntity<NagaEntity> {
     }
 
     @Override
-    protected void defineSynchedData() {
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
     }
 
     @Override
@@ -99,3 +91,4 @@ public final class NagaPart extends PartEntity<NagaEntity> {
     protected void addAdditionalSaveData(CompoundTag tag) {
     }
 }
+

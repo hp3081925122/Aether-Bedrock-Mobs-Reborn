@@ -1,18 +1,14 @@
-// 当前文件只保留最小的 Forge 开发、构建和运行配置。
 plugins {
+    id 'java-library'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'net.neoforged.gradle.userdev' version '7.1.37'
 }
 
 repositories {
-    maven {
-        url = 'https://www.cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
-        }
-    }
+    mavenLocal()
+    maven { url = 'https://maven.neoforged.net/releases' }
     maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
@@ -36,62 +32,44 @@ base {
     archivesName = project.mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-minecraft {
-    mappings channel: project.mapping_channel, version: project.mapping_version
-    copyIdeResources = true
-
-    runs {
+ runs {
         configureEach {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-
-            mods {
-                "${project.mod_id}" {
-                    source sourceSets.main
-                }
-            }
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
+            modSource project.sourceSets.main
         }
-
         client {
-            property 'forge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
-
         server {
-            args '--nogui'
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+            programArgument '--nogui'
         }
-
         gameTestServer {
-            property 'forge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
-
         data {
-            workingDirectory project.file('run-data')
-            args '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
-    }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
-    compileOnly fg.deobf("curse.maven:aether-255308:${project.aether_file_id}")
-    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${project.minecraft_version}:${project.geckolib_version}")
-    compileOnly fg.deobf("mezz.jei:jei-${project.minecraft_version}-forge:${project.jei_version}")
-    runtimeOnly fg.deobf("mezz.jei:jei-${project.minecraft_version}-forge:${project.jei_version}")
+    implementation "net.neoforged:neoforge:${project.neo_version}"
+    implementation "software.bernie.geckolib:geckolib-neoforge-${project.minecraft_version}:${project.geckolib_version}"
+    compileOnly "mezz.jei:jei-${project.minecraft_version}-neoforge-api:${project.jei_version}"
+    runtimeOnly "mezz.jei:jei-${project.minecraft_version}-neoforge:${project.jei_version}"
 }
 
 tasks.named('processResources', ProcessResources).configure {
     def replaceProperties = [
             minecraft_version: project.minecraft_version,
             minecraft_version_range: project.minecraft_version_range,
-            forge_version: project.forge_version,
-            forge_version_range: project.forge_version_range,
+            neo_version: project.neo_version,
+            neo_version_range: project.neo_version_range,
             loader_version_range: project.loader_version_range,
             mod_id: project.mod_id,
             mod_name: project.mod_name,
@@ -103,7 +81,7 @@ tasks.named('processResources', ProcessResources).configure {
     ]
     inputs.properties replaceProperties
 
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
         expand replaceProperties + [project: project]
     }
 }
@@ -119,13 +97,12 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Vendor': project.mod_authors
         ])
     }
-    finalizedBy 'reobfJar'
 }
 
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifact jar
+            from components.java
         }
     }
     repositories {

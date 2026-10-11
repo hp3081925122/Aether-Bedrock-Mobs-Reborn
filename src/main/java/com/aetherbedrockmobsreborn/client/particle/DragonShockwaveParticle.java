@@ -63,21 +63,17 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         float v1 = this.getV1();
         int light = 15728880;
         // 朝上的一面
-        buffer.vertex(px - radius, py, pz - radius).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px - radius, py, pz + radius).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px + radius, py, pz + radius).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px + radius, py, pz - radius).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
+        buffer.addVertex(px - radius, py, pz - radius).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px - radius, py, pz + radius).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px + radius, py, pz + radius).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px + radius, py, pz - radius).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
         // 朝下的一面
-        buffer.vertex(px + radius, py, pz - radius).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px + radius, py, pz + radius).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px - radius, py, pz + radius).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(px - radius, py, pz - radius).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
+        buffer.addVertex(px + radius, py, pz - radius).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px + radius, py, pz + radius).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px - radius, py, pz + radius).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(px - radius, py, pz - radius).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
     }
 
-    @Override
-    public boolean shouldCull() {
-        return false;
-    }
 
     @Override
     public ParticleRenderType getRenderType() {
