@@ -1,7 +1,6 @@
 package com.aetherbedrockmobsreborn;
 
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
-import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -19,7 +18,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityStruckByLightningEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -33,10 +31,6 @@ import java.util.function.Consumer;
 
 @Mod.EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class RebornGameplayEvents {
-    private static final int GOLEM_MINION_COOLDOWN_TICKS = 20;
-    private static final int GOLEM_MINION_LIMIT = 8;
-    private static final double GOLEM_MINION_COUNT_RADIUS = 32.0D;
-    private static final String GOLEM_MINION_COOLDOWN_TAG = "reborn_minion_cooldown_until";
     private static final Map<String, Consumer<RebornMobEntity>> JOIN_HANDLERS = Map.of(
             "crystalitegolem", RebornGameplayEvents::handleGolemJoin,
             "crystaliteminion", RebornGameplayEvents::handleMinionJoin
@@ -51,7 +45,6 @@ public final class RebornGameplayEvents {
             Map.entry("guardianangel", RebornGameplayEvents::handleGuardianAngelDeath)
     );
     private static final Map<String, Consumer<RebornMobEntity>> HURT_HANDLERS = Map.of(
-            "crystalitegolem", RebornGameplayEvents::handleCrystaliteGolemHurt,
             "saltcrab", RebornGameplayEvents::handleSaltCrabHurt
     );
 
@@ -163,21 +156,6 @@ public final class RebornGameplayEvents {
         }
     }
 
-    private static void handleCrystaliteGolemHurt(RebornMobEntity entity) {
-        if (entity.level() instanceof ServerLevel server && entity.getRandom().nextBoolean() && canSummonCrystaliteMinion(entity, server)) {
-            RebornMobEntity minion = ModEntities.MOBS.get("crystaliteminion").get().create(server);
-            if (minion != null) {
-                minion.moveTo(entity.getX() + entity.getRandom().nextDouble() * 6.0D - 3.0D, entity.getY(), entity.getZ() + entity.getRandom().nextDouble() * 6.0D - 3.0D, entity.getYRot(), entity.getXRot());
-                server.addFreshEntity(minion);
-                entity.getPersistentData().putLong(GOLEM_MINION_COOLDOWN_TAG, server.getGameTime() + GOLEM_MINION_COOLDOWN_TICKS);
-                sendParticles(server, ModParticles.RUNESEFFECT.get(), entity, 5);
-            }
-            entity.triggerAction("summoning");
-        } else {
-            entity.triggerAction("roar");
-        }
-    }
-
     private static void handleSaltCrabHurt(RebornMobEntity entity) {
         entity.triggerAction("jump");
     }
@@ -197,16 +175,6 @@ public final class RebornGameplayEvents {
         } else {
             entity.spawnAtLocation(spiritSword);
         }
-    }
-
-    private static boolean canSummonCrystaliteMinion(RebornMobEntity entity, ServerLevel server) {
-        long cooldownUntil = entity.getPersistentData().getLong(GOLEM_MINION_COOLDOWN_TAG);
-        if (server.getGameTime() < cooldownUntil) {
-            return false;
-        }
-        AABB range = entity.getBoundingBox().inflate(GOLEM_MINION_COUNT_RADIUS);
-        int minionCount = server.getEntitiesOfClass(RebornMobEntity.class, range, candidate -> candidate.getIdPath().equals("crystaliteminion")).size();
-        return minionCount < GOLEM_MINION_LIMIT;
     }
 
     @SubscribeEvent

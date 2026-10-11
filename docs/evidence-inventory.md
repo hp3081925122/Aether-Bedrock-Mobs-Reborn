@@ -9,7 +9,7 @@
 - 原包名：`net.mcreator.aethermobs`
 - Forge loader 范围：`[47,)`
 - Minecraft：`[1.20.1]`
-- Aether：必需，范围 `[0,)`
+- Aether：可选；开发环境使用 CurseMaven 文件 `6134920`
 - GeckoLib：原文件标为非必需，范围 `[0,)`；重写版若使用 GeckoLib，应按实际代码改为必需依赖
 - 原 `mods.toml` 重复声明了 Aether；重写版不保留该错误
 

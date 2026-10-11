@@ -3,12 +3,17 @@ package com.aetherbedrockmobsreborn.client;
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
+import software.bernie.geckolib.model.data.EntityModelData;
 
 public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     public static boolean supports(String id) {
         return switch (id) {
-            case "aetherdragon", "aether_naga", "buterfly_2", "buterfly_3", "buterfly_4", "buterfly_5", "buterfly_6", "buterfly7", "buterfly_8", "buterfly_9", "buterfly_10", "buterfly_11", "buterfly_12", "buterfly_13", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "shimaenaga", "twinkler" -> true;
+            case "aetherdragon", "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
             default -> false;
         };
     }
@@ -25,6 +30,9 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
             case "percipitus" -> "percipitus";
             case "saltcrab" -> "salt_crab";
             case "shimaenaga" -> "shima_enaga";
+            case "spirit" -> "spirit";
+            case "saltcrabking" -> "salt_crab_king";
+            case "eldershulker" -> "elder_shulker";
             default -> "twinkler";
         };
         return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "geo/" + model + ".geo.json");
@@ -47,8 +55,33 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
             case "percipitus" -> "percipitus";
             case "saltcrab" -> "salt_crab";
             case "shimaenaga" -> "shima_enaga";
+            case "spirit" -> "spirit";
+            case "saltcrabking" -> "salt_crab_king";
+            case "eldershulker" -> "elder_shulker";
             default -> "twinkler";
         };
         return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "animations/" + animation + ".animation.json");
+    }
+
+    @Override
+    public void setCustomAnimations(RebornMobEntity entity, long instanceId, AnimationState<RebornMobEntity> state) {
+        super.setCustomAnimations(entity, instanceId, state);
+        // 灵魂与远古潜影贝：不放技能时头部看向目标，叠加在动画旋转之上
+        String headBone = "";
+        if (entity.getIdPath().equals("spirit") && entity.getSpiritSkill() == 0) {
+            headBone = "head";
+        } else if (entity.getIdPath().equals("eldershulker") && entity.getShulkerSkill() == 0) {
+            headBone = "shulker_head";
+        }
+        if (headBone.isEmpty()) {
+            return;
+        }
+        CoreGeoBone head = getAnimationProcessor().getBone(headBone);
+        EntityModelData data = state.getData(DataTickets.ENTITY_MODEL_DATA);
+        if (head == null || data == null) {
+            return;
+        }
+        head.setRotX(head.getRotX() + data.headPitch() * Mth.DEG_TO_RAD);
+        head.setRotY(head.getRotY() + data.netHeadYaw() * Mth.DEG_TO_RAD);
     }
 }

@@ -16,6 +16,8 @@ import net.minecraft.world.phys.Vec3;
 public class DragonShockwaveParticle extends TextureSheetParticle {
     private final float maxRadius;
     private final boolean warning;
+    // 匀速扩张：用于与判定同步的灵焰轮环
+    private boolean linear;
 
     protected DragonShockwaveParticle(ClientLevel level, double x, double y, double z, double radius, double life, boolean warning, SpriteSet sprites) {
         super(level, x, y, z);
@@ -43,6 +45,10 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         float inverse = 1.0F - progress;
         float radius = this.maxRadius * (1.0F - inverse * inverse * inverse);
         float alpha = 1.0F - progress * progress;
+        if (this.linear) {
+            radius = this.maxRadius * progress;
+            alpha = Math.min(1.0F, (1.0F - progress) * 3.0F);
+        }
         // 预警：从外向内收缩、逐渐变亮并闪烁，收到最小时即为命中时刻
         if (this.warning) {
             radius = 0.4F + (this.maxRadius - 0.4F) * inverse;
@@ -87,7 +93,26 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
-            return new DragonShockwaveParticle(level, x, y, z, xd, yd, false, this.sprites);
+            DragonShockwaveParticle particle = new DragonShockwaveParticle(level, x, y, z, xd, yd, false, this.sprites);
+            // zd 大于 0.5 时匀速扩张
+            if (zd > 0.5D) {
+                particle.linear = true;
+            }
+            return particle;
+        }
+    }
+
+    // 灵魂预警环：保持贴图原色
+    public static final class PlainWarningProvider implements ParticleProvider<SimpleParticleType> {
+        private final SpriteSet sprites;
+
+        public PlainWarningProvider(SpriteSet sprites) {
+            this.sprites = sprites;
+        }
+
+        @Override
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+            return new DragonShockwaveParticle(level, x, y, z, xd, yd, true, this.sprites);
         }
     }
 

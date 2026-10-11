@@ -24,7 +24,7 @@ public class DragonDecalParticle extends TextureSheetParticle {
         this.size = (float) Math.max(0.5D, size);
         this.yaw = (float) yaw * Mth.DEG_TO_RAD;
         this.mirror = mirror > 0.5D;
-        this.lifetime = 9;
+        this.lifetime = 15;
         this.gravity = 0.0F;
         this.hasPhysics = false;
         this.xd = 0.0D;
@@ -42,7 +42,8 @@ public class DragonDecalParticle extends TextureSheetParticle {
         float progress = Mth.clamp((this.age + partialTicks) / this.lifetime, 0.0F, 1.0F);
         // 快速张开并淡出
         float scale = this.size * (0.85F + 0.2F * Math.min(1.0F, progress * 3.0F));
-        float alpha = 1.0F - progress * progress;
+        float fadeProgress = Mth.clamp((progress - 0.45F) / 0.55F, 0.0F, 1.0F);
+        float alpha = 1.0F - fadeProgress * fadeProgress;
         // 图像上方对应朝向前方，右方对应朝向右侧
         float fx = -Mth.sin(this.yaw) * scale;
         float fz = Mth.cos(this.yaw) * scale;

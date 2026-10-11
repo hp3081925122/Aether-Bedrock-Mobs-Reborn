@@ -2,6 +2,7 @@ package com.aetherbedrockmobsreborn.entity;
 
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
+import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -153,8 +154,7 @@ public class DragonSkillEntity extends Entity {
         if (!level().isClientSide && getY() <= getGroundY()) {
             // 落地爆裂
             damageArea(new Vec3(getX(), getGroundY(), getZ()), 3.0D, 10.0F);
-            level().playSound(null, getX(), getGroundY(), getZ(), SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.HOSTILE, 2.5F, 0.6F);
-            level().playSound(null, getX(), getGroundY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.0F, 1.4F);
+            ModSounds.play(level(), "dragon_crystal_impact", getX(), getGroundY(), getZ(), 3.0F, 1.0F);
             level().broadcastEntityEvent(this, (byte) 1);
             discard();
         }
@@ -201,7 +201,7 @@ public class DragonSkillEntity extends Entity {
                 living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
                 living.hurtMarked = true;
             }
-            level().playSound(null, getX(), getY(), getZ(), SoundEvents.AMETHYST_CLUSTER_PLACE, SoundSource.HOSTILE, 2.0F, 0.6F);
+            ModSounds.play(level(), "dragon_spike_erupt", getX(), getY(), getZ(), 2.0F, 1.0F);
             level().broadcastEntityEvent(this, (byte) 4);
         }
         if (this.tickCount > delay + SPIKE_END) {
@@ -296,7 +296,7 @@ public class DragonSkillEntity extends Entity {
 
     private void burst(Vec3 pos) {
         setPos(pos.x, pos.y, pos.z);
-        level().playSound(null, pos.x, pos.y, pos.z, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.HOSTILE, 1.0F, 1.3F);
+        ModSounds.play(level(), "dragon_feather_hit", pos.x, pos.y, pos.z, 1.5F, 1.0F);
         level().broadcastEntityEvent(this, (byte) 3);
         discard();
     }

@@ -33,16 +33,14 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.LeapAtTargetGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.RangedAttackGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomFlyingGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -82,7 +80,10 @@ import software.bernie.geckolib.core.keyframe.event.ParticleKeyframeEvent;
 import software.bernie.geckolib.core.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedAttackMob {
+public class RebornMobEntity extends PathfinderMob implements GeoEntity {
+    private static final String BUTTERFLY_VARIANT_TAG = "reborn_butterfly_variant";
+    private static final String[] BUTTERFLY_TEXTURES = {"black", "blue", "cloud", "cyan", "dark", "dark_blue", "gold", "green", "orange", "purple", "red_large", "yellow"};
+    private static final EntityDataAccessor<Integer> BUTTERFLY_VARIANT = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DRAGON_PHASE_TWO = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.BOOLEAN);
     private static final String DRAGON_PHASE_TAG = "reborn_dragon_phase_two";
     // 转阶段状态：同步给客户端，期间无敌且不执行 AI
@@ -146,12 +147,29 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     private double orbitAngle;
     private Vec3 beamBase = Vec3.ZERO;
     private Vec3 beamSide = Vec3.ZERO;
+    // 灵魂战斗状态，首次使用时创建
+    private SpiritCombat spiritCombat;
+    // 天境娜迦战斗状态，首次使用时创建
+    private NagaCombat nagaCombat;
+    // 水晶石傀儡战斗状态，首次使用时创建
+    private GolemCombat golemCombat;
+    // 盐蟹王战斗状态，首次使用时创建
+    private CrabCombat crabCombat;
+    // 远古潜影贝战斗状态，首次使用时创建
+    private ShulkerCombat shulkerCombat;
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
     private final ServerBossEvent bossInfo = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_10);
     private float lastBossBarProgress = -1.0F;
 
     public RebornMobEntity(EntityType<? extends RebornMobEntity> type, Level level) {
         super(type, level);
+        if (getIdPath().equals("buterfly") && !level.isClientSide) {
+            this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
+            LOGGER.debug("Butterfly variant assigned: entity={}, variant={}, texture={}", getId(), this.entityData.get(BUTTERFLY_VARIANT), getTextureName());
+        }
+        if (getIdPath().equals("crystalitegolem")) {
+            LOGGER.debug("Crystalite golem hitbox initialized: entity={}, box={}", getId(), getBoundingBox());
+        }
         if (isFlyingEntity()) {
             this.moveControl = new FlyingMoveControl(this, 10, true);
         }
@@ -165,7 +183,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         } else {
             if (isFlyingEntity()) {
                 this.goalSelector.addGoal(1, new PanicGoal(this, 1.1D));
-                this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.8D, 20));
+                this.goalSelector.addGoal(5, new WaterAvoidingRandomFlyingGoal(this, 0.8D));
             } else {
                 this.goalSelector.addGoal(0, new FloatGoal(this));
                 this.goalSelector.addGoal(5, new RandomStrollGoal(this, 1.0D));
@@ -181,12 +199,22 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 this.goalSelector.addGoal(2, new DragonSkyCombatGoal(this));
                 this.goalSelector.addGoal(2, new DragonGroundCombatGoal(this));
             } else if (getIdPath().equals("eldershulker")) {
-                this.goalSelector.addGoal(2, new RangedAttackGoal(this, 1.25D, 30, 70.0F));
+                // 远古潜影贝：技能战斗，取代原有远程射击
+                this.goalSelector.addGoal(2, new ShulkerCombat.CombatGoal(this));
+            } else if (getIdPath().equals("spirit")) {
+                // 灵魂：技能战斗，取代原有普攻与扑跳
+                this.goalSelector.addGoal(2, new SpiritCombat.CombatGoal(this));
+            } else if (getIdPath().equals("aether_naga")) {
+                // 天境娜迦：技能战斗，取代原有普攻与扑跳
+                this.goalSelector.addGoal(2, new NagaCombat.CombatGoal(this));
+            } else if (getIdPath().equals("crystalitegolem")) {
+                // 水晶石傀儡：技能战斗，取代原有普攻
+                this.goalSelector.addGoal(2, new GolemCombat.CombatGoal(this));
+            } else if (getIdPath().equals("saltcrabking")) {
+                // 盐蟹王：技能战斗，取代原有普攻
+                this.goalSelector.addGoal(2, new CrabCombat.CombatGoal(this));
             } else {
                 this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
-                if (getIdPath().equals("aether_naga") || getIdPath().equals("spirit")) {
-                    this.goalSelector.addGoal(3, new LeapAtTargetGoal(this, 0.5F));
-                }
             }
             this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
             this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -195,7 +223,14 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
 
     @Override
     protected PathNavigation createNavigation(Level level) {
-        return isFlyingEntity() ? new FlyingPathNavigation(this, level) : super.createNavigation(level);
+        if (!isFlyingEntity()) {
+            return super.createNavigation(level);
+        }
+        FlyingPathNavigation navigation = new FlyingPathNavigation(this, level);
+        navigation.setCanOpenDoors(false);
+        navigation.setCanFloat(false);
+        navigation.setCanPassDoors(true);
+        return navigation;
     }
 
     @Override
@@ -213,6 +248,14 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     public boolean isInvulnerableTo(DamageSource source) {
         // 转阶段期间无敌，/kill 之类的绕过无敌伤害除外
         if (isDragonTransitioning() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return true;
+        }
+        // 远古潜影贝相位跃迁期间无敌
+        if (getIdPath().equals("eldershulker") && !level().isClientSide && getShulkerCombat().isPhased() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return true;
+        }
+        // 天境娜迦潜地期间无敌
+        if (getIdPath().equals("aether_naga") && !level().isClientSide && getNagaCombat().isBurrowed() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return true;
         }
         return super.isInvulnerableTo(source);
@@ -256,12 +299,31 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
 
     @Override
     public void aiStep() {
+        if (!level().isClientSide && getIdPath().equals("buterfly") && this.entityData.get(BUTTERFLY_VARIANT) < 0) {
+            this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
+            LOGGER.debug("Butterfly variant assigned after spawn: entity={}, variant={}, texture={}", getId(), this.entityData.get(BUTTERFLY_VARIANT), getTextureName());
+        }
         super.aiStep();
         if (isDragonPhaseOne()) {
             setNoGravity(true);
             if (!level().isClientSide && isAlive() && getHealth() <= 300.0F) {
                 enterDragonPhaseTwo();
             }
+        }
+        if (level().isClientSide && getIdPath().equals("spirit")) {
+            getSpiritCombat().clientTick();
+        }
+        if (level().isClientSide && getIdPath().equals("aether_naga")) {
+            getNagaCombat().clientTick();
+        }
+        if (level().isClientSide && getIdPath().equals("crystalitegolem")) {
+            getGolemCombat().clientTick();
+        }
+        if (level().isClientSide && getIdPath().equals("saltcrabking")) {
+            getCrabCombat().clientTick();
+        }
+        if (level().isClientSide && getIdPath().equals("eldershulker")) {
+            getShulkerCombat().clientTick();
         }
         if (level().isClientSide) {
             // 客户端技能计时，用于蓄力与冲锋表现
@@ -357,6 +419,13 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             }
             return hurt;
         }
+        // 远古潜影贝：记录受击时间，闭壳期间伤害降为两成
+        if (!level().isClientSide && getIdPath().equals("eldershulker")) {
+            getShulkerCombat().onHurt();
+            if (getShulkerCombat().isGuarding()) {
+                amount *= 0.2F;
+            }
+        }
         return super.hurt(source, amount);
     }
 
@@ -379,6 +448,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         this.entityData.define(DRAGON_BEAM_X, 0.0F);
         this.entityData.define(DRAGON_BEAM_Y, 0.0F);
         this.entityData.define(DRAGON_BEAM_Z, 0.0F);
+        this.entityData.define(BUTTERFLY_VARIANT, -1);
     }
 
     @Override
@@ -466,14 +536,50 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putString("reborn_texture", getTextureName());
+        if (getIdPath().equals("buterfly")) {
+            tag.putInt(BUTTERFLY_VARIANT_TAG, this.entityData.get(BUTTERFLY_VARIANT));
+        }
         if (getIdPath().equals("aetherdragon")) {
             tag.putBoolean(DRAGON_PHASE_TAG, isDragonPhaseTwo());
+        }
+        if (getIdPath().equals("spirit")) {
+            getSpiritCombat().save(tag);
+        }
+        if (getIdPath().equals("aether_naga")) {
+            getNagaCombat().save(tag);
+        }
+        if (getIdPath().equals("crystalitegolem")) {
+            getGolemCombat().save(tag);
+        }
+        if (getIdPath().equals("saltcrabking")) {
+            getCrabCombat().save(tag);
+        }
+        if (getIdPath().equals("eldershulker")) {
+            getShulkerCombat().save(tag);
         }
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
+        if (getIdPath().equals("buterfly") && tag.contains(BUTTERFLY_VARIANT_TAG)) {
+            this.entityData.set(BUTTERFLY_VARIANT, Mth.clamp(tag.getInt(BUTTERFLY_VARIANT_TAG), 0, BUTTERFLY_TEXTURES.length - 1));
+        }
+        if (getIdPath().equals("spirit")) {
+            getSpiritCombat().load(tag);
+        }
+        if (getIdPath().equals("aether_naga")) {
+            getNagaCombat().load(tag);
+        }
+        if (getIdPath().equals("crystalitegolem")) {
+            getGolemCombat().load(tag);
+        }
+        if (getIdPath().equals("saltcrabking")) {
+            getCrabCombat().load(tag);
+        }
+        if (getIdPath().equals("eldershulker")) {
+            getShulkerCombat().load(tag);
+        }
         if (getIdPath().equals("aetherdragon") && tag.getBoolean(DRAGON_PHASE_TAG)) {
             this.entityData.set(DRAGON_PHASE_TWO, true);
             applyDragonPhaseTwoAttributes();
@@ -580,6 +686,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 // 转阶段：受创惨叫与落地后咆哮
                 case "phase_hurt" -> "drh";
                 case "phase_roar" -> "drw";
+                case "phase_slam" -> "dragon_ground_slam";
                 default -> null;
             };
             case "crystalitegolem" -> switch (event.getKeyframeData().getSound()) {
@@ -614,6 +721,9 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     volume = 4.0F;
                     pitch = 0.6F;
                 }
+                if (event.getKeyframeData().getSound().equals("phase_slam")) {
+                    volume = 4.0F;
+                }
                 // 客户端需用本地播放，playSound(null, ...) 在客户端不会出声
                 level().playLocalSound(getX(), getY(), getZ(), sound.get(), SoundSource.HOSTILE, volume, pitch, false);
             }
@@ -632,8 +742,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     private String getActionAnimation(String action) {
         return switch (getIdPath()) {
             case "crystalitegolem" -> switch (action) {
-                case "attack" -> "animation.crystalite_golem.swing";
-                case "death", "summoning", "roar", "groundslam", "activate" -> "animation.crystalite_golem." + action;
+                case "death", "activate" -> "animation.crystalite_golem." + action;
                 default -> "";
             };
             case "crystaliteminion" -> switch (action) {
@@ -646,7 +755,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 default -> "";
             };
             case "aether_naga" -> switch (action) {
-                case "attack", "death" -> "animation.slider." + action;
+                case "death" -> "animation.slider." + action;
                 default -> "";
             };
             case "guardianangel" -> action.equals("attack") ? "animation.guardian_angel.attack" : "";
@@ -669,17 +778,36 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     }
 
     @Override
-    public void performRangedAttack(net.minecraft.world.entity.LivingEntity target, float distanceFactor) {
-        RebornProjectileEntity.shootShalk(level(), this, target);
-        triggerAction("attack");
-    }
-
-    @Override
     public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
         return isDragonPhaseOne() ? false : super.causeFallDamage(distance, multiplier, source);
     }
 
     private PlayState movementPredicate(AnimationState<RebornMobEntity> state) {
+        // 灵魂技能动画同样以待机为底，放在移动控制器里
+        String spiritSkill = SpiritCombat.getAnimation(getSpiritSkill());
+        if (!spiritSkill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(spiritSkill));
+        }
+        // 天境娜迦技能动画
+        String nagaSkill = NagaCombat.getAnimation(getNagaSkill());
+        if (!nagaSkill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(nagaSkill));
+        }
+        // 水晶石傀儡技能动画
+        String golemSkill = GolemCombat.getAnimation(getGolemSkill());
+        if (!golemSkill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(golemSkill));
+        }
+        // 盐蟹王技能动画
+        String crabSkill = CrabCombat.getAnimation(getCrabSkill());
+        if (!crabSkill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(crabSkill));
+        }
+        // 远古潜影贝技能动画
+        String shulkerSkill = ShulkerCombat.getAnimation(getShulkerSkill());
+        if (!shulkerSkill.isEmpty()) {
+            return state.setAndContinue(RawAnimation.begin().thenPlay(shulkerSkill));
+        }
         // 一阶段技能动画以飞行待机为底，放在移动控制器里与待机平滑过渡
         String skill = switch (getDragonSkill()) {
             case SKILL_BREATH -> "animation.aether_dragon.skill_breath";
@@ -709,6 +837,9 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         return switch (getIdPath()) {
             case "aetherdragon" -> isDragonPhaseTwo() ? (moving ? "animation.aether_dragon.walk" : "animation.aether_dragon.idle") : "animation.aether_dragon.idle.flying";
             case "aether_naga" -> moving ? "animation.slider.move" : "animation.slider.idle";
+            case "saltcrabking" -> moving ? "animation.salt_crab_king.walk" : "animation.salt_crab_king.idle";
+            case "eldershulker" -> "animation.elder_shulker.idle";
+            case "spirit" -> moving ? "animation.spirit.move" : "animation.spirit.idle";
             case "crystalitegolem" -> moving ? "animation.crystalite_golem.walk" : "animation.crystalite_golem.idle1";
             case "crystaliteminion" -> moving ? "animation.crystalite_minion.walk" : "animation.crystalite_minion.idle";
             case "guardianangel" -> moving ? "animation.guardian_angel.move" : "animation.guardian_angel.idle";
@@ -716,7 +847,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             case "percipitus" -> moving ? "animation.percipitus.fly" : "animation.percipitus.idle";
             case "saltcrab" -> moving ? "animation.salt_crab.walk" : "animation.salt_crab.idle2";
             case "shimaenaga" -> moving ? "animation.shima_enaga.walk" : "animation.shima_enaga.idle2";
-            case "twinkler", "buterfly_2", "buterfly_3", "buterfly_4", "buterfly_5", "buterfly_6", "buterfly7", "buterfly_8", "buterfly_9", "buterfly_10", "buterfly_11", "buterfly_12", "buterfly_13" -> moving ? "animation.twinkler.fly" : "animation.twinkler.idle";
+            case "buterfly", "twinkler" -> moving ? "animation.twinkler.fly" : "animation.twinkler.idle";
             default -> "";
         };
     }
@@ -734,18 +865,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         return switch (getIdPath()) {
             case "aetherdragon" -> "dragon";
             case "aether_naga" -> "slider";
-            case "buterfly_2" -> "black";
-            case "buterfly_3" -> "blue";
-            case "buterfly_4" -> "cloud";
-            case "buterfly_5" -> "cyan";
-            case "buterfly_6" -> "dark";
-            case "buterfly7" -> "dark_blue";
-            case "buterfly_8" -> "gold";
-            case "buterfly_9" -> "green";
-            case "buterfly_10" -> "orange";
-            case "buterfly_11" -> "purple";
-            case "buterfly_12" -> "red_large";
-            case "buterfly_13" -> "yellow";
+            case "buterfly" -> BUTTERFLY_TEXTURES[Mth.clamp(this.entityData.get(BUTTERFLY_VARIANT), 0, BUTTERFLY_TEXTURES.length - 1)];
             case "crystalitegolem" -> "crystalite_golem";
             case "crystaliteminion" -> "crystalite_minion";
             case "eldershulker" -> "elder_shulker";
@@ -780,7 +900,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             case "aether_naga" -> kind.equals("ambient") ? "naw" : kind.equals("hurt") ? "nah" : "nad";
             case "crystalitegolem" -> kind.equals("ambient") ? "cgw" : kind.equals("hurt") ? "cgh" : "cgd";
             case "guardianangel" -> kind.equals("ambient") ? "gaw" : kind.equals("hurt") ? "gah" : "gad";
-            case "mutatedcritter" -> kind.equals("ambient") ? "muw" : kind.equals("hurt") ? "muh" : "mud";
+            case "mutatedcritter" -> kind.equals("ambient") ? null : kind.equals("hurt") ? "muh" : "mud";
             case "saltcrab" -> kind.equals("ambient") ? "saw" : "sah";
             case "spirit" -> kind.equals("ambient") ? "spw" : kind.equals("hurt") ? "sph" : "spd";
             case "aetherdragon" -> kind.equals("ambient") ? "drw" : kind.equals("hurt") ? "drh" : "drd";
@@ -791,7 +911,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     }
     private boolean isFlyingEntity() {
         String id = getIdPath();
-        return isDragonPhaseOne() || id.equals("percipitus") || id.equals("shimaenaga") || id.equals("twinkler") || id.startsWith("buterfly_") || id.equals("buterfly7");
+        return isDragonPhaseOne() || id.equals("percipitus") || id.equals("shimaenaga") || id.equals("twinkler") || id.equals("buterfly");
     }
 
     public static AttributeSupplier.Builder createAttributes(String id) {
@@ -814,13 +934,14 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             health = 350.0D;
             armor = 0.1D;
             damage = 6.0D;
-            followRange = 20.0D;
+            followRange = 32.0D;
+            knockbackResistance = 0.8D;
             attackKnockback = 0.1D;
         } else if (id.equals("spirit")) {
             speed = 0.4D;
             health = 300.0D;
             armor = 0.3D;
-            knockbackResistance = 0.1D;
+            knockbackResistance = 0.8D;
             damage = 11.0D;
             followRange = 30.0D;
             attackKnockback = 0.2D;
@@ -845,8 +966,9 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             health = 300.0D;
             armor = 0.2D;
             damage = 8.0D;
-            followRange = 12.0D;
+            followRange = 32.0D;
             attackKnockback = 0.3D;
+            knockbackResistance = 1.0D;
         } else if (id.equals("crystaliteminion")) {
             speed = 0.2D;
             health = 20.0D;
@@ -863,7 +985,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         } else if (id.equals("percipitus") || id.equals("shimaenaga")) {
             health = 10.0D;
             flyingSpeed = 0.3D;
-        } else if (id.startsWith("buterfly") || id.equals("twinkler")) {
+        } else if (id.equals("buterfly") || id.equals("twinkler")) {
             health = 1.0D;
             flyingSpeed = 0.3D;
         }
@@ -932,6 +1054,129 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         }
     }
 
+    // 灵魂技能复用技能同步字段
+    public int getSpiritSkill() {
+        if (!getIdPath().equals("spirit")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    void setBossSkill(int skill) {
+        this.entityData.set(DRAGON_SKILL, skill);
+    }
+
+    // 灵魂技能记录点（突进起点），复用龙息落点同步字段
+    void setBossSkillPoint(Vec3 point) {
+        this.entityData.set(DRAGON_BEAM_X, (float) point.x);
+        this.entityData.set(DRAGON_BEAM_Y, (float) point.y);
+        this.entityData.set(DRAGON_BEAM_Z, (float) point.z);
+    }
+
+    Vec3 getBossSkillPoint() {
+        return getDragonBeamEnd();
+    }
+
+    // 天境娜迦技能复用技能同步字段
+    public int getNagaSkill() {
+        if (!getIdPath().equals("aether_naga")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    // 天境娜迦光束开关，复用龙息光束同步字段
+    public boolean isNagaBeamActive() {
+        return getIdPath().equals("aether_naga") && this.entityData.get(DRAGON_BEAM);
+    }
+
+    void setBossBeam(boolean active) {
+        this.entityData.set(DRAGON_BEAM, active);
+    }
+
+    // 水晶石傀儡技能复用技能同步字段
+    public int getGolemSkill() {
+        if (!getIdPath().equals("crystalitegolem")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    // 水晶石傀儡狂暴状态复用二阶段同步字段，客户端据此显示光环
+    public boolean isGolemEnraged() {
+        return getIdPath().equals("crystalitegolem") && this.entityData.get(DRAGON_PHASE_TWO);
+    }
+
+    void setBossEnraged(boolean enraged) {
+        this.entityData.set(DRAGON_PHASE_TWO, enraged);
+    }
+
+    // 盐蟹王技能复用技能同步字段
+    public int getCrabSkill() {
+        if (!getIdPath().equals("saltcrabking")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    // 盐蟹王狂暴状态复用二阶段同步字段
+    public boolean isCrabEnraged() {
+        return getIdPath().equals("saltcrabking") && this.entityData.get(DRAGON_PHASE_TWO);
+    }
+
+    // 远古潜影贝技能复用技能同步字段
+    public int getShulkerSkill() {
+        if (!getIdPath().equals("eldershulker")) {
+            return 0;
+        }
+        return this.entityData.get(DRAGON_SKILL);
+    }
+
+    // 远古潜影贝狂暴状态复用二阶段同步字段
+    public boolean isShulkerEnraged() {
+        return getIdPath().equals("eldershulker") && this.entityData.get(DRAGON_PHASE_TWO);
+    }
+
+    // 远古潜影贝光束开关，复用龙息光束同步字段
+    public boolean isShulkerBeamActive() {
+        return getIdPath().equals("eldershulker") && this.entityData.get(DRAGON_BEAM);
+    }
+
+    ShulkerCombat getShulkerCombat() {
+        if (this.shulkerCombat == null) {
+            this.shulkerCombat = new ShulkerCombat(this);
+        }
+        return this.shulkerCombat;
+    }
+
+    CrabCombat getCrabCombat() {
+        if (this.crabCombat == null) {
+            this.crabCombat = new CrabCombat(this);
+        }
+        return this.crabCombat;
+    }
+
+    GolemCombat getGolemCombat() {
+        if (this.golemCombat == null) {
+            this.golemCombat = new GolemCombat(this);
+        }
+        return this.golemCombat;
+    }
+
+    NagaCombat getNagaCombat() {
+        if (this.nagaCombat == null) {
+            this.nagaCombat = new NagaCombat(this);
+        }
+        return this.nagaCombat;
+    }
+
+    SpiritCombat getSpiritCombat() {
+        if (this.spiritCombat == null) {
+            this.spiritCombat = new SpiritCombat(this);
+        }
+        return this.spiritCombat;
+    }
+
     public int getDragonSkill() {
         if (!getIdPath().equals("aetherdragon")) {
             return 0;
@@ -953,7 +1198,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         return position().add(-Mth.sin(yaw) * 5.0D, 3.2D, Mth.cos(yaw) * 5.0D);
     }
 
-    private void faceDragonTowards(double x, double z, float maxStep) {
+    void faceDragonTowards(double x, double z, float maxStep) {
         float yaw = (float) (Mth.atan2(z - getZ(), x - getX()) * Mth.RAD_TO_DEG) - 90.0F;
         setYRot(Mth.approachDegrees(getYRot(), yaw, maxStep));
         this.yBodyRot = getYRot();
@@ -961,7 +1206,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
     }
 
     // 向下寻找地面高度，找不到时返回 fallback
-    private double findGroundY(double x, double fromY, double z, double depth, double fallback) {
+    double findGroundY(double x, double fromY, double z, double depth, double fallback) {
         Vec3 from = new Vec3(x, fromY, z);
         BlockHitResult hit = level().clip(new ClipContext(from, from.subtract(0.0D, depth, 0.0D), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, this));
         if (hit.getType() == HitResult.Type.BLOCK) {
@@ -976,7 +1221,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         this.entityData.set(DRAGON_BEAM, false);
     }
 
-    private boolean canDragonSkillHit(LivingEntity entity) {
+    boolean canDragonSkillHit(LivingEntity entity) {
         return entity != this && entity.isAlive() && !(entity instanceof RebornMobEntity);
     }
 
@@ -1039,6 +1284,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         // 施法时减速悬停
         setDeltaMovement(getDeltaMovement().scale(0.8D));
         this.skillTicks++;
+        playSkillCue(skill, this.skillTicks);
         if (!(level() instanceof ServerLevel server)) {
             return;
         }
@@ -1047,15 +1293,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         switch (skill) {
             case SKILL_BREATH -> {
                 // 天穹龙息：0-20 蓄力，20-68 横扫光束
-                if (this.skillTicks == 1) {
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 3.0F, 0.5F);
-                }
                 if (this.skillTicks < 20) {
                     faceDragonTowards(target.getX(), target.getZ(), 8.0F);
                 }
                 if (this.skillTicks == 20) {
                     this.entityData.set(DRAGON_BEAM, true);
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_SHOOT, SoundSource.HOSTILE, 4.0F, 0.7F);
                 }
                 if (this.skillTicks >= 20 && this.skillTicks <= 68) {
                     this.beamBase = this.beamBase.lerp(target.position().add(0.0D, 0.5D, 0.0D), 0.06D);
@@ -1101,17 +1343,13 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         Vec3 velocity = aim.yRot(i * 8.0F * Mth.DEG_TO_RAD).scale(1.3D);
                         DragonSkillEntity.spawn(server, this, DragonSkillEntity.FEATHER, origin, velocity, 0.0D, 0, target);
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 4.0F, 0.8F);
+                    ModSounds.play(level(), "dragon_feather_launch", getX(), getY(), getZ(), 4.0F, 1.0F);
                     level().broadcastEntityEvent(this, EVENT_FEATHER);
                 }
             }
             case SKILL_METEOR -> {
                 // 苍穹陨晶：咆哮后在目标周围依次落下 7 根晶矛
                 if (this.skillTicks == 12) {
-                    var roar = ModSounds.ALL.get("drw");
-                    if (roar != null) {
-                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 4.0F, 0.7F);
-                    }
                     level().broadcastEntityEvent(this, EVENT_METEOR);
                 }
                 if (this.skillTicks >= 20 && this.skillTicks <= 56 && (this.skillTicks - 20) % 6 == 0) {
@@ -1123,6 +1361,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     }
                     double groundY = findGroundY(x, target.getY() + 6.0D, z, 30.0D, target.getY());
                     DragonSkillEntity.spawn(server, this, DragonSkillEntity.CRYSTAL, new Vec3(x, groundY + 26.0D, z), Vec3.ZERO, groundY, 0, target);
+                    ModSounds.play(level(), "dragon_crystal_fall", x, groundY + 16.0D, z, 3.0F, 1.0F);
                 }
             }
             case SKILL_THUNDER -> {
@@ -1130,7 +1369,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 if (this.skillTicks == 12 || this.skillTicks == 24 || this.skillTicks == 36) {
                     double groundY = findGroundY(target.getX(), target.getY() + 1.0D, target.getZ(), 12.0D, target.getY());
                     DragonSkillEntity.spawn(server, this, DragonSkillEntity.THUNDER, new Vec3(target.getX(), groundY, target.getZ()), Vec3.ZERO, groundY, 0, target);
-                    server.playSound(null, target.getX(), groundY, target.getZ(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.5F, 1.8F);
+                    ModSounds.play(level(), "dragon_thunder_mark", target.getX(), groundY, target.getZ(), 2.0F, 1.0F);
                 }
             }
             case SKILL_GALE -> {
@@ -1146,7 +1385,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x * 2.2D, 0.7D, push.z * 2.2D));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 5.0F, 0.5F);
+                    ModSounds.play(level(), "dragon_gale_blast", getX(), getY(), getZ(), 5.0F, 1.0F);
                     level().broadcastEntityEvent(this, EVENT_GALE);
                 }
             }
@@ -1161,6 +1400,26 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
 
     @Override
     public void handleEntityEvent(byte id) {
+        if (getIdPath().equals("spirit") && SpiritCombat.isEvent(id)) {
+            getSpiritCombat().handleEvent(id);
+            return;
+        }
+        if (getIdPath().equals("aether_naga") && NagaCombat.isEvent(id)) {
+            getNagaCombat().handleEvent(id);
+            return;
+        }
+        if (getIdPath().equals("crystalitegolem") && GolemCombat.isEvent(id)) {
+            getGolemCombat().handleEvent(id);
+            return;
+        }
+        if (getIdPath().equals("saltcrabking") && CrabCombat.isEvent(id)) {
+            getCrabCombat().handleEvent(id);
+            return;
+        }
+        if (getIdPath().equals("eldershulker") && ShulkerCombat.isEvent(id)) {
+            getShulkerCombat().handleEvent(id);
+            return;
+        }
         if (id < EVENT_FEATHER || id > EVENT_RIPPLE + RIPPLE_RADII.length - 1) {
             super.handleEntityEvent(id);
             return;
@@ -1425,6 +1684,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
         }
         getNavigation().stop();
         this.skillTicks++;
+        playSkillCue(skill, this.skillTicks);
         if (!(level() instanceof ServerLevel server)) {
             return;
         }
@@ -1452,7 +1712,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.2D, 0.4D, push.z * 1.2D));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 3.0F, 0.5F);
+                    ModSounds.play(level(), "dragon_claw_hit", getX(), getY(), getZ(), 3.5F, 1.0F);
                     if (skill == SKILL_CLAW_RIGHT) {
                         level().broadcastEntityEvent(this, EVENT_CLAW_RIGHT);
                     } else {
@@ -1490,7 +1750,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.8D, push.z));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 3.0F - wave * 0.6F, 0.6F + wave * 0.1F);
+                    if (wave == 0) {
+                        ModSounds.play(level(), "dragon_ground_slam", getX(), getY(), getZ(), 4.5F, 1.0F);
+                    } else {
+                        ModSounds.play(level(), "dragon_quake_wave", getX(), getY(), getZ(), 3.0F - wave * 0.5F, 1.0F + wave * 0.05F);
+                    }
                     level().broadcastEntityEvent(this, (byte) (EVENT_STOMP + wave));
                 }
             }
@@ -1501,10 +1765,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 }
                 if (this.skillTicks == 16) {
                     this.chargeDir = forward;
-                    var roar = ModSounds.ALL.get("drw");
-                    if (roar != null) {
-                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 3.0F, 0.9F);
-                    }
                 }
                 if (this.skillTicks > 16 && this.skillTicks <= 38) {
                     setDeltaMovement(this.chargeDir.x * 0.8D, getDeltaMovement().y, this.chargeDir.z * 0.8D);
@@ -1515,12 +1775,12 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.hurt(damageSources().mobAttack(this), 12.0F);
                         living.setDeltaMovement(living.getDeltaMovement().add(this.chargeDir.x * 1.8D, 0.6D, this.chargeDir.z * 1.8D));
                         living.hurtMarked = true;
-                        server.playSound(null, living.getX(), living.getY(), living.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.HOSTILE, 2.0F, 0.6F);
+                        ModSounds.play(level(), "dragon_charge_impact", living.getX(), living.getY(), living.getZ(), 3.0F, 1.0F);
                         level().broadcastEntityEvent(this, EVENT_CHARGE_HIT);
                     }
                     if (this.horizontalCollision && this.skillTicks > 19) {
                         this.skillTicks = 38;
-                        server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 1.2F);
+                        ModSounds.play(level(), "dragon_ground_slam", getX(), getY(), getZ(), 2.5F, 1.2F);
                         level().broadcastEntityEvent(this, EVENT_CHARGE_HIT);
                     }
                 }
@@ -1541,8 +1801,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.6D, 0.5D, push.z * 1.6D));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.HOSTILE, 3.0F, 0.4F);
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 3.0F, 0.7F);
+                    ModSounds.play(level(), "dragon_claw_hit", getX(), getY(), getZ(), 2.5F, 0.8F);
                     level().broadcastEntityEvent(this, EVENT_TAIL);
                 }
             }
@@ -1562,20 +1821,18 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         double groundY = findGroundY(p.x, getY() + 4.0D, p.z, 10.0D, getY());
                         DragonSkillEntity.spawn(server, this, DragonSkillEntity.SPIKE, new Vec3(p.x, groundY, p.z), Vec3.ZERO, groundY, 8 + i * 2, target);
                     }
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.5F, 1.2F);
+                    ModSounds.play(level(), "dragon_ground_slam", getX(), getY(), getZ(), 2.5F, 1.1F);
+                    ModSounds.play(level(), "dragon_crystal_summon", getX(), getY(), getZ(), 2.5F, 1.0F);
                     level().broadcastEntityEvent(this, EVENT_SPIKE_SLAM);
                 }
             }
             case SKILL_ROAR -> {
                 // 雷霆咆哮：咆哮后在身边召唤内外两圈落雷，远处目标脚下追加一道
                 if (this.skillTicks == 18) {
-                    var roar = ModSounds.ALL.get("drw");
-                    if (roar != null) {
-                        server.playSound(null, getX(), getY(), getZ(), roar.get(), SoundSource.HOSTILE, 5.0F, 0.6F);
-                    }
                     level().broadcastEntityEvent(this, EVENT_ROAR);
                 }
                 if (this.skillTicks == 22 || this.skillTicks == 34) {
+                    ModSounds.play(level(), "dragon_thunder_mark", getX(), getY(), getZ(), 3.0F, 1.0F);
                     int count = 6;
                     double radius = 7.0D;
                     double offset = 0.0D;
@@ -1622,8 +1879,8 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x * 0.8D, 0.6D, push.z * 0.8D));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, to.x, to.y, to.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.5F, 0.7F);
-                    server.playSound(null, to.x, to.y, to.z, SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.HOSTILE, 3.0F, 0.5F);
+                    ModSounds.play(level(), "dragon_ground_slam", to.x, to.y, to.z, 4.0F, 0.9F);
+                    ModSounds.play(level(), "dragon_quake_wave", to.x, to.y, to.z, 3.0F, 1.0F);
                     level().broadcastEntityEvent(this, EVENT_TAIL_SLAM);
                 }
             }
@@ -1631,9 +1888,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                 // 天穹震息：1.0~2.2 秒向前下方地面喷吐，2.3 秒起从落点外扩五道震荡波
                 if (this.skillTicks < 20) {
                     faceDragonTowards(target.getX(), target.getZ(), 8.0F);
-                }
-                if (this.skillTicks == 1) {
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 3.0F, 0.4F);
                 }
                 if (this.skillTicks == 20) {
                     double px = getX() + forward.x * 3.5D;
@@ -1643,7 +1897,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                     this.entityData.set(DRAGON_BEAM_Y, (float) this.quakeCenter.y);
                     this.entityData.set(DRAGON_BEAM_Z, (float) this.quakeCenter.z);
                     this.entityData.set(DRAGON_BEAM, true);
-                    server.playSound(null, getX(), getY(), getZ(), SoundEvents.ENDER_DRAGON_SHOOT, SoundSource.HOSTILE, 4.0F, 0.6F);
                 }
                 if (this.skillTicks > 20 && this.skillTicks <= 44 && this.skillTicks % 4 == 0) {
                     // 吐息落点持续伤害
@@ -1676,7 +1929,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
                         living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.7D, push.z));
                         living.hurtMarked = true;
                     }
-                    server.playSound(null, this.quakeCenter.x, this.quakeCenter.y, this.quakeCenter.z, SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 2.5F - ring * 0.35F, 0.5F + ring * 0.08F);
+                    if (ring == 0) {
+                        ModSounds.play(level(), "dragon_ground_slam", this.quakeCenter.x, this.quakeCenter.y, this.quakeCenter.z, 4.5F, 0.9F);
+                    } else {
+                        ModSounds.play(level(), "dragon_quake_wave", this.quakeCenter.x, this.quakeCenter.y, this.quakeCenter.z, 3.2F - ring * 0.4F, 0.9F + ring * 0.05F);
+                    }
                     level().broadcastEntityEvent(this, (byte) (EVENT_RIPPLE + ring));
                 }
             }
@@ -1687,6 +1944,120 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity, RangedA
             stopDragonSkill();
             this.skillGap = 15;
         }
+    }
+
+    // 技能提示音时间轴：蓄力、低吼、挥动、持续音、脚步等与命中无关的声音
+    private void playSkillCue(int skill, int tick) {
+        switch (skill) {
+            case SKILL_BREATH, SKILL_QUAKE_BREATH -> {
+                int beamEnd = 68;
+                if (skill == SKILL_QUAKE_BREATH) {
+                    beamEnd = 44;
+                }
+                if (tick == 1) {
+                    playCue("dragon_breath_charge", 3.0F, 1.0F);
+                }
+                if (tick == 20) {
+                    playCue("dragon_breath_fire", 4.0F, 1.0F);
+                    playCue("dragon_roar", 3.0F, 1.1F);
+                }
+                if (tick > 20 && tick <= beamEnd && tick % 10 == 0) {
+                    playCue("dragon_breath_loop", 3.0F, 1.0F);
+                }
+            }
+            case SKILL_FEATHER -> {
+                if (tick == 8) {
+                    playCue("dragon_whoosh", 3.0F, 1.0F);
+                }
+            }
+            case SKILL_METEOR -> {
+                if (tick == 12) {
+                    playCue("dragon_roar", 4.0F, 0.9F);
+                }
+                if (tick == 16) {
+                    playCue("dragon_crystal_summon", 4.0F, 1.0F);
+                }
+            }
+            case SKILL_THUNDER -> {
+                if (tick == 4) {
+                    playCue("dragon_vocal_attack", 2.5F, 1.1F);
+                }
+            }
+            case SKILL_GALE -> {
+                if (tick == 6) {
+                    playCue("dragon_whoosh", 3.0F, 0.9F);
+                }
+            }
+            case SKILL_CLAW_RIGHT, SKILL_CLAW_LEFT -> {
+                if (tick == 2) {
+                    playCue("dragon_vocal_attack", 3.0F, 1.0F);
+                }
+                if (tick == 20) {
+                    playCue("dragon_whoosh", 3.0F, 1.0F);
+                }
+            }
+            case SKILL_STOMP -> {
+                if (tick == 2) {
+                    playCue("dragon_roar", 4.0F, 0.8F);
+                }
+                if (tick >= 22 && tick <= 58 && (tick - 22) % 9 == 0) {
+                    playCue("dragon_heavy_step", 2.5F, 1.0F);
+                }
+                if (tick == 60) {
+                    playCue("dragon_whoosh", 3.0F, 0.7F);
+                }
+            }
+            case SKILL_CHARGE -> {
+                if (tick == 2) {
+                    playCue("dragon_vocal_attack", 3.0F, 0.9F);
+                }
+                if (tick == 16) {
+                    playCue("dragon_roar", 4.0F, 1.0F);
+                }
+                if (tick > 16 && tick <= 38 && tick % 4 == 0) {
+                    playCue("dragon_heavy_step", 3.0F, 1.0F);
+                }
+            }
+            case SKILL_TAIL -> {
+                if (tick == 4) {
+                    playCue("dragon_vocal_attack", 3.0F, 1.0F);
+                }
+                if (tick == 10) {
+                    playCue("dragon_tail_whip", 3.5F, 1.0F);
+                }
+            }
+            case SKILL_SPIKE -> {
+                if (tick == 2) {
+                    playCue("dragon_vocal_attack", 3.0F, 1.0F);
+                }
+                if (tick == 12) {
+                    playCue("dragon_whoosh", 2.5F, 1.0F);
+                }
+            }
+            case SKILL_ROAR -> {
+                if (tick == 18) {
+                    playCue("dragon_roar", 5.0F, 0.6F);
+                    playCue("dragon_roar", 3.0F, 0.8F);
+                }
+            }
+            case SKILL_TAIL_SLAM -> {
+                if (tick == 2) {
+                    playCue("dragon_vocal_attack", 3.0F, 1.0F);
+                }
+                if (tick == 8) {
+                    playCue("dragon_tail_whip", 3.0F, 0.8F);
+                }
+                if (tick == 16) {
+                    playCue("dragon_whoosh", 3.0F, 0.6F);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void playCue(String id, float volume, float pitch) {
+        ModSounds.play(level(), id, getX(), getY(), getZ(), volume, pitch);
     }
 
     private static final class DragonGroundCombatGoal extends Goal {

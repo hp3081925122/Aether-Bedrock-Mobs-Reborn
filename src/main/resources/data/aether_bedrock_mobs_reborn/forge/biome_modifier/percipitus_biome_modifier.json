@@ -1,11 +1,6 @@
 {
   "type": "forge:add_spawns",
-  "biomes": [
-   	"aether:skyroot_woodland",
-    "aether:skyroot_meadow",
-    "aether:skyroot_forest",
-    "aether:skyroot_grove"
-  ],
+  "biomes": "#aether_bedrock_mobs_reborn:aether_biomes",
   "spawners": {
     "type": "aether_bedrock_mobs_reborn:percipitus",
     "weight": 22,
