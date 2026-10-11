@@ -12,12 +12,14 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-// 水平展开的冲击波圆环，xd 为最大半径，yd 为持续 tick
+// 水平冲击波圆环，xd 为最大半径，yd 为持续 tick；预警模式下圆环向内收缩
 public class DragonShockwaveParticle extends TextureSheetParticle {
     private final float maxRadius;
+    private final boolean warning;
 
-    protected DragonShockwaveParticle(ClientLevel level, double x, double y, double z, double radius, double life, SpriteSet sprites) {
+    protected DragonShockwaveParticle(ClientLevel level, double x, double y, double z, double radius, double life, boolean warning, SpriteSet sprites) {
         super(level, x, y, z);
+        this.warning = warning;
         // 半径与寿命由生成参数决定
         this.maxRadius = (float) Math.max(1.0D, radius);
         this.lifetime = Math.max(4, (int) life);
@@ -41,6 +43,14 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         float inverse = 1.0F - progress;
         float radius = this.maxRadius * (1.0F - inverse * inverse * inverse);
         float alpha = 1.0F - progress * progress;
+        // 预警：从外向内收缩、逐渐变亮并闪烁，收到最小时即为命中时刻
+        if (this.warning) {
+            radius = 0.4F + (this.maxRadius - 0.4F) * inverse;
+            alpha = 0.35F + 0.65F * progress;
+            if (((this.age / 2) & 1) == 0) {
+                alpha *= 0.75F;
+            }
+        }
         float u0 = this.getU0();
         float u1 = this.getU1();
         float v0 = this.getV0();
@@ -77,7 +87,27 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
-            return new DragonShockwaveParticle(level, x, y, z, xd, yd, this.sprites);
+            return new DragonShockwaveParticle(level, x, y, z, xd, yd, false, this.sprites);
+        }
+    }
+
+    // 预警环：zd 为 0 时橙红（陨晶），为 1 时金色（雷击）
+    public static final class WarningProvider implements ParticleProvider<SimpleParticleType> {
+        private final SpriteSet sprites;
+
+        public WarningProvider(SpriteSet sprites) {
+            this.sprites = sprites;
+        }
+
+        @Override
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+            DragonShockwaveParticle particle = new DragonShockwaveParticle(level, x, y, z, xd, yd, true, this.sprites);
+            if (zd > 0.5D) {
+                particle.setColor(1.0F, 0.85F, 0.35F);
+            } else {
+                particle.setColor(1.0F, 0.45F, 0.3F);
+            }
+            return particle;
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.aetherbedrockmobsreborn.registry;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import com.aetherbedrockmobsreborn.entity.DragonSkillEntity;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import com.aetherbedrockmobsreborn.entity.RebornProjectileEntity;
 import net.minecraft.world.entity.EntityType;
@@ -16,6 +17,12 @@ public final class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, AetherBedrockMobsReborn.MOD_ID);
     public static final Map<String, RegistryObject<EntityType<RebornMobEntity>>> MOBS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<EntityType<RebornProjectileEntity>>> PROJECTILES = new LinkedHashMap<>();
+    // 艾瑟龙技能实体：羽刃、陨晶、雷击标记
+    public static final RegistryObject<EntityType<DragonSkillEntity>> DRAGON_SKILL = ENTITIES.register("dragon_skill", () -> EntityType.Builder.<DragonSkillEntity>of(DragonSkillEntity::new, MobCategory.MISC)
+            .sized(0.8F, 0.8F)
+            .clientTrackingRange(8)
+            .updateInterval(1)
+            .build("dragon_skill"));
 
     static {
         String[] ambient = {

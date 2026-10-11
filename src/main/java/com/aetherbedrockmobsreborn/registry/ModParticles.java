@@ -14,6 +14,8 @@ public final class ModParticles {
     // 艾瑟龙转阶段冲击波与碎鳞
     public static final RegistryObject<SimpleParticleType> DRAGON_SHOCKWAVE = PARTICLES.register("dragon_shockwave", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> DRAGON_SHARD = PARTICLES.register("dragon_shard", () -> new SimpleParticleType(true));
+    // 艾瑟龙技能落点预警环
+    public static final RegistryObject<SimpleParticleType> DRAGON_WARNING = PARTICLES.register("dragon_warning", () -> new SimpleParticleType(true));
 
     private ModParticles() {
     }

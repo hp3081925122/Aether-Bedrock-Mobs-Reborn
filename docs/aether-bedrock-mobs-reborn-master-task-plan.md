@@ -28,7 +28,7 @@
 
 | ID | 任务 | 复杂度 | 依赖 | 验收标准 | 文件/产物 |
 |---|---|---:|---|---|---|
-| ☑ T1.1 | 从匹配模板创建 1.20.1 Forge 工程 | M | T0.4 | 基于 `E:\模组\模组模板\1201-forge` 创建；`gradlew build` 通过 | `build.gradle`, `settings.gradle`, `src/` |
+| ☑ T1.1 | 从匹配模板创建 1.20.1 Forge 工程 | M | T0.4 | 基于 1.20.1 Forge 模板创建；`gradlew build` 通过 | `build.gradle`, `settings.gradle`, `src/` |
 | ◐ T1.2 | 建立注册表、包结构、数据生成和生命周期骨架 | M | T1.1 | 注册、客户端渲染、GeckoLib、Boss 条、第一阶段死亡转阶段二和特殊召唤方块已接入；Boss 攻击与实体专属行为仍待重写 | `src/main/java/` |
 | ☑ T1.3 | 建立资源、语言、数据命名规范和内容清单映射 | M | T0.2, T1.1 | 原资源已迁移到新命名空间，已补 `zh_cn.json`、38 个声音事件、3 个粒子类型并通过 JSON 静态检查 | `src/main/resources/` |
 

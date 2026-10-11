@@ -10,10 +10,10 @@
 | 文件 URL | https://cdn.modrinth.com/data/6NmqryJl/versions/HFN7qFQM/aethermobs-1.5.0-forge-1.20.1.jar |
 | 发布记录 | 2025-01-27，`release`，`listed` |
 | Minecraft / 加载器 | 1.20.1 / Forge |
-| 下载保存位置 | `D:\AI临时文件\Aether Bedrock Mobs Reborn\source\aethermobs-1.5.0-forge-1.20.1.jar` |
+| 下载保存位置 | `source/aethermobs-1.5.0-forge-1.20.1.jar`（本地取证缓存） |
 | 文件大小 | 3,223,334 bytes |
 | SHA-256 | `627735432F332A2A2808D2FCBEB72D2AA2D221BC3A6160A5CB969C13B2478665` |
-| 本地解包位置 | `D:\AI临时文件\Aether Bedrock Mobs Reborn\source\unpacked-20261011` |
+| 本地解包位置 | `source/unpacked-20261011`（本地取证缓存） |
 | 取证日期 | 2026-10-11 |
 
 ## 证据边界
