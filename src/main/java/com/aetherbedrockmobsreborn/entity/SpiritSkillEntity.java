@@ -181,7 +181,7 @@ public class SpiritSkillEntity extends Entity {
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 if (living.position().distanceToSqr(center) <= 3.4D * 3.4D) {
                     living.hurt(skillDamage(), 12.0F);
-                    living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.5D, 0.0D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
                     living.hurtMarked = true;
                 }
             }

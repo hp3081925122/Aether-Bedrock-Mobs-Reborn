@@ -65,8 +65,6 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.registries.ForgeRegistries;
 import software.bernie.geckolib.animatable.GeoEntity;
@@ -81,6 +79,16 @@ import software.bernie.geckolib.core.keyframe.event.SoundKeyframeEvent;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RebornMobEntity extends PathfinderMob implements GeoEntity {
+    static void applyBossKnockback(LivingEntity target, Vec3 impulse) {
+        var resistance = target.getAttribute(Attributes.KNOCKBACK_RESISTANCE);
+        double scale = resistance == null ? 1.0D : 1.0D - Mth.clamp(resistance.getValue(), 0.0D, 1.0D);
+        if (scale <= 0.0D) {
+            return;
+        }
+        target.setDeltaMovement(target.getDeltaMovement().add(impulse.scale(scale)));
+        target.hurtMarked = true;
+    }
+
     private static final String BUTTERFLY_VARIANT_TAG = "reborn_butterfly_variant";
     private static final String[] BUTTERFLY_TEXTURES = {"black", "blue", "cloud", "cyan", "dark", "dark_blue", "gold", "green", "orange", "purple", "red_large", "yellow"};
     private static final EntityDataAccessor<Integer> BUTTERFLY_VARIANT = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.INT);
@@ -88,7 +96,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     private static final String DRAGON_PHASE_TAG = "reborn_dragon_phase_two";
     // 转阶段状态：同步给客户端，期间无敌且不执行 AI
     private static final EntityDataAccessor<Boolean> DRAGON_TRANSITION = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final Logger LOGGER = LogUtils.getLogger();
     // 转阶段时间轴（tick），与 phase_transition 动画一致
     private static final int TRANSITION_TICKS = 215;
     private static final int TRANSITION_DIVE_START = 35;
@@ -96,6 +103,8 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     private int transitionTicks;
     private double transitionStartY;
     private double transitionGroundY;
+    // 盐蟹受伤音效冷却，避免连续受伤时反复播放跳跃音效
+    private int saltCrabHurtSoundCooldown;
     // 一阶段技能：当前技能、龙息开关与落点，同步给客户端做表现
     private static final EntityDataAccessor<Integer> DRAGON_SKILL = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DRAGON_BEAM = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.BOOLEAN);
@@ -165,10 +174,8 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
         super(type, level);
         if (getIdPath().equals("buterfly") && !level.isClientSide) {
             this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
-            LOGGER.debug("Butterfly variant assigned: entity={}, variant={}, texture={}", getId(), this.entityData.get(BUTTERFLY_VARIANT), getTextureName());
         }
         if (getIdPath().equals("crystalitegolem")) {
-            LOGGER.debug("Crystalite golem hitbox initialized: entity={}, box={}", getId(), getBoundingBox());
         }
         if (isFlyingEntity()) {
             this.moveControl = new FlyingMoveControl(this, 10, true);
@@ -287,7 +294,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     protected void checkFallDamage(double distance, boolean onGround, BlockState state, BlockPos pos) {
-        if (!isDragonPhaseOne()) {
+        if (!isFlyingEntity()) {
             super.checkFallDamage(distance, onGround, state, pos);
         }
     }
@@ -299,9 +306,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public void aiStep() {
+        if (this.saltCrabHurtSoundCooldown > 0) {
+            this.saltCrabHurtSoundCooldown--;
+        }
         if (!level().isClientSide && getIdPath().equals("buterfly") && this.entityData.get(BUTTERFLY_VARIANT) < 0) {
             this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
-            LOGGER.debug("Butterfly variant assigned after spawn: entity={}, variant={}, texture={}", getId(), this.entityData.get(BUTTERFLY_VARIANT), getTextureName());
         }
         super.aiStep();
         if (isDragonPhaseOne()) {
@@ -401,7 +410,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
             if (this.transitionTicks >= TRANSITION_TICKS) {
                 this.entityData.set(DRAGON_TRANSITION, false);
                 super.setNoGravity(false);
-                LOGGER.debug("Aether dragon {} finished phase transition at y={}", getId(), getY());
             }
         }
     }
@@ -489,7 +497,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
         if (Math.abs(progress - lastBossBarProgress) > 1.0E-6F) {
             bossInfo.setProgress(progress);
             lastBossBarProgress = progress;
-            LOGGER.debug("Boss bar progress synchronized for {}: health={}, maxHealth={}, progress={}", getId(), getHealth(), maxHealth, progress);
         }
     }
 
@@ -506,6 +513,19 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     @Override
     protected SoundEvent getDeathSound() {
         return getSound("death");
+    }
+
+    @Override
+    public int getAmbientSoundInterval() {
+        return getIdPath().equals("saltcrab") ? 600 : super.getAmbientSoundInterval();
+    }
+
+    public void triggerSaltCrabHurtSound() {
+        if (this.saltCrabHurtSoundCooldown > 0) {
+            return;
+        }
+        this.saltCrabHurtSoundCooldown = 40;
+        triggerAction("jump");
     }
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);
@@ -779,7 +799,12 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
-        return isDragonPhaseOne() ? false : super.causeFallDamage(distance, multiplier, source);
+        if (isFlyingEntity()) {
+            if (!level().isClientSide && getIdPath().equals("buterfly") && distance > 3.0F) {
+            }
+            return false;
+        }
+        return super.causeFallDamage(distance, multiplier, source);
     }
 
     private PlayState movementPredicate(AnimationState<RebornMobEntity> state) {
@@ -1033,7 +1058,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
         setDeltaMovement(Vec3.ZERO);
         super.setNoGravity(true);
         triggerAction("phase");
-        LOGGER.debug("Aether dragon {} started phase transition: startY={}, groundY={}, groundHit={}", getId(), this.transitionStartY, this.transitionGroundY, ground.getType());
     }
 
     public boolean isDragonTransitioning() {
@@ -1227,6 +1251,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     // 一阶段空战：绕目标盘旋，按冷却挑选技能并执行时间轴
     private void tickSkyCombat(LivingEntity target) {
+        // 目标可能在 Goal 校验与本 tick 执行之间失效，先终止当前技能时间轴
+        if (target == null || !target.isAlive()) {
+            stopDragonSkill();
+            return;
+        }
         for (int i = 1; i < this.skillCooldowns.length; i++) {
             if (this.skillCooldowns[i] > 0) {
                 this.skillCooldowns[i]--;
@@ -1278,7 +1307,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                 Vec3 toward = target.position().subtract(position());
                 this.beamSide = new Vec3(-toward.z, 0.0D, toward.x).normalize();
             }
-            LOGGER.debug("Aether dragon {} casts skill {} at distance {}", getId(), chosen, distanceTo(target));
             return;
         }
         // 施法时减速悬停
@@ -1382,7 +1410,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         }
                         push = push.normalize();
                         living.hurt(damageSources().mobAttack(this), 4.0F);
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 2.2D, 0.7D, push.z * 2.2D));
+                        applyBossKnockback(living, new Vec3(push.x * 1.1D, 0.35D, push.z * 1.1D));
                         living.hurtMarked = true;
                     }
                     ModSounds.play(level(), "dragon_gale_blast", getX(), getY(), getZ(), 5.0F, 1.0F);
@@ -1679,7 +1707,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
             this.chargeHits.clear();
             getNavigation().stop();
             this.entityData.set(DRAGON_SKILL, chosen);
-            LOGGER.debug("Aether dragon {} casts ground skill {} at distance {}", getId(), chosen, distance);
             return;
         }
         getNavigation().stop();
@@ -1709,7 +1736,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         if (reach > 0.1D) {
                             push = to.normalize();
                         }
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.2D, 0.4D, push.z * 1.2D));
+                        applyBossKnockback(living, new Vec3(push.x * 0.6D, 0.2D, push.z * 0.6D));
                         living.hurtMarked = true;
                     }
                     ModSounds.play(level(), "dragon_claw_hit", getX(), getY(), getZ(), 3.5F, 1.0F);
@@ -1747,7 +1774,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         if (reach > 0.1D) {
                             push = to.normalize().scale(0.6D);
                         }
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.8D, push.z));
+                        applyBossKnockback(living, new Vec3(push.x * 0.5D, 0.4D, push.z * 0.5D));
                         living.hurtMarked = true;
                     }
                     if (wave == 0) {
@@ -1773,7 +1800,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                             continue;
                         }
                         living.hurt(damageSources().mobAttack(this), 12.0F);
-                        living.setDeltaMovement(living.getDeltaMovement().add(this.chargeDir.x * 1.8D, 0.6D, this.chargeDir.z * 1.8D));
+                        applyBossKnockback(living, new Vec3(this.chargeDir.x * 0.9D, 0.3D, this.chargeDir.z * 0.9D));
                         living.hurtMarked = true;
                         ModSounds.play(level(), "dragon_charge_impact", living.getX(), living.getY(), living.getZ(), 3.0F, 1.0F);
                         level().broadcastEntityEvent(this, EVENT_CHARGE_HIT);
@@ -1798,7 +1825,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         if (to.lengthSqr() > 0.01D) {
                             push = to.normalize();
                         }
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 1.6D, 0.5D, push.z * 1.6D));
+                        applyBossKnockback(living, new Vec3(push.x * 0.8D, 0.25D, push.z * 0.8D));
                         living.hurtMarked = true;
                     }
                     ModSounds.play(level(), "dragon_claw_hit", getX(), getY(), getZ(), 2.5F, 0.8F);
@@ -1876,7 +1903,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         if (push.lengthSqr() > 0.01D) {
                             push = push.normalize();
                         }
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x * 0.8D, 0.6D, push.z * 0.8D));
+                        applyBossKnockback(living, new Vec3(push.x * 0.4D, 0.3D, push.z * 0.4D));
                         living.hurtMarked = true;
                     }
                     ModSounds.play(level(), "dragon_ground_slam", to.x, to.y, to.z, 4.0F, 0.9F);
@@ -1926,7 +1953,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
                         if (reach > 0.1D) {
                             push = to.normalize().scale(0.4D);
                         }
-                        living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.7D, push.z));
+                        applyBossKnockback(living, new Vec3(push.x * 0.5D, 0.35D, push.z * 0.5D));
                         living.hurtMarked = true;
                     }
                     if (ring == 0) {

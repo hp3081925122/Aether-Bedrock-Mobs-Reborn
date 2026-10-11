@@ -1,6 +1,7 @@
 package com.aetherbedrockmobsreborn.client;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import com.aetherbedrockmobsreborn.entity.NagaEntity;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -66,6 +67,9 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     @Override
     public void setCustomAnimations(RebornMobEntity entity, long instanceId, AnimationState<RebornMobEntity> state) {
         super.setCustomAnimations(entity, instanceId, state);
+        if (entity instanceof NagaEntity naga) {
+            applyNagaTailBend(naga, state.getPartialTick());
+        }
         // 灵魂与远古潜影贝：不放技能时头部看向目标，叠加在动画旋转之上
         String headBone = "";
         if (entity.getIdPath().equals("spirit") && entity.getSpiritSkill() == 0) {
@@ -83,5 +87,21 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
         }
         head.setRotX(head.getRotX() + data.headPitch() * Mth.DEG_TO_RAD);
         head.setRotY(head.getRotY() + data.netHeadYaw() * Mth.DEG_TO_RAD);
+    }
+
+    // 天境娜迦：转身时尾部逐节滞后弯曲，叠加在动画旋转之上
+    private void applyNagaTailBend(NagaEntity naga, float partialTicks) {
+        float bend = naga.getTailBend(partialTicks) * Mth.DEG_TO_RAD;
+        if (Math.abs(bend) < 1.0E-4F) {
+            return;
+        }
+        String[] bones = {"tail1", "tail2", "tail3"};
+        float[] weights = {0.3F, 0.35F, 0.35F};
+        for (int i = 0; i < bones.length; i++) {
+            CoreGeoBone bone = getAnimationProcessor().getBone(bones[i]);
+            if (bone != null) {
+                bone.setRotY(bone.getRotY() + bend * weights[i]);
+            }
+        }
     }
 }

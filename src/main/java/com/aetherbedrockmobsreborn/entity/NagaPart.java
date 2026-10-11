@@ -1,6 +1,5 @@
 package com.aetherbedrockmobsreborn.entity;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -9,10 +8,8 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.entity.PartEntity;
-import org.slf4j.Logger;
 
 public final class NagaPart extends PartEntity<NagaEntity> {
-    private static final Logger LOGGER = LogUtils.getLogger();
     private final String bone;
 
     NagaPart(NagaEntity parent, String bone) {
@@ -43,7 +40,6 @@ public final class NagaPart extends PartEntity<NagaEntity> {
             return false;
         }
         boolean accepted = getParent().hurt(source, amount);
-        LOGGER.debug("Naga multipart hit: entity={}, part={}, damage={}, accepted={}", getParent().getId(), this.bone, amount, accepted);
         return accepted;
     }
 

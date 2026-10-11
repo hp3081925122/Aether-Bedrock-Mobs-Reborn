@@ -5,7 +5,6 @@ import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.RandomSource;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
@@ -16,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -30,7 +30,9 @@ public class SpecialSpawnerBlock extends Block {
     private final String action;
 
     public SpecialSpawnerBlock(String action) {
-        super(BlockBehaviour.Properties.of().strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
+        super(action.equals("lamp")
+                ? BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4).noOcclusion()
+                : BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
         this.action = action;
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
     }
@@ -40,31 +42,15 @@ public class SpecialSpawnerBlock extends Block {
         builder.add(POWERED);
     }
 
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!level.isClientSide && isProximityAction()) {
-            level.scheduleTick(pos, this, 20);
-        }
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moving) {
-        super.neighborChanged(state, level, pos, block, fromPos, moving);
-    }
-
-    @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (isProximityAction()) {
-            Player player = level.getNearestPlayer(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 8.0D, candidate -> !candidate.isSpectator());
-            if (player != null) {
-                if (!activate(level, pos, player)) {
-                    level.scheduleTick(pos, this, 20);
-                }
-            } else {
-                level.scheduleTick(pos, this, 20);
-            }
+    public void checkPlayerProximity(ServerLevel level, BlockPos pos, Player player) {
+        if (!isProximityAction() || player.isSpectator()) {
             return;
+        }
+        double dx = player.getX() - (pos.getX() + 0.5D);
+        double dy = player.getY() - (pos.getY() + 0.5D);
+        double dz = player.getZ() - (pos.getZ() + 0.5D);
+        if (dx * dx + dy * dy + dz * dz <= 64.0D) {
+            activate(level, pos, player);
         }
     }
 

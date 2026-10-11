@@ -198,7 +198,7 @@ public class DragonSkillEntity extends Entity {
             AABB box = new AABB(position(), position()).inflate(1.5D, 3.0D, 1.5D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 living.hurt(skillDamage(), 9.0F);
-                living.setDeltaMovement(living.getDeltaMovement().add(0.0D, 0.9D, 0.0D));
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 living.hurtMarked = true;
             }
             ModSounds.play(level(), "dragon_spike_erupt", getX(), getY(), getZ(), 2.0F, 1.0F);
