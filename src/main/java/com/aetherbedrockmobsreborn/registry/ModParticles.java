@@ -1,6 +1,9 @@
 package com.aetherbedrockmobsreborn.registry;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import com.mojang.serialization.Codec;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -16,6 +19,14 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> DRAGON_SHARD = PARTICLES.register("dragon_shard", () -> new SimpleParticleType(true));
     // 艾瑟龙技能落点预警环
     public static final RegistryObject<SimpleParticleType> DRAGON_WARNING = PARTICLES.register("dragon_warning", () -> new SimpleParticleType(true));
+    // 艾瑟龙二阶段：爪痕刀光、被震起的地面方块
+    public static final RegistryObject<SimpleParticleType> DRAGON_SLASH = PARTICLES.register("dragon_slash", () -> new SimpleParticleType(true));
+    public static final RegistryObject<ParticleType<BlockParticleOption>> DRAGON_QUAKE_BLOCK = PARTICLES.register("dragon_quake_block", () -> new ParticleType<BlockParticleOption>(true, BlockParticleOption.DESERIALIZER) {
+        @Override
+        public Codec<BlockParticleOption> codec() {
+            return BlockParticleOption.codec(this);
+        }
+    });
 
     private ModParticles() {
     }

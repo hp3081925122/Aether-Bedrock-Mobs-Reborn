@@ -5,6 +5,8 @@ import com.aetherbedrockmobsreborn.client.model.ElderShulkerModel;
 import com.aetherbedrockmobsreborn.client.model.SaltCrabKingModel;
 import com.aetherbedrockmobsreborn.client.model.ShadayArmorModel;
 import com.aetherbedrockmobsreborn.client.model.SpiritModel;
+import com.aetherbedrockmobsreborn.client.particle.DragonDecalParticle;
+import com.aetherbedrockmobsreborn.client.particle.DragonQuakeBlockParticle;
 import com.aetherbedrockmobsreborn.client.particle.DragonShardParticle;
 import com.aetherbedrockmobsreborn.client.particle.DragonShockwaveParticle;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
@@ -79,6 +81,8 @@ public final class RebornClientEvents {
         event.registerSpriteSet(ModParticles.DRAGON_SHOCKWAVE.get(), DragonShockwaveParticle.Provider::new);
         event.registerSpriteSet(ModParticles.DRAGON_SHARD.get(), DragonShardParticle.Provider::new);
         event.registerSpriteSet(ModParticles.DRAGON_WARNING.get(), DragonShockwaveParticle.WarningProvider::new);
+        event.registerSpriteSet(ModParticles.DRAGON_SLASH.get(), DragonDecalParticle.SlashProvider::new);
+        event.registerSpecial(ModParticles.DRAGON_QUAKE_BLOCK.get(), new DragonQuakeBlockParticle.Provider());
     }
 
     private static final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity> {
