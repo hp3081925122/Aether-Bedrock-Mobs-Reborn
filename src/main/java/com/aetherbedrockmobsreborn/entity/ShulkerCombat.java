@@ -2,7 +2,6 @@ package com.aetherbedrockmobsreborn.entity;
 
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +17,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -26,7 +24,6 @@ import java.util.List;
 
 // 远古潜影贝 boss 战斗：原地炮台型，技能选择、服务端时间轴与客户端特效
 final class ShulkerCombat {
-    private static final Logger LOGGER = LogUtils.getLogger();
     static final int BARRAGE = 1;
     static final int BEAM = 2;
     static final int VINE = 3;
@@ -212,7 +209,6 @@ final class ShulkerCombat {
         this.cooldowns[chosen] = cooldown;
         this.skillTicks = 0;
         this.shulker.setBossSkill(chosen);
-        LOGGER.debug("Elder shulker {} casts skill {} at distance {}", this.shulker.getId(), chosen, distance);
     }
 
     // 潜影弹幕：14-38 tick 连续向四周抛出潜影弹，之后自动追踪目标
@@ -250,8 +246,6 @@ final class ShulkerCombat {
             this.beamCandidates = 0;
             this.beamHits = 0;
             ModSounds.play(server, "shulker_beam_fire", this.shulker.getX(), this.shulker.getY() + 2.5D, this.shulker.getZ(), 3.0F, 1.0F);
-            LOGGER.debug("Elder shulker beam started: yaw={}, initialStep={}, finalStep={}, sweepTicks={}",
-                    this.shulker.getYRot(), BEAM_INITIAL_STEP, BEAM_INITIAL_STEP * BEAM_FINAL_SPEED_MULTIPLIER, BEAM_SWEEP_TICKS);
         }
         if (t >= BEAM_START && t < BEAM_END) {
             int sweepTick = t - BEAM_START;
@@ -273,12 +267,10 @@ final class ShulkerCombat {
                 ModSounds.play(server, "shulker_beam_loop", end.x, end.y, end.z, 1.5F, 1.0F);
             }
             if (t == BEAM_END - 1) {
-                LOGGER.debug("Elder shulker beam completed: yaw={}, finalStep={}, turns=3.0", yaw, step);
             }
         }
         if (t == BEAM_END) {
             this.shulker.setBossBeam(false);
-            LOGGER.debug("Elder shulker beam damage summary: candidates={}, hits={}", this.beamCandidates, this.beamHits);
         }
     }
 
@@ -305,7 +297,7 @@ final class ShulkerCombat {
             }
             if (living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 6.0F)) {
                 this.beamHits++;
-                living.setSecondsOnFire(2);
+                living.igniteForSeconds(2.0F);
             }
         }
     }
@@ -367,7 +359,6 @@ final class ShulkerCombat {
             AABB box = this.shulker.getBoundingBox().move(x - this.shulker.getX(), y - this.shulker.getY(), z - this.shulker.getZ());
             if (server.noCollision(this.shulker, box)) {
                 this.shulker.teleportTo(x, y, z);
-                LOGGER.debug("Elder shulker {} phased to {}, {}, {}", this.shulker.getId(), x, y, z);
             }
             this.shulker.faceDragonTowards(target.getX() + 0.01D, target.getZ() + 1.0D, 360.0F);
         }
@@ -377,7 +368,7 @@ final class ShulkerCombat {
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurt(this.shulker.damageSources().mobAttack(this.shulker), 14.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(offset.x * 0.15D, 1.0D, offset.z * 0.15D));
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.075D, 0.5D, offset.z * 0.075D));
                     living.hurtMarked = true;
                 }
             }
@@ -412,8 +403,7 @@ final class ShulkerCombat {
                 }
                 // 拍落：解除浮空并高速下坠，落地按摔落结算
                 living.removeEffect(MobEffects.LEVITATION);
-                living.setDeltaMovement(living.getDeltaMovement().x, -2.2D, living.getDeltaMovement().z);
-                living.hurtMarked = true;
+                RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, -1.1D, 0.0D));
             }
             ModSounds.play(server, "shulker_close", this.shulker.getX(), this.shulker.getY() + 2.0D, this.shulker.getZ(), 3.0F, 0.7F);
             server.broadcastEntityEvent(this.shulker, EVENT_CRASH);
@@ -451,9 +441,8 @@ final class ShulkerCombat {
             AABB box = this.shulker.getBoundingBox().inflate(5.0D, 2.0D, 5.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.shulker.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.3D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.4D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.65D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
             }
             ModSounds.play(server, "shulker_burst", center.x, center.y, center.z, 3.0F, 1.0F);
             server.broadcastEntityEvent(this.shulker, EVENT_BURST);
@@ -469,12 +458,10 @@ final class ShulkerCombat {
             AABB box = this.shulker.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.shulker.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.4D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.5D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
             }
             server.broadcastEntityEvent(this.shulker, EVENT_ENRAGE);
-            LOGGER.debug("Elder shulker {} enraged at health {}", this.shulker.getId(), this.shulker.getHealth());
         }
     }
 
@@ -647,3 +634,4 @@ final class ShulkerCombat {
         }
     }
 }
+

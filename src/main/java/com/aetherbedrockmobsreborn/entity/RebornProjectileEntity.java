@@ -7,6 +7,7 @@ import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -16,8 +17,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -46,7 +47,6 @@ public class RebornProjectileEntity extends AbstractArrow {
         // 不再使用暴击星星拖尾，基础伤害提高到与原暴击平均值相当
         projectile.setCritArrow(false);
         projectile.setBaseDamage(1.25D);
-        projectile.setKnockback(1);
         projectile.pickup = AbstractArrow.Pickup.ALLOWED;
         server.addFreshEntity(projectile);
         server.playSound(null, shooter.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.7F, 1.4F);
@@ -86,7 +86,7 @@ public class RebornProjectileEntity extends AbstractArrow {
     }
 
     @Override
-    protected ItemStack getPickupItem() {
+    protected ItemStack getDefaultPickupItem() {
         return getIdPath().equals("shulkercrysta") ? new ItemStack(Items.SHULKER_SHELL) : new ItemStack(ModItems.ALL.get("pyrespear").get());
     }
 
@@ -126,12 +126,13 @@ public class RebornProjectileEntity extends AbstractArrow {
     }
 
     private String getIdPath() {
-        var key = ForgeRegistries.ENTITY_TYPES.getKey(getType());
+        var key = BuiltInRegistries.ENTITY_TYPE.getKey(getType());
         return key == null ? "missing" : key.getPath();
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
 }
+

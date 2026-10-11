@@ -16,7 +16,7 @@ import net.minecraft.world.entity.Entity;
 
 public class ShadayArmorModel<T extends Entity>
 extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation("aether_bedrock_mobs_reborn", "modelshaday_armor"), "main");
+    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "modelshaday_armor"), "main");
     public final ModelPart root;
     public final ModelPart waist;
     public final ModelPart body;
@@ -80,11 +80,12 @@ extends EntityModel<T> {
         return LayerDefinition.create((MeshDefinition)meshdefinition, (int)128, (int)128);
     }
 
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.root.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int packedColor) {
+        this.root.render(poseStack, vertexConsumer, packedLight, packedOverlay, packedColor);
     }
 
     public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
     }
 }
+
 

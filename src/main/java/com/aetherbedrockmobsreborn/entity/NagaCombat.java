@@ -2,7 +2,6 @@ package com.aetherbedrockmobsreborn.entity;
 
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
@@ -20,7 +19,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -28,7 +26,6 @@ import java.util.List;
 
 // 天境娜迦 boss 战斗：技能选择、服务端时间轴与客户端特效
 final class NagaCombat {
-    private static final Logger LOGGER = LogUtils.getLogger();
     static final int BITE = 1;
     static final int TAIL_SWEEP = 2;
     static final int BURROW = 3;
@@ -218,7 +215,6 @@ final class NagaCombat {
         this.skillTicks = 0;
         this.naga.getNavigation().stop();
         this.naga.setBossSkill(chosen);
-        LOGGER.debug("Aether naga {} casts skill {} at distance {} front {}", this.naga.getId(), chosen, distance, front);
     }
 
     // 噬咬猛扑：0-9 后仰锁定，10-13 前冲 4 格，第 13 tick 咬合
@@ -244,9 +240,8 @@ final class NagaCombat {
                 }
                 if (living.hurt(source(), 12.0F)) {
                     landed = true;
-                    Vec3 push = forward().scale(0.8D);
-                    living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.3D, push.z));
-                    living.hurtMarked = true;
+                    Vec3 push = forward().scale(0.4D);
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.15D, push.z));
                 }
             }
             ModSounds.play(this.naga.level(), "naga_bite", center.x, center.y, center.z, 2.0F, 1.0F);
@@ -278,8 +273,7 @@ final class NagaCombat {
                     continue;
                 }
                 if (living.hurt(source(), 12.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(left.x * 1.3D, 0.45D, left.z * 1.3D));
-                    living.hurtMarked = true;
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(left.x * 0.65D, 0.225D, left.z * 0.65D));
                 }
             }
             ModSounds.play(this.naga.level(), "naga_tail_sweep", body.x, body.y + 1.0D, body.z, 2.5F, 1.0F);
@@ -328,8 +322,7 @@ final class NagaCombat {
                     continue;
                 }
                 if (living.hurt(source(), 15.0F)) {
-                    living.setDeltaMovement(living.getDeltaMovement().add(offset.x * 0.12D, 0.65D, offset.z * 0.12D));
-                    living.hurtMarked = true;
+                    RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.06D, 0.325D, offset.z * 0.06D));
                 }
             }
             ModSounds.play(this.naga.level(), "naga_erupt", center.x, center.y, center.z, 3.0F, 1.0F);
@@ -464,9 +457,8 @@ final class NagaCombat {
             AABB box = this.naga.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
                 Vec3 push = living.position().subtract(this.naga.position());
-                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(1.4D);
-                living.setDeltaMovement(living.getDeltaMovement().add(push.x, 0.5D, push.z));
-                living.hurtMarked = true;
+                push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
+                RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
             }
             for (int i = 0; i < 10; i++) {
                 double angle = Math.PI * 2.0D * i / 10.0D;
@@ -477,7 +469,6 @@ final class NagaCombat {
             }
             ModSounds.play(server, "naga_enrage", this.naga.getX(), this.naga.getY() + 2.0D, this.naga.getZ(), 4.0F, 1.0F);
             server.broadcastEntityEvent(this.naga, EVENT_ENRAGE);
-            LOGGER.debug("Aether naga {} enraged at health {}", this.naga.getId(), this.naga.getHealth());
         }
     }
 

@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#aether_bedrock_mobs_reborn:aether_biomes",
+  "spawners": {
+    "type": "aether_bedrock_mobs_reborn:buterfly",
+    "weight": 24,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

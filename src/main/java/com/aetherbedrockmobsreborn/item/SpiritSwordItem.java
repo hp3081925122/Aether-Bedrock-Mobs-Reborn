@@ -5,10 +5,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
@@ -24,13 +25,13 @@ public final class SpiritSwordItem extends ShieldItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.spiritsword").withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHoverText(stack, context, tooltip, flag);
     }
 
     @Override
-    public boolean canEquip(ItemStack stack, EquipmentSlot slot, Entity entity) {
+    public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
         return slot != EquipmentSlot.OFFHAND && super.canEquip(stack, slot, entity);
     }
 
@@ -53,3 +54,4 @@ public final class SpiritSwordItem extends ShieldItem {
         return result;
     }
 }
+

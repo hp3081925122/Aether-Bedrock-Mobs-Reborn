@@ -18,8 +18,8 @@ import org.joml.Matrix4f;
 
 // 灵魂技能实体渲染：符文为面向相机的旋转光盘，天剑为竖直十字面片
 public class SpiritSkillRenderer extends EntityRenderer<SpiritSkillEntity> {
-    private static final ResourceLocation RUNE = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/spirit_skill/spirit_rune.png");
-    private static final ResourceLocation SWORD = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/spirit_skill/spirit_sword.png");
+    private static final ResourceLocation RUNE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/spirit_skill/spirit_rune.png");
+    private static final ResourceLocation SWORD = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/spirit_skill/spirit_sword.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public SpiritSkillRenderer(EntityRendererProvider.Context context) {
@@ -72,7 +72,7 @@ public class SpiritSkillRenderer extends EntityRenderer<SpiritSkillEntity> {
 
     // 全亮顶点，带透明度
     private static void vertex(VertexConsumer consumer, Matrix4f pose, Matrix3f normal, float x, float y, float z, float u, float v, float alpha) {
-        consumer.vertex(pose, x, y, z).color(1.0F, 1.0F, 1.0F, alpha).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(FULL_BRIGHT).normal(normal, 0.0F, 1.0F, 0.0F).endVertex();
+        consumer.addVertex(pose, x, y, z).setColor(1.0F, 1.0F, 1.0F, alpha).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(FULL_BRIGHT).setNormal(0.0F, 1.0F, 0.0F);
     }
 
     @Override
@@ -88,3 +88,4 @@ public class SpiritSkillRenderer extends EntityRenderer<SpiritSkillEntity> {
         return RUNE;
     }
 }
+

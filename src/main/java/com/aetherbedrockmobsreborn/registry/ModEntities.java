@@ -12,49 +12,49 @@ import com.aetherbedrockmobsreborn.entity.ShulkerSkillEntity;
 import com.aetherbedrockmobsreborn.entity.SpiritSkillEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class ModEntities {
-    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, AetherBedrockMobsReborn.MOD_ID);
-    public static final Map<String, RegistryObject<EntityType<RebornMobEntity>>> MOBS = new LinkedHashMap<>();
-    public static final Map<String, RegistryObject<EntityType<RebornProjectileEntity>>> PROJECTILES = new LinkedHashMap<>();
+    public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, AetherBedrockMobsReborn.MOD_ID);
+    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<RebornMobEntity>>> MOBS = new LinkedHashMap<>();
+    public static final Map<String, DeferredHolder<EntityType<?>, EntityType<RebornProjectileEntity>>> PROJECTILES = new LinkedHashMap<>();
     // 艾瑟龙技能实体：羽刃、陨晶、雷击标记
-    public static final RegistryObject<EntityType<DragonSkillEntity>> DRAGON_SKILL = ENTITIES.register("dragon_skill", () -> EntityType.Builder.<DragonSkillEntity>of(DragonSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<DragonSkillEntity>> DRAGON_SKILL = ENTITIES.register("dragon_skill", () -> EntityType.Builder.<DragonSkillEntity>of(DragonSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
             .build("dragon_skill"));
     // 灵魂技能实体：圣环符文、天剑
-    public static final RegistryObject<EntityType<SpiritSkillEntity>> SPIRIT_SKILL = ENTITIES.register("spirit_skill", () -> EntityType.Builder.<SpiritSkillEntity>of(SpiritSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<SpiritSkillEntity>> SPIRIT_SKILL = ENTITIES.register("spirit_skill", () -> EntityType.Builder.<SpiritSkillEntity>of(SpiritSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
             .build("spirit_skill"));
     // 天境娜迦技能实体：石柱、巨石
-    public static final RegistryObject<EntityType<NagaSkillEntity>> NAGA_SKILL = ENTITIES.register("naga_skill", () -> EntityType.Builder.<NagaSkillEntity>of(NagaSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<NagaSkillEntity>> NAGA_SKILL = ENTITIES.register("naga_skill", () -> EntityType.Builder.<NagaSkillEntity>of(NagaSkillEntity::new, MobCategory.MISC)
             .sized(1.0F, 1.0F)
             .clientTrackingRange(8)
             .updateInterval(1)
             .build("naga_skill"));
     // 水晶石傀儡技能实体：晶刺、晶笼、晶核
-    public static final RegistryObject<EntityType<GolemSkillEntity>> GOLEM_SKILL = ENTITIES.register("golem_skill", () -> EntityType.Builder.<GolemSkillEntity>of(GolemSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<GolemSkillEntity>> GOLEM_SKILL = ENTITIES.register("golem_skill", () -> EntityType.Builder.<GolemSkillEntity>of(GolemSkillEntity::new, MobCategory.MISC)
             .sized(1.0F, 1.0F)
             .clientTrackingRange(8)
             .updateInterval(1)
             .build("golem_skill"));
     // 盐蟹王技能实体：泡泡、盐泉、浪墙、盐晶
-    public static final RegistryObject<EntityType<CrabSkillEntity>> CRAB_SKILL = ENTITIES.register("crab_skill", () -> EntityType.Builder.<CrabSkillEntity>of(CrabSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<CrabSkillEntity>> CRAB_SKILL = ENTITIES.register("crab_skill", () -> EntityType.Builder.<CrabSkillEntity>of(CrabSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
             .build("crab_skill"));
     // 远古潜影贝技能实体：潜影弹、碎刃、缠藤
-    public static final RegistryObject<EntityType<ShulkerSkillEntity>> SHULKER_SKILL = ENTITIES.register("shulker_skill", () -> EntityType.Builder.<ShulkerSkillEntity>of(ShulkerSkillEntity::new, MobCategory.MISC)
+    public static final DeferredHolder<EntityType<?>, EntityType<ShulkerSkillEntity>> SHULKER_SKILL = ENTITIES.register("shulker_skill", () -> EntityType.Builder.<ShulkerSkillEntity>of(ShulkerSkillEntity::new, MobCategory.MISC)
             .sized(0.6F, 0.6F)
             .clientTrackingRange(8)
             .updateInterval(1)

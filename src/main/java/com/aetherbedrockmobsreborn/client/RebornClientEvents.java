@@ -28,15 +28,15 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
-@Mod.EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class RebornClientEvents {
     private RebornClientEvents() {
     }
@@ -106,6 +106,7 @@ public final class RebornClientEvents {
         event.registerSpriteSet(ModParticles.SALT_RING.get(), DragonShockwaveParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SALT_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
         event.registerSpriteSet(ModParticles.SALT_SHARD.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SALT_SPRAY.get(), DragonShardParticle.ShortProvider::new);
         event.registerSpriteSet(ModParticles.CRAB_PINCH.get(), JawParticle.PinchProvider::new);
         // 远古潜影贝技能特效
         event.registerSpriteSet(ModParticles.SHULKER_RING.get(), DragonShockwaveParticle.Provider::new);
@@ -117,9 +118,9 @@ public final class RebornClientEvents {
     }
 
     private static final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity> {
-        private static final ResourceLocation DRAGON_BEAM = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_beam.png");
-        private static final ResourceLocation NAGA_BEAM = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/naga_skill/naga_beam.png");
-        private static final ResourceLocation SHULKER_BEAM = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_beam.png");
+        private static final ResourceLocation DRAGON_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_beam.png");
+        private static final ResourceLocation NAGA_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/naga_skill/naga_beam.png");
+        private static final ResourceLocation SHULKER_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_beam.png");
 
         private RebornGeoRenderer(EntityRendererProvider.Context context) {
             super(context, new RebornGeoModel());
@@ -203,7 +204,7 @@ public final class RebornClientEvents {
 
         @Override
         public ResourceLocation getTextureLocation(RebornMobEntity entity) {
-            return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entities/" + entity.getTextureName() + ".png");
+            return ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entities/" + entity.getTextureName() + ".png");
         }
     }
 
@@ -214,8 +215,9 @@ public final class RebornClientEvents {
 
         @Override
         public ResourceLocation getTextureLocation(RebornProjectileEntity entity) {
-            return new ResourceLocation("minecraft", "textures/entity/projectiles/arrow.png");
+            return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/projectiles/arrow.png");
         }
     }
 }
+
 

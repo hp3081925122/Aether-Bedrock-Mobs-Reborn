@@ -100,20 +100,16 @@ public class JawParticle extends TextureSheetParticle {
         float y3 = py + ay * far + sy * width;
         float z3 = pz + az * far + sz * width;
         // 正反两面都画
-        buffer.vertex(x0, y0, z0).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x1, y1, z1).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x2, y2, z2).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x3, y3, z3).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x3, y3, z3).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x2, y2, z2).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x1, y1, z1).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(x0, y0, z0).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
+        buffer.addVertex(x0, y0, z0).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x1, y1, z1).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x2, y2, z2).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x3, y3, z3).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x3, y3, z3).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x2, y2, z2).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x1, y1, z1).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(x0, y0, z0).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
     }
 
-    @Override
-    public boolean shouldCull() {
-        return false;
-    }
 
     @Override
     public ParticleRenderType getRenderType() {

@@ -68,20 +68,16 @@ public class DragonDecalParticle extends TextureSheetParticle {
         float dx = px + rx + fx;
         float dz = pz + rz + fz;
         // 正反两面都画
-        buffer.vertex(ax, py, az).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(bx, py, bz).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(cx, py, cz).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(dx, py, dz).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(dx, py, dz).uv(u1, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(cx, py, cz).uv(u1, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(bx, py, bz).uv(u0, v1).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
-        buffer.vertex(ax, py, az).uv(u0, v0).color(this.rCol, this.gCol, this.bCol, alpha).uv2(light).endVertex();
+        buffer.addVertex(ax, py, az).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(bx, py, bz).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(cx, py, cz).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(dx, py, dz).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(dx, py, dz).setUv(u1, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(cx, py, cz).setUv(u1, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(bx, py, bz).setUv(u0, v1).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
+        buffer.addVertex(ax, py, az).setUv(u0, v0).setColor(this.rCol, this.gCol, this.bCol, alpha).setLight(light);
     }
 
-    @Override
-    public boolean shouldCull() {
-        return false;
-    }
 
     @Override
     public ParticleRenderType getRenderType() {

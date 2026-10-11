@@ -13,26 +13,26 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
-import net.minecraftforge.common.ForgeSpawnEggItem;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.Registries;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public final class ModItems {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, AetherBedrockMobsReborn.MOD_ID);
-    public static final Map<String, RegistryObject<Item>> ALL = new LinkedHashMap<>();
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, AetherBedrockMobsReborn.MOD_ID);
+    public static final Map<String, DeferredHolder<Item, Item>> ALL = new LinkedHashMap<>();
 
     static {
-        for (Map.Entry<String, RegistryObject<net.minecraft.world.level.block.Block>> entry : ModBlocks.ALL.entrySet()) {
+        for (Map.Entry<String, DeferredHolder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.Block>> entry : ModBlocks.ALL.entrySet()) {
             register(entry.getKey(), () -> new BlockItem(entry.getValue().get(), new Item.Properties()));
         }
         register("citykey", () -> new Item(new Item.Properties().stacksTo(64).rarity(Rarity.RARE)));
-        register("crabmeat", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(4).saturationMod(0.3F).build())));
-        register("crabmeatcooked", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(8).saturationMod(0.6F).build())));
+        register("crabmeat", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(4).saturationModifier(0.3F).build())));
+        register("crabmeatcooked", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.6F).build())));
         register("crystalite", () -> new Item(new Item.Properties().stacksTo(64)));
         register("crystalitedust", () -> new Item(new Item.Properties().stacksTo(64)));
         register("crystalitesword", CrystaliteSwordItem::new);
@@ -50,10 +50,10 @@ public final class ModItems {
                 "saltcrabking", "shimaenaga", "spirit", "twinkler"
         };
         for (String id : spawnEggs) {
-            RegistryObject<net.minecraft.world.entity.EntityType<RebornMobEntity>> entity = ModEntities.MOBS.get(id);
+            DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<RebornMobEntity>> entity = ModEntities.MOBS.get(id);
             if (entity != null) {
                 int[] colors = spawnEggColors(id);
-                register(id + "_spawn_egg", () -> new ForgeSpawnEggItem(entity::get, colors[0], colors[1], new Item.Properties()));
+                register(id + "_spawn_egg", () -> new DeferredSpawnEggItem(entity::get, colors[0], colors[1], new Item.Properties()));
             }
         }
     }

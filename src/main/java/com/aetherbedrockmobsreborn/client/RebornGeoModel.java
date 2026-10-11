@@ -1,12 +1,13 @@
 package com.aetherbedrockmobsreborn.client;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import com.aetherbedrockmobsreborn.entity.NagaEntity;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
-import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
-import software.bernie.geckolib.core.animation.AnimationState;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
 
@@ -35,12 +36,12 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
             case "eldershulker" -> "elder_shulker";
             default -> "twinkler";
         };
-        return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "geo/" + model + ".geo.json");
+        return ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "geo/" + model + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(RebornMobEntity entity) {
-        return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entities/" + entity.getTextureName() + ".png");
+        return ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entities/" + entity.getTextureName() + ".png");
     }
 
     @Override
@@ -60,12 +61,15 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
             case "eldershulker" -> "elder_shulker";
             default -> "twinkler";
         };
-        return new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "animations/" + animation + ".animation.json");
+        return ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "animations/" + animation + ".animation.json");
     }
 
     @Override
     public void setCustomAnimations(RebornMobEntity entity, long instanceId, AnimationState<RebornMobEntity> state) {
         super.setCustomAnimations(entity, instanceId, state);
+        if (entity instanceof NagaEntity naga) {
+            applyNagaTailBend(naga, state.getPartialTick());
+        }
         // 灵魂与远古潜影贝：不放技能时头部看向目标，叠加在动画旋转之上
         String headBone = "";
         if (entity.getIdPath().equals("spirit") && entity.getSpiritSkill() == 0) {
@@ -76,7 +80,7 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
         if (headBone.isEmpty()) {
             return;
         }
-        CoreGeoBone head = getAnimationProcessor().getBone(headBone);
+        GeoBone head = getAnimationProcessor().getBone(headBone);
         EntityModelData data = state.getData(DataTickets.ENTITY_MODEL_DATA);
         if (head == null || data == null) {
             return;
@@ -84,4 +88,21 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
         head.setRotX(head.getRotX() + data.headPitch() * Mth.DEG_TO_RAD);
         head.setRotY(head.getRotY() + data.netHeadYaw() * Mth.DEG_TO_RAD);
     }
+
+    // 天境娜迦：转身时尾部逐节滞后弯曲，叠加在动画旋转之上
+    private void applyNagaTailBend(NagaEntity naga, float partialTicks) {
+        float bend = naga.getTailBend(partialTicks) * Mth.DEG_TO_RAD;
+        if (Math.abs(bend) < 1.0E-4F) {
+            return;
+        }
+        String[] bones = {"tail1", "tail2", "tail3"};
+        float[] weights = {0.3F, 0.35F, 0.35F};
+        for (int i = 0; i < bones.length; i++) {
+            GeoBone bone = getAnimationProcessor().getBone(bones[i]);
+            if (bone != null) {
+                bone.setRotY(bone.getRotY() + bend * weights[i]);
+            }
+        }
+    }
 }
+
