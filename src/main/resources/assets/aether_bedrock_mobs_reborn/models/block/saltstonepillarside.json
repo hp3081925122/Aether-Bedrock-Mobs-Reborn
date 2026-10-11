@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/saltstone_pillar_top",
+    "up": "aether_bedrock_mobs_reborn:block/saltstone_pillar_top",
+    "north": "aether_bedrock_mobs_reborn:block/saltstone_pillar_side",
+    "east": "aether_bedrock_mobs_reborn:block/saltstone_pillar_side",
+    "south": "aether_bedrock_mobs_reborn:block/saltstone_pillar_side",
+    "west": "aether_bedrock_mobs_reborn:block/saltstone_pillar_side",
+    "particle": "aether_bedrock_mobs_reborn:block/saltstone_pillar_top"
+  },
+  "render_type": "solid"
+}

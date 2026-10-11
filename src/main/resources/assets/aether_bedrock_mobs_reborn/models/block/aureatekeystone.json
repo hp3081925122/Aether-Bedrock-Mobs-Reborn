@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "up": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "north": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "east": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "south": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "west": "aether_bedrock_mobs_reborn:block/aureate_keystone",
+    "particle": "aether_bedrock_mobs_reborn:block/aureate_keystone"
+  },
+  "render_type": "solid"
+}

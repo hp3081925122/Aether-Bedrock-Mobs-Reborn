@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "up": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "north": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "east": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "south": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "west": "aether_bedrock_mobs_reborn:block/mosaic_white",
+    "particle": "aether_bedrock_mobs_reborn:block/mosaic_white"
+  },
+  "render_type": "solid"
+}

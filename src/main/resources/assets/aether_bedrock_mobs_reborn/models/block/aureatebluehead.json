@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/aureate_blue_pillar_bottom",
+    "up": "aether_bedrock_mobs_reborn:block/aureate_blue_pillar_bottom",
+    "north": "aether_bedrock_mobs_reborn:block/aureate_blue_head",
+    "east": "aether_bedrock_mobs_reborn:block/aureate_blue_head",
+    "south": "aether_bedrock_mobs_reborn:block/aureate_blue_head",
+    "west": "aether_bedrock_mobs_reborn:block/aureate_blue_head",
+    "particle": "aether_bedrock_mobs_reborn:block/aureate_blue_pillar_bottom"
+  },
+  "render_type": "solid"
+}

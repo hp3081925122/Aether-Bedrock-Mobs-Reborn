@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/mossy_deadrock_brick",
+    "up": "aether_bedrock_mobs_reborn:block/deep_grass_top",
+    "north": "aether_bedrock_mobs_reborn:block/grassy_deadrock",
+    "east": "aether_bedrock_mobs_reborn:block/grassy_deadrock",
+    "south": "aether_bedrock_mobs_reborn:block/grassy_deadrock",
+    "west": "aether_bedrock_mobs_reborn:block/grassy_deadrock",
+    "particle": "aether_bedrock_mobs_reborn:block/mossy_deadrock_brick"
+  },
+  "render_type": "solid"
+}

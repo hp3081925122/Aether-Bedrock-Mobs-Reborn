@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "up": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "north": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "east": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "south": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "west": "aether_bedrock_mobs_reborn:block/aureate_script",
+    "particle": "aether_bedrock_mobs_reborn:block/aureate_script"
+  },
+  "render_type": "solid"
+}

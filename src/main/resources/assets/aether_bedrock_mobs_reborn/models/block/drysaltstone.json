@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "up": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "north": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "east": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "south": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "west": "aether_bedrock_mobs_reborn:block/dry_saltstone",
+    "particle": "aether_bedrock_mobs_reborn:block/dry_saltstone"
+  },
+  "render_type": "solid"
+}

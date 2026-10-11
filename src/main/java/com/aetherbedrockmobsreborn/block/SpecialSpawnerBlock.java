@@ -1,0 +1,137 @@
+package com.aetherbedrockmobsreborn.block;
+
+import com.aetherbedrockmobsreborn.registry.ModEntities;
+import com.aetherbedrockmobsreborn.registry.ModItems;
+import com.aetherbedrockmobsreborn.registry.ModParticles;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
+import net.minecraftforge.registries.RegistryObject;
+
+public class SpecialSpawnerBlock extends Block {
+    private static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    private final String action;
+
+    public SpecialSpawnerBlock(String action) {
+        super(BlockBehaviour.Properties.of().strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
+        this.action = action;
+        this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(POWERED);
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean moving) {
+        super.neighborChanged(state, level, pos, block, fromPos, moving);
+        if (!level.isClientSide && isRedstoneAction()) {
+            boolean powered = level.getBestNeighborSignal(pos) > 0;
+            if (powered != state.getValue(POWERED)) {
+                if (!powered) {
+                    level.setBlock(pos, state.setValue(POWERED, powered), 3);
+                } else if (!activate(level, pos, null)) {
+                    level.setBlock(pos, state, 3);
+                    level.scheduleTick(pos, this, 20);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (!state.getValue(POWERED) && level.getBestNeighborSignal(pos) > 0) {
+            if (!activate(level, pos, null)) {
+                level.scheduleTick(pos, this, 20);
+            }
+        }
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (hand != InteractionHand.MAIN_HAND || (!action.equals("dragon") && !action.equals("lamp"))) {
+            return InteractionResult.PASS;
+        }
+        activate(level, pos, player);
+        return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    private boolean isRedstoneAction() {
+        return action.equals("elder") || action.equals("crystalite") || action.equals("salt") || action.equals("labyrinth");
+    }
+
+    private boolean activate(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide) {
+            return false;
+        }
+        if (action.equals("dragon") && player != null) {
+            RegistryObject<net.minecraft.world.item.Item> key = ModItems.ALL.get("finalkey");
+            if (key == null || !player.getMainHandItem().is(key.get())) {
+                player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
+                return false;
+            }
+        }
+        if ((action.equals("elder") || action.equals("crystalite") || action.equals("labyrinth")) && level.isDay()) {
+            if (player != null) {
+                player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.night_only"), true);
+            }
+            return false;
+        }
+        String entityId = switch (action) {
+            case "dragon" -> "aetherdragon";
+            case "elder" -> "eldershulker";
+            case "crystalite" -> "crystalitegolem";
+            case "salt" -> "saltcrabking";
+            case "labyrinth" -> "aether_naga";
+            case "lamp" -> "spirit";
+            default -> null;
+        };
+        if (entityId == null) {
+            return false;
+        }
+        RegistryObject<EntityType<RebornMobEntity>> type = ModEntities.MOBS.get(entityId);
+        if (type == null) {
+            return false;
+        }
+        RebornMobEntity entity = type.get().create(level);
+        if (entity == null) {
+            return false;
+        }
+        double y = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
+        entity.moveTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
+        level.addFreshEntity(entity);
+        if (level instanceof ServerLevel server) {
+            double particleY = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
+            server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5D, particleY, pos.getZ() + 0.5D, 5, 3.0D, 3.0D, 3.0D, 1.0D);
+            server.sendParticles(ModParticles.FIRE.get(), pos.getX() + 0.5D, particleY, pos.getZ() + 0.5D, 10, 3.0D, 3.0D, 3.0D, 1.0D);
+            server.sendParticles(ModParticles.RUNESEFFECT.get(), pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, 16, 0.5D, 0.5D, 0.5D, 0.05D);
+        }
+        if (action.equals("dragon")) {
+            level.explode(null, pos.getX() + 0.5D, y, pos.getZ() + 0.5D, 0.0F, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
+        }
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        return true;
+    }
+}
+
+
+
+

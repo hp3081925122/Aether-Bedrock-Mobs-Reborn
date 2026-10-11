@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:jigsaw",
+  "start_pool": "aether_bedrock_mobs_reborn:spiritdange",
+  "size": 1,
+  "max_distance_from_center": 64,
+  "spawn_overrides": {},
+  "step": "surface_structures",
+  "terrain_adaptation": "none",
+  "start_height": {
+    "type": "minecraft:uniform",
+    "min_inclusive": {
+      "absolute": 30
+    },
+    "max_inclusive": {
+      "absolute": 128
+    }
+  },
+  "biomes": [
+   	"aether:skyroot_woodland",
+    "aether:skyroot_meadow",
+    "aether:skyroot_forest",
+    "aether:skyroot_grove"
+  ],
+  "use_expansion_hack": false
+}

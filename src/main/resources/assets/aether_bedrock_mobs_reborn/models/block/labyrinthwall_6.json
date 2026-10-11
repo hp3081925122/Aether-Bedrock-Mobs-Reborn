@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "up": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "north": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "east": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "south": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "west": "aether_bedrock_mobs_reborn:block/etched_slidestone_script",
+    "particle": "aether_bedrock_mobs_reborn:block/etched_slidestone_script"
+  },
+  "render_type": "solid"
+}

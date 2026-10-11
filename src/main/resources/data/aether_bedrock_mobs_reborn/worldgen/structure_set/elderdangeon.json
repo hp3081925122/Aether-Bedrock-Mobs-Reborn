@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "aether_bedrock_mobs_reborn:elderdangeon",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 60,
+    "separation": 28,
+    "salt": 1331428560
+  }
+}

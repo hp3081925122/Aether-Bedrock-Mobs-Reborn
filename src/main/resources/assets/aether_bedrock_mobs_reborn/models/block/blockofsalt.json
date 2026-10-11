@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "up": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "north": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "east": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "south": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "west": "aether_bedrock_mobs_reborn:block/block_of_salt",
+    "particle": "aether_bedrock_mobs_reborn:block/block_of_salt"
+  },
+  "render_type": "solid"
+}

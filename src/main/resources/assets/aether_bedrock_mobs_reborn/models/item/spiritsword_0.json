@@ -1,0 +1,8 @@
+{
+  "parent": "aether_bedrock_mobs_reborn:custom/spiritswordshild",
+  "textures": {
+    "1": "aether_bedrock_mobs_reborn:block/mystic",
+    "missing": "aether_bedrock_mobs_reborn:block/mystic",
+    "particle": "aether_bedrock_mobs_reborn:item/mystic"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "up": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "north": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "east": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "south": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "west": "aether_bedrock_mobs_reborn:block/mutated_liveroots",
+    "particle": "aether_bedrock_mobs_reborn:block/mutated_liveroots"
+  },
+  "render_type": "solid"
+}

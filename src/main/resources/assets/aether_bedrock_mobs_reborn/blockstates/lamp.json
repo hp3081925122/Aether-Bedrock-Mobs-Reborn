@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "aether_bedrock_mobs_reborn:block/lamp"
+    },
+    "powered=true": {
+      "model": "aether_bedrock_mobs_reborn:block/lamp"
+    }
+  }
+}

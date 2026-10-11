@@ -1,0 +1,15 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": [
+  	"aether:skyroot_woodland",
+    "aether:skyroot_meadow",
+    "aether:skyroot_forest",
+    "aether:skyroot_grove"
+  ],
+  "spawners": {
+    "type": "aether_bedrock_mobs_reborn:buterfly_5",
+    "weight": 2,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}
