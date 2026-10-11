@@ -1,0 +1,290 @@
+{
+  "sword": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:flame_2",
+        "stream": false
+      }
+    ]
+  },
+  "victorymmm": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:aether_victory",
+        "stream": false
+      }
+    ]
+  },
+  "cgd": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgd",
+        "stream": false
+      }
+    ]
+  },
+  "cgh": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgh",
+        "stream": false
+      }
+    ]
+  },
+  "cgi": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgi",
+        "stream": false
+      }
+    ]
+  },
+  "cgmd": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgmd",
+        "stream": false
+      }
+    ]
+  },
+  "cgmh": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgmh",
+        "stream": false
+      }
+    ]
+  },
+  "cgmi": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgmi",
+        "stream": false
+      }
+    ]
+  },
+  "cgmw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgmw",
+        "stream": false
+      }
+    ]
+  },
+  "cgw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:cgw",
+        "stream": false
+      }
+    ]
+  },
+  "mud": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:mud",
+        "stream": false
+      }
+    ]
+  },
+  "muh": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:muh",
+        "stream": false
+      }
+    ]
+  },
+  "mui": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:mui",
+        "stream": false
+      }
+    ]
+  },
+  "muw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:muw",
+        "stream": false
+      }
+    ]
+  },
+  "nad": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:nad",
+        "stream": false
+      }
+    ]
+  },
+  "nah": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:nah",
+        "stream": false
+      }
+    ]
+  },
+  "naw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:naw",
+        "stream": false
+      }
+    ]
+  },
+  "sabw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:sabw",
+        "stream": false
+      }
+    ]
+  },
+  "sah": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:sah",
+        "stream": false
+      }
+    ]
+  },
+  "saw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:saw",
+        "stream": false
+      }
+    ]
+  },
+  "spd": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:spd",
+        "stream": false
+      }
+    ]
+  },
+  "sph": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:sph",
+        "stream": false
+      }
+    ]
+  },
+  "spi": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:spi",
+        "stream": false
+      }
+    ]
+  },
+  "spw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:spw",
+        "stream": false
+      }
+    ]
+  },
+  "shh": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:shh",
+        "stream": false
+      }
+    ]
+  },
+  "shi": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:shi",
+        "stream": false
+      }
+    ]
+  },
+  "shd": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:shd",
+        "stream": false
+      }
+    ]
+  },
+  "gad": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:gad",
+        "stream": false
+      }
+    ]
+  },
+  "gah": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:gah",
+        "stream": false
+      }
+    ]
+  },
+  "gai": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:gai",
+        "stream": false
+      }
+    ]
+  },
+  "gaw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:gaw",
+        "stream": false
+      }
+    ]
+  },
+  "drd": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:drd",
+        "stream": false
+      }
+    ]
+  },
+  "drf": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:drf",
+        "stream": false
+      }
+    ]
+  },
+  "drh": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:drh",
+        "stream": false
+      }
+    ]
+  },
+  "dri": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:dri",
+        "stream": false
+      }
+    ]
+  },
+  "drw": {
+    "sounds": [
+      {
+        "name": "aether_bedrock_mobs_reborn:drw",
+        "stream": false
+      }
+    ]
+  }
+}

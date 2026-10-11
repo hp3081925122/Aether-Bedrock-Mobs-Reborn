@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "aether_bedrock_mobs_reborn:block/crystalitecapstone",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "aether_bedrock_mobs_reborn:block/crystalitecapstone"
+    },
+    "axis=z": {
+      "model": "aether_bedrock_mobs_reborn:block/crystalitecapstone",
+      "x": 90
+    }
+  }
+}

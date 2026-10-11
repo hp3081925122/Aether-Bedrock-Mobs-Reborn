@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "aether_bedrock_mobs_reborn:saltdangeon",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 60,
+    "separation": 27,
+    "salt": 1074419239
+  }
+}

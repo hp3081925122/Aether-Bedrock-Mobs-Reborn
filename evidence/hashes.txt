@@ -1,0 +1,2 @@
+2026-10-11  source=aethermobs-1.5.0-forge-1.20.1.jar  sha256=627735432F332A2A2808D2FCBEB72D2AA2D221BC3A6160A5CB969C13B2478665  size=3223334  source_url=https://cdn.modrinth.com/data/6NmqryJl/versions/HFN7qFQM/aethermobs-1.5.0-forge-1.20.1.jar
+2026-10-11  output=aether_bedrock_mobs_reborn-0.1.0.jar  sha256=630C3A55C00C8EC9F24C74C82CB9A3E257650C45EFB718C34C47551058DB930F  size=2869223  path=build/libs/aether_bedrock_mobs_reborn-0.1.0.jar

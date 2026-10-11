@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "up": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "north": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "east": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "south": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "west": "aether_bedrock_mobs_reborn:block/eldrspawn",
+    "particle": "aether_bedrock_mobs_reborn:block/eldrspawn"
+  },
+  "render_type": "solid"
+}

@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "up": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "north": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "east": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "south": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "west": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit",
+    "particle": "aether_bedrock_mobs_reborn:block/crystalite_lightstone_lit"
+  },
+  "render_type": "solid"
+}

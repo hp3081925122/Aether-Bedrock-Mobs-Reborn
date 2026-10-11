@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/crystalite_keystone_lit",
+    "up": "aether_bedrock_mobs_reborn:block/crystalite_keystone_lit",
+    "north": "aether_bedrock_mobs_reborn:block/crystalite_capstone_lit",
+    "east": "aether_bedrock_mobs_reborn:block/crystalite_capstone_lit",
+    "south": "aether_bedrock_mobs_reborn:block/crystalite_capstone_lit",
+    "west": "aether_bedrock_mobs_reborn:block/crystalite_capstone_lit",
+    "particle": "aether_bedrock_mobs_reborn:block/crystalite_keystone_lit"
+  },
+  "render_type": "cutout_mipped"
+}

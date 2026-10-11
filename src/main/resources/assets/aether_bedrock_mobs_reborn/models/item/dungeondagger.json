@@ -1,0 +1,6 @@
+{
+  "parent": "item/handheld",
+  "textures": {
+    "layer0": "aether_bedrock_mobs_reborn:item/dungeon_dagger"
+  }
+}

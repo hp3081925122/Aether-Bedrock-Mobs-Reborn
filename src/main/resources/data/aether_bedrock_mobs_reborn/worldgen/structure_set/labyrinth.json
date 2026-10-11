@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "aether_bedrock_mobs_reborn:labyrinth",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 60,
+    "separation": 30,
+    "salt": 1077119346
+  }
+}

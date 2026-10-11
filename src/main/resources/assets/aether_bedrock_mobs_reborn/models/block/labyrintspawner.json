@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "up": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "north": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "east": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "south": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "west": "aether_bedrock_mobs_reborn:block/sliderspawn",
+    "particle": "aether_bedrock_mobs_reborn:block/sliderspawn"
+  },
+  "render_type": "solid"
+}

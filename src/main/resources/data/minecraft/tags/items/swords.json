@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "aether_bedrock_mobs_reborn:saltinstrument",
+    "aether_bedrock_mobs_reborn:dungeondagger",
+    "aether_bedrock_mobs_reborn:crystalitesword"
+  ]
+}

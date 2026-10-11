@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "up": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "north": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "east": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "south": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "west": "aether_bedrock_mobs_reborn:block/crystalite_keystone",
+    "particle": "aether_bedrock_mobs_reborn:block/crystalite_keystone"
+  },
+  "render_type": "solid"
+}

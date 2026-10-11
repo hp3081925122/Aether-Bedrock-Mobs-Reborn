@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "up": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "north": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "east": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "south": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "west": "aether_bedrock_mobs_reborn:block/cobbled_deepslate",
+    "particle": "aether_bedrock_mobs_reborn:block/cobbled_deepslate"
+  },
+  "render_type": "solid"
+}

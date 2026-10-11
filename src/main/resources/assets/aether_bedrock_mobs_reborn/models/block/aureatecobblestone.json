@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "up": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "north": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "east": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "south": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "west": "aether_bedrock_mobs_reborn:block/aureate_cobblestone",
+    "particle": "aether_bedrock_mobs_reborn:block/aureate_cobblestone"
+  },
+  "render_type": "solid"
+}

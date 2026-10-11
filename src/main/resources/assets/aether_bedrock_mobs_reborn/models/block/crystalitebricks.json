@@ -1,0 +1,13 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "down": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "up": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "north": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "east": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "south": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "west": "aether_bedrock_mobs_reborn:block/crystalite_bricks",
+    "particle": "aether_bedrock_mobs_reborn:block/crystalite_bricks"
+  },
+  "render_type": "solid"
+}

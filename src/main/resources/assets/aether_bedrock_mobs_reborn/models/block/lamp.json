@@ -1,0 +1,9 @@
+{
+  "parent": "aether_bedrock_mobs_reborn:custom/mystic_lamp.geo_-_converted",
+  "textures": {
+    "all": "aether_bedrock_mobs_reborn:block/mystic_lamp",
+    "particle": "aether_bedrock_mobs_reborn:block/mystic_lamp",
+    "0": "aether_bedrock_mobs_reborn:block/mystic_lamp"
+  },
+  "render_type": "cutout_mipped"
+}
