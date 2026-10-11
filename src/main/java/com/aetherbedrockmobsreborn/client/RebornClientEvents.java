@@ -18,6 +18,15 @@ import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.particle.FlameParticle;
 import net.minecraft.client.particle.SmokeParticle;
 import net.minecraft.resources.ResourceLocation;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3d;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -49,6 +58,8 @@ public final class RebornClientEvents {
         for (var entry : ModEntities.PROJECTILES.entrySet()) {
             event.registerEntityRenderer(entry.getValue().get(), RebornProjectileRenderer::new);
         }
+        // 艾瑟龙技能实体
+        event.registerEntityRenderer(ModEntities.DRAGON_SKILL.get(), DragonSkillRenderer::new);
     }
 
     @SubscribeEvent
@@ -67,12 +78,61 @@ public final class RebornClientEvents {
         // 艾瑟龙转阶段特效
         event.registerSpriteSet(ModParticles.DRAGON_SHOCKWAVE.get(), DragonShockwaveParticle.Provider::new);
         event.registerSpriteSet(ModParticles.DRAGON_SHARD.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.DRAGON_WARNING.get(), DragonShockwaveParticle.WarningProvider::new);
     }
 
     private static final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity> {
+        private static final ResourceLocation DRAGON_BEAM = new ResourceLocation(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_beam.png");
+
         private RebornGeoRenderer(EntityRendererProvider.Context context) {
             super(context, new RebornGeoModel());
             this.shadowRadius = 0.5F;
+        }
+
+        @Override
+        public void render(RebornMobEntity entity, float yaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {
+            boolean beam = entity.isDragonBeamActive();
+            // 龙息期间追踪下颚骨骼的世界坐标
+            if (beam) {
+                getGeoModel().getBone("jaw").ifPresent(bone -> bone.setTrackingMatrices(true));
+            }
+            super.render(entity, yaw, partialTick, poseStack, buffers, light);
+            if (beam) {
+                getGeoModel().getBone("jaw").ifPresent(bone -> renderDragonBeam(entity, partialTick, poseStack, buffers, bone.getWorldPosition()));
+            }
+        }
+
+        private void renderDragonBeam(RebornMobEntity entity, float partialTick, PoseStack poseStack, MultiBufferSource buffers, Vector3d jaw) {
+            // 以实体插值位置为原点，计算光束起止点
+            double ox = Mth.lerp(partialTick, entity.xo, entity.getX());
+            double oy = Mth.lerp(partialTick, entity.yo, entity.getY());
+            double oz = Mth.lerp(partialTick, entity.zo, entity.getZ());
+            // GeckoLib 的骨骼世界坐标基于未插值的实体位置
+            Vec3 start = new Vec3(jaw.x - entity.getX(), jaw.y - entity.getY(), jaw.z - entity.getZ());
+            Vec3 end = entity.getDragonBeamEnd().subtract(ox, oy, oz);
+            Vec3 dir = end.subtract(start);
+            double length = dir.length();
+            if (length < 0.5D) {
+                return;
+            }
+            // 面向相机展开光束宽度
+            Vec3 cam = this.entityRenderDispatcher.camera.getPosition().subtract(ox, oy, oz);
+            Vec3 side = dir.cross(cam.subtract(start)).normalize();
+            float time = entity.tickCount + partialTick;
+            float scroll = -time * 0.35F;
+            float pulse = 1.0F + Mth.sin(time * 0.9F) * 0.12F;
+            float vLength = (float) (length / 4.0D);
+            VertexConsumer consumer = buffers.getBuffer(RenderType.eyes(DRAGON_BEAM));
+            Matrix4f pose = poseStack.last().pose();
+            Matrix3f normal = poseStack.last().normal();
+            // 外层光晕与内层核心
+            for (float width : new float[]{2.4F * pulse, 1.0F * pulse}) {
+                Vec3 s = side.scale(width * 0.5F);
+                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x - s.x), (float) (start.y - s.y), (float) (start.z - s.z), 0.0F, scroll);
+                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x + s.x), (float) (start.y + s.y), (float) (start.z + s.z), 1.0F, scroll);
+                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x + s.x), (float) (end.y + s.y), (float) (end.z + s.z), 1.0F, scroll + vLength);
+                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x - s.x), (float) (end.y - s.y), (float) (end.z - s.z), 0.0F, scroll + vLength);
+            }
         }
     }
 

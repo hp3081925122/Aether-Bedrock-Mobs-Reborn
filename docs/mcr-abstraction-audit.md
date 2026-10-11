@@ -70,4 +70,4 @@
 3. 复核 Geo 渲染、声音关键帧和关键帧显式映射，确认已知 GeckoLib 解析错误不再出现。
 4. 最后复核雷击范围、红石昼夜重试、粒子/爆炸/掉落配置，并补测试矩阵。
 
-本轮已修改 Java、注册表、资源和审计文档；只完成了源码与 JSON 静态检查，没有自动执行 `build` 或 `runClient`。原始字节码对照材料保存在 `D:\AI临时文件\aether_audit_entities`、`D:\AI临时文件\aether_audit_javap` 和 `D:\AI临时文件\aether_modentities_javap.txt`。
+本轮已修改 Java、注册表、资源和审计文档；只完成了源码与 JSON 静态检查，没有自动执行 `build` 或 `runClient`。原始字节码对照材料保存在本地取证缓存目录。
