@@ -18,7 +18,7 @@ import org.joml.Matrix4f;
 
 // 盐蟹王技能实体渲染：泡泡为面向相机的半透明球面，水柱与浪墙为滚动 UV 的半透明面片，盐晶为阶梯晶簇
 public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
-    private static final ResourceLocation BUBBLE = ，ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
+    private static final ResourceLocation BUBBLE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
     private static final ResourceLocation WATER = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_water.png");
     private static final ResourceLocation WAVE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_wave.png");
     private static final ResourceLocation SALT = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_salt.png");
