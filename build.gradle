@@ -83,6 +83,8 @@ dependencies {
     compileOnly fg.deobf("curse.maven:aether-255308:${project.aether_file_id}")
     // 仅注入开发运行环境，发布模组仍不携带天境依赖
     runtimeOnly fg.deobf("curse.maven:aether-255308:${project.aether_file_id}")
+    compileOnly fg.deobf("curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}")
+    runtimeOnly fg.deobf("curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}")
     implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${project.minecraft_version}:${project.geckolib_version}")
     compileOnly fg.deobf("mezz.jei:jei-${project.minecraft_version}-forge:${project.jei_version}")
     runtimeOnly fg.deobf("mezz.jei:jei-${project.minecraft_version}-forge:${project.jei_version}")

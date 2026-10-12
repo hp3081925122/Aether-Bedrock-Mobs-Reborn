@@ -3,6 +3,7 @@ package com.aetherbedrockmobsreborn.client;
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
 import com.aetherbedrockmobsreborn.entity.NagaEntity;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
+import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import software.bernie.geckolib.constant.DataTickets;
@@ -10,8 +11,13 @@ import software.bernie.geckolib.core.animatable.model.CoreGeoBone;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
+import org.slf4j.Logger;
 
 public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
+    // 调试日志：展示用实体跳过头部旋转时只输出一次
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static boolean loggedDetachedHead = false;
+
     public static boolean supports(String id) {
         return switch (id) {
             case "aetherdragon", "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
@@ -85,8 +91,19 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
         if (head == null || data == null) {
             return;
         }
-        head.setRotX(head.getRotX() + data.headPitch() * Mth.DEG_TO_RAD);
-        head.setRotY(head.getRotY() + data.netHeadYaw() * Mth.DEG_TO_RAD);
+        // 未加入世界的展示用实体（JEI 掉落物界面等）不叠加看向旋转，避免插值字段未同步导致头部乱飞
+        if (entity.level().getEntity(entity.getId()) != entity) {
+            if (!loggedDetachedHead) {
+                loggedDetachedHead = true;
+                LOGGER.debug("Skipping head look for detached {} (id {}), netHeadYaw={}, headPitch={}", entity.getIdPath(), entity.getId(), data.netHeadYaw(), data.headPitch());
+            }
+            return;
+        }
+        // 偏航归一化后限幅，俯仰限幅
+        float yaw = Mth.clamp(Mth.wrapDegrees(data.netHeadYaw()), -75.0F, 75.0F);
+        float pitch = Mth.clamp(data.headPitch(), -60.0F, 60.0F);
+        head.setRotX(head.getRotX() + pitch * Mth.DEG_TO_RAD);
+        head.setRotY(head.getRotY() + yaw * Mth.DEG_TO_RAD);
     }
 
     // 天境娜迦：转身时尾部逐节滞后弯曲，叠加在动画旋转之上

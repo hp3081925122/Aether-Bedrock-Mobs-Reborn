@@ -8,9 +8,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class CrystaliteCapstoneBlock extends RotatedPillarBlock {
     public CrystaliteCapstoneBlock() {
@@ -32,10 +29,5 @@ public final class CrystaliteCapstoneBlock extends RotatedPillarBlock {
     @Override
     public int getLightBlock(BlockState state, BlockGetter getter, BlockPos pos) {
         return 0;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter getter, BlockPos pos, CollisionContext context) {
-        return Shapes.empty();
     }
 }

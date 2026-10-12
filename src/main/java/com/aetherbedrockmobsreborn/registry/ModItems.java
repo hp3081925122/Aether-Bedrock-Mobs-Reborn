@@ -45,7 +45,7 @@ public final class ModItems {
         register("shaday_leggings", () -> new ShadayArmorItem(net.minecraft.world.item.ArmorItem.Type.LEGGINGS));
         register("spiritsword", SpiritSwordItem::new);
         String[] spawnEggs = {
-                "aether_naga", "aetherdragon", "buterfly",
+                "aether_naga", "buterfly",
                 "crystalitegolem", "crystaliteminion", "eldershulker", "guardianangel", "mutatedcritter", "percipitus", "saltcrab",
                 "saltcrabking", "shimaenaga", "spirit", "twinkler"
         };
