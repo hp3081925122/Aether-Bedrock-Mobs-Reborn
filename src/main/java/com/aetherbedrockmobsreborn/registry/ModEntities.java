@@ -80,7 +80,6 @@ public final class ModEntities {
         registerMob("saltcrabking", MobCategory.MONSTER, 2.6F, 2.6F, 3);
         registerMob("eldershulker", MobCategory.MONSTER, 4.0F, 4.0F, 3);
         registerMob("guardianangel", MobCategory.MONSTER, 0.6F, 2.7F, 3);
-        registerMob("aetherdragon", MobCategory.MONSTER, 5.0F, 4.0F, 3);
         registerProjectile("shalkbbbb");
         registerProjectile("shulkercrysta");
     }

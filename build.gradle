@@ -10,6 +10,20 @@ repositories {
     mavenLocal()
     maven { url = 'https://maven.neoforged.net/releases' }
     maven {
+        name = 'CurseMaven'
+        url = 'https://www.cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+    maven {
+        name = 'ForgifiedFabricAPI'
+        url = 'https://dl.cloudsmith.io/public/thinkingstudio/forgifiedfabricapi/maven/'
+        content {
+            includeGroup 'org.sinytra.forgified-fabric-api'
+        }
+    }
+    maven {
         name = 'GeckoLib'
         url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
         content {
@@ -62,6 +76,14 @@ dependencies {
     implementation "software.bernie.geckolib:geckolib-neoforge-${project.minecraft_version}:${project.geckolib_version}"
     compileOnly "mezz.jei:jei-${project.minecraft_version}-neoforge-api:${project.jei_version}"
     runtimeOnly "mezz.jei:jei-${project.minecraft_version}-neoforge:${project.jei_version}"
+    compileOnly "curse.maven:aether-255308:${project.aether_file_id}"
+    runtimeOnly "curse.maven:aether-255308:${project.aether_file_id}"
+    compileOnly "curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}"
+    runtimeOnly "curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}"
+    compileOnly "curse.maven:owo-lib-532610:${project.owo_file_id}"
+    runtimeOnly "curse.maven:owo-lib-532610:${project.owo_file_id}"
+    compileOnly "org.sinytra.forgified-fabric-api:fabric-networking-api-v1:4.3.0+6db6dff919"
+    runtimeOnly "org.sinytra.forgified-fabric-api:fabric-networking-api-v1:4.3.0+6db6dff919"
 }
 
 tasks.named('processResources', ProcessResources).configure {
