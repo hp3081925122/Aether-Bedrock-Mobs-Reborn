@@ -1,0 +1,5 @@
+{
+  "name": "aether_bedrock_mobs_reborn:aether_dragon",
+  "fallback": "minecraft:empty",
+  "elements": [{"weight": 1, "element": {"element_type": "minecraft:single_pool_element", "location": "aether_dragon:goldcity_aether", "projection": "rigid", "processors": {"processors": [{"processor_type": "minecraft:block_ignore", "blocks": [{"Name": "minecraft:structure_block"}]}]}}}]
+}

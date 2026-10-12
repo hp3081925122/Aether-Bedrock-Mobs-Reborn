@@ -29,3 +29,10 @@ mandatory=true
 versionRange="${geckolib_version_range}"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="aether_dragon"
+mandatory=true
+versionRange="[1.0.0,)"
+ordering="AFTER"
+side="BOTH"
