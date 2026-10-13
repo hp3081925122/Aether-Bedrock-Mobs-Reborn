@@ -142,7 +142,7 @@ final class CrabCombat {
             }
         } else {
             this.crab.getNavigation().stop();
-            this.crab.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+            this.crab.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         }
         if (this.gap > 0) {
             this.gap--;
@@ -204,13 +204,13 @@ final class CrabCombat {
     private void tickPincer(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 6 || (t >= 11 && t <= 15)) {
-            this.crab.faceDragonTowards(target.getX(), target.getZ(), 12.0F);
+            this.crab.faceBossTowards(target.getX(), target.getZ(), 12.0F);
         }
         if (t == 9 || t == 18) {
             Vec3 forward = forward();
             boolean landed = false;
             AABB box = this.crab.getBoundingBox().inflate(4.5D, 1.5D, 4.5D);
-            for (LivingEntity living : this.crab.level().getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
+            for (LivingEntity living : this.crab.level().getEntitiesOfClass(LivingEntity.class, box, this.crab::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(this.crab.position());
                 Vec3 flat = new Vec3(offset.x, 0.0D, offset.z);
                 double distance = flat.length();
@@ -239,12 +239,12 @@ final class CrabCombat {
     private void tickSlam(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 12) {
-            this.crab.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+            this.crab.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         }
         if (t == 18) {
             Vec3 center = this.crab.position().add(forward().scale(2.6D));
             AABB box = new AABB(center, center).inflate(4.0D, 2.0D, 4.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurtOrSimulate(source(), 15.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.4D, 0.0D));
@@ -279,9 +279,9 @@ final class CrabCombat {
             Vec3 dir = new Vec3(toward.x, 0.0D, toward.z).normalize();
             this.rushDir = dir;
             this.rushFacing = new Vec3(dir.z, 0.0D, -dir.x);
-            this.crab.faceDragonTowards(this.crab.getX() + this.rushFacing.x * 5.0D, this.crab.getZ() + this.rushFacing.z * 5.0D, 18.0F);
+            this.crab.faceBossTowards(this.crab.getX() + this.rushFacing.x * 5.0D, this.crab.getZ() + this.rushFacing.z * 5.0D, 18.0F);
         } else {
-            this.crab.faceDragonTowards(this.crab.getX() + this.rushFacing.x * 5.0D, this.crab.getZ() + this.rushFacing.z * 5.0D, 30.0F);
+            this.crab.faceBossTowards(this.crab.getX() + this.rushFacing.x * 5.0D, this.crab.getZ() + this.rushFacing.z * 5.0D, 30.0F);
         }
         if (t == 4) {
             ModSounds.play(server, "crab_snap", this.crab.getX(), this.crab.getY() + 1.0D, this.crab.getZ(), 1.5F, 0.8F);
@@ -292,7 +292,7 @@ final class CrabCombat {
                 ModSounds.play(server, "crab_scuttle", this.crab.getX(), this.crab.getY(), this.crab.getZ(), 1.5F, 1.2F);
             }
             AABB box = this.crab.getBoundingBox().inflate(0.8D, 0.5D, 0.8D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canBossSkillHit)) {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
@@ -315,7 +315,7 @@ final class CrabCombat {
     // 泡沫弹幕：14-32 tick 每 3 tick 扇形吐出泡泡；狂暴后每 2 tick 一发
     private void tickBubbles(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.crab.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+        this.crab.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         int interval = 3;
         if (enraged()) {
             interval = 2;
@@ -338,7 +338,7 @@ final class CrabCombat {
     // 盐泉喷涌：双钳四次敲地，每次在目标附近召出一道盐泉，16 tick 后喷发
     private void tickGeyser(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.crab.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+        this.crab.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         for (int k = 0; k < DRUM_TICKS.length; k++) {
             if (t != DRUM_TICKS[k]) {
                 continue;
@@ -370,7 +370,7 @@ final class CrabCombat {
     private void tickTidal(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 18) {
-            this.crab.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+            this.crab.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         }
         if (t == 24) {
             Vec3 forward = forward();
@@ -396,7 +396,7 @@ final class CrabCombat {
         }
         if (this.skillTicks == 20) {
             AABB box = this.crab.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.crab.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
@@ -507,7 +507,7 @@ final class CrabCombat {
             Vec3 center = pos.add(forward.scale(2.6D));
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, center.x, center.y + 0.15D, center.z, 7.0D, 14.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, center.x, center.y + 0.2D, center.z, 4.0D, 10.0D, 0.0D);
-            DragonSkillEntity.spawnQuakeRing(level, center.x, center.y, center.z, 0.0D, 3.2D, 0.38D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, center.x, center.y, center.z, 0.0D, 3.2D, 0.38D, random);
             for (int i = 0; i < 24; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
                 level.addParticle(ModParticles.SALT_SPRAY.get(), center.x + Math.cos(angle) * 1.5D, center.y + 0.3D, center.z + Math.sin(angle) * 1.5D, Math.cos(angle) * 0.3D, 0.4D, Math.sin(angle) * 0.3D);

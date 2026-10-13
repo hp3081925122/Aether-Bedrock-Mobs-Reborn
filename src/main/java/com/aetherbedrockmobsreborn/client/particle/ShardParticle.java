@@ -9,11 +9,11 @@ import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.particles.SimpleParticleType;
 
 // 飞散旋转的龙鳞碎片
-public class DragonShardParticle extends GeometryParticle {
+public class ShardParticle extends GeometryParticle {
     private final float spin;
     private final float baseSize;
 
-    protected DragonShardParticle(ClientLevel level, double x, double y, double z, double xd, double yd, double zd, SpriteSet sprites) {
+    protected ShardParticle(ClientLevel level, double x, double y, double z, double xd, double yd, double zd, SpriteSet sprites) {
         super(level, x, y, z);
         // 初速度直接使用生成参数
         this.xd = xd;
@@ -63,7 +63,7 @@ public class DragonShardParticle extends GeometryParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
-            DragonShardParticle particle = new DragonShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
+            ShardParticle particle = new ShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
             particle.setLifetime(10 + level.getRandom().nextInt(8));
             return particle;
         }
@@ -78,7 +78,7 @@ public class DragonShardParticle extends GeometryParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
-            return new DragonShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
+            return new ShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
         }
     }
 }

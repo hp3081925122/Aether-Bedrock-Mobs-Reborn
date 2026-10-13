@@ -33,12 +33,12 @@ public final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity, 
         state.headLook = entity.level().getEntity(entity.getId()) == entity;
         boolean naga = entity.isNagaBeamActive();
         state.shulkerBeam = entity.isShulkerBeamActive();
-        state.beam = entity.isDragonBeamActive() || naga || state.shulkerBeam;
-        state.beamBone = naga || state.shulkerBeam ? "mouth" : "jaw";
-        String beam = state.shulkerBeam ? "shulker" : naga ? "naga" : "dragon";
+        state.beam = naga || state.shulkerBeam;
+        state.beamBone = "mouth";
+        String beam = state.shulkerBeam ? "shulker" : "naga";
         state.beamTexture = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID,
                 "textures/entity/" + beam + "_skill/" + beam + "_beam.png");
-        state.beamEnd = entity.getDragonBeamEnd();
+        state.beamEnd = entity.getBossBeamEnd();
         state.beamYaw = Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
     }
     @Override
@@ -104,7 +104,7 @@ public final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity, 
                 Vec3[] corners = {start.subtract(half),start.add(half),endpoint.add(half),endpoint.subtract(half)};
                 for (int i=0;i<4;i++) {
                     Vec3 point = corners[i];
-                    DragonSkillRenderer.vertex(vertices,entry.pose(),entry.normal(),(float)point.x,(float)point.y,(float)point.z,
+                    BeamRenderUtil.vertex(vertices,entry.pose(),entry.normal(),(float)point.x,(float)point.y,(float)point.z,
                             i==0 || i==3 ? 0 : 1, scroll+(i>=2 ? (float)(length/4) : 0));
                 }
             }

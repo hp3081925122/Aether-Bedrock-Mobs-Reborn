@@ -4,10 +4,10 @@
       "id": "aether_bedrock_mobs_reborn:shaday_helmet"
     },
     "title": {
-      "translate": "advancements.dr.title"
+      "translate": "advancements.shaday_armor.title"
     },
     "description": {
-      "translate": "advancements.dr.descr"
+      "translate": "advancements.shaday_armor.descr"
     },
     "frame": "goal",
     "show_toast": true,
