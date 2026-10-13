@@ -340,14 +340,14 @@ public class CrabSkillEntity extends Entity {
             case 2 -> {
                 // 盐泉喷发：冲击环 + 震起地面 + 盐粒
                 level().addAlwaysVisibleParticle(ModParticles.SALT_RING.get(), true, getX(), getY() + 0.15D, getZ(), 3.0D, 10.0D, 0.0D);
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.6D, 2.0D, 0.28D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.6D, 2.0D, 0.28D, random);
                 for (int i = 0; i < 10; i++) {
                     level().addParticle(ModParticles.SALT_SHARD.get(), getX(), getY() + 0.5D, getZ(), random.nextGaussian() * 0.2D, 0.5D + random.nextDouble() * 0.4D, random.nextGaussian() * 0.2D);
                 }
             }
             case 4 -> {
                 // 盐晶破土
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 1.3D, 0.22D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 1.3D, 0.22D, random);
                 for (int i = 0; i < 6; i++) {
                     level().addParticle(ModParticles.SALT_SHARD.get(), getX(), getY() + 0.3D, getZ(), random.nextGaussian() * 0.15D, 0.35D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.15D);
                 }

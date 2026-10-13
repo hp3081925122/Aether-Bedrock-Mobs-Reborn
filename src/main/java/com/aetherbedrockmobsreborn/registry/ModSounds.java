@@ -20,12 +20,7 @@ public final class ModSounds {
         String[] ids = {
                 "sword", "victorymmm", "cgd", "cgh", "cgi", "cgmd", "cgmh", "cgmi", "cgmw", "cgw",
                 "mud", "muh", "mui", "nad", "nah", "naw", "sabw", "sah", "saw", "spd", "sph", "spi", "spw", "shh", "shi", "shd",
-                "gad", "gah", "gai", "gaw", "drd", "drf", "drh", "dri", "drw",
-                // 艾瑟龙技能音效，定义见 sounds.json
-                "dragon_vocal_attack", "dragon_roar", "dragon_whoosh", "dragon_claw_hit", "dragon_ground_slam", "dragon_quake_wave",
-                "dragon_breath_charge", "dragon_breath_fire", "dragon_breath_loop", "dragon_crystal_summon", "dragon_crystal_fall",
-                "dragon_crystal_impact", "dragon_spike_erupt", "dragon_thunder_mark", "dragon_feather_launch", "dragon_feather_hit",
-                "dragon_gale_blast", "dragon_heavy_step", "dragon_charge_impact", "dragon_tail_whip",
+                "gad", "gah", "gai", "gaw",
                 // 灵魂技能音效，定义见 sounds.json
                 "spirit_slash", "spirit_slash_hit", "spirit_charge", "spirit_impact", "spirit_erupt", "spirit_rune_summon",
                 "spirit_rune_launch", "spirit_rune_hit", "spirit_dash", "spirit_sky_flash", "spirit_sword_fall", "spirit_sword_impact",
