@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
@@ -295,7 +297,7 @@ final class ShulkerCombat {
             if (beamY < living.getY() - 0.2D || beamY > living.getY() + living.getBbHeight() + 0.2D) {
                 continue;
             }
-            if (living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 6.0F)) {
+            if (living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), BossSkillDamage.calculate(this.shulker, SHULKER_BEAM))) {
                 this.beamHits++;
                 living.igniteForSeconds(2.0F);
             }
@@ -367,7 +369,7 @@ final class ShulkerCombat {
             AABB box = new AABB(center, center).inflate(4.5D, 3.0D, 4.5D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurt(this.shulker.damageSources().mobAttack(this.shulker), 14.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurt(this.shulker.damageSources().mobAttack(this.shulker), BossSkillDamage.calculate(this.shulker, SHULKER_PHASE))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.075D, 0.5D, offset.z * 0.075D));
                     living.hurtMarked = true;
                 }
@@ -389,7 +391,7 @@ final class ShulkerCombat {
                 if (living.distanceTo(this.shulker) > 12.0F) {
                     continue;
                 }
-                living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 4.0F);
+                living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), BossSkillDamage.calculate(this.shulker, SHULKER_FIELD));
                 living.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 40, 1));
             }
             ModSounds.play(server, "shulker_pulse", this.shulker.getX(), this.shulker.getY() + 2.0D, this.shulker.getZ(), 3.0F, 1.0F);

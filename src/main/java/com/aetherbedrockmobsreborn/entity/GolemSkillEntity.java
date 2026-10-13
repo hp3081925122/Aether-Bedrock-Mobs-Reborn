@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -32,6 +34,7 @@ public class GolemSkillEntity extends Entity {
     private static final EntityDataAccessor<Integer> DELAY = SynchedEntityData.defineId(GolemSkillEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> SCALE = SynchedEntityData.defineId(GolemSkillEntity.class, EntityDataSerializers.FLOAT);
     private int ownerId = -1;
+    private double ownerAttackDamage;
     private boolean silent;
 
     public GolemSkillEntity(EntityType<? extends GolemSkillEntity> type, Level level) {
@@ -49,6 +52,7 @@ public class GolemSkillEntity extends Entity {
         entity.entityData.set(DELAY, delay);
         entity.entityData.set(SCALE, scale);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         entity.silent = silent;
         entity.setPos(pos.x, pos.y, pos.z);
         entity.setYRot(level.random.nextFloat() * 360.0F);
@@ -111,7 +115,7 @@ public class GolemSkillEntity extends Entity {
         }
         if (getKind() == CAGE && this.tickCount > delay + RISE && this.tickCount < end && this.tickCount % 10 == 0) {
             // 晶笼：触碰柱身持续受伤
-            damageAround(0.9D, scale, 4.0F, 0.0D);
+            damageAround(0.9D, scale, skillDamageAmount(GOLEM_CAGE_CONTACT), 0.0D);
         }
         if (this.tickCount >= end) {
             if (!this.silent || getKind() == CORE) {
@@ -125,11 +129,11 @@ public class GolemSkillEntity extends Entity {
     private void erupt(float scale) {
         int kind = getKind();
         if (kind == CORE) {
-            damageAround(3.0D, scale, 14.0F, 0.6D);
+            damageAround(3.0D, scale, skillDamageAmount(GOLEM_CORE), 0.6D);
         } else if (kind == CAGE) {
-            damageAround(0.9D, scale, 6.0F, 0.25D);
+            damageAround(0.9D, scale, skillDamageAmount(GOLEM_CAGE_ERUPT), 0.25D);
         } else {
-            damageAround(0.8D + scale * 0.5D, scale, 10.0F, 0.4D);
+            damageAround(0.8D + scale * 0.5D, scale, skillDamageAmount(GOLEM_SPIKE), 0.4D);
         }
         if (!this.silent) {
             ModSounds.play(level(), "golem_spike", getX(), getY(), getZ(), 1.0F + scale * 0.5F, 1.2F - scale * 0.2F);
@@ -163,6 +167,10 @@ public class GolemSkillEntity extends Entity {
 
     private boolean canHit(Entity entity) {
         return entity.isAlive() && entity.getId() != this.ownerId && !(entity instanceof RebornMobEntity) && !entity.isSpectator();
+    }
+
+    private float skillDamageAmount(com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill skill) {
+        return BossSkillDamage.calculate(level().getEntity(this.ownerId), this.ownerAttackDamage, skill);
     }
 
     private DamageSource skillDamage() {

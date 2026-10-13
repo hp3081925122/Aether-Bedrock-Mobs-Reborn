@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -217,7 +219,7 @@ final class CrabCombat {
                 if (distance > 4.8D || (distance > 1.0D && flat.normalize().dot(forward) < 0.35D)) {
                     continue;
                 }
-                if (living.hurt(source(), 12.0F)) {
+                if (living.hurt(source(), BossSkillDamage.calculate(this.crab, CRAB_PINCER))) {
                     landed = true;
                     RebornMobEntity.applyBossKnockback(living, new Vec3(forward.x * 0.35D, 0.15D, forward.z * 0.35D));
                     living.hurtMarked = true;
@@ -246,7 +248,7 @@ final class CrabCombat {
             AABB box = new AABB(center, center).inflate(4.0D, 2.0D, 4.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurt(source(), 15.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurt(source(), BossSkillDamage.calculate(this.crab, CRAB_SLAM))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.4D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -296,7 +298,7 @@ final class CrabCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), 13.0F)) {
+                if (living.hurt(source(), BossSkillDamage.calculate(this.crab, CRAB_RUSH))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(this.rushDir.x * 0.7D, 0.225D, this.rushDir.z * 0.7D));
                     living.hurtMarked = true;
                     ModSounds.play(server, "crab_snap_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
