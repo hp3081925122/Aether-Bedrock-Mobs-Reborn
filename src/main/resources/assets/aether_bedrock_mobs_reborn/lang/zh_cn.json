@@ -4,7 +4,7 @@
   "tooltip.aether_bedrock_mobs_reborn.pyrespear": "右键：消耗 1 枚潜影壳发射潜影弹，消耗耐久，冷却 3 秒",
   "tooltip.aether_bedrock_mobs_reborn.saltinstrument": "可作为斧、锄、铲、镐和剑使用",
   "tooltip.aether_bedrock_mobs_reborn.spiritsword": "主动：获得缓降、生命恢复和跳跃提升，冷却 2 秒",
-  "message.aether_bedrock_mobs_reborn.key_required": "激活需要钥匙",
+  "message.aether_bedrock_mobs_reborn.key_required": "请手持终末之钥右键刷怪器，召唤天境巨龙",
   "message.aether_bedrock_mobs_reborn.night_only": "只能在夜间召唤",
   "entity.aether_bedrock_mobs_reborn.buterfly": "蝴蝶",
   "item.aether_bedrock_mobs_reborn.buterfly_spawn_egg": "蝴蝶刷怪蛋",

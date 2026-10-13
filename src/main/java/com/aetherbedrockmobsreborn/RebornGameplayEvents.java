@@ -2,6 +2,7 @@ package com.aetherbedrockmobsreborn;
 
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import com.aetherbedrockmobsreborn.block.SpecialSpawnerBlock;
+import com.aetherbedrockmobsreborn.block.DragonSummoning;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -63,7 +64,7 @@ public final class RebornGameplayEvents {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide || event.player.tickCount % 20 != 0
                 || !(event.player.level() instanceof ServerLevel server)) {
@@ -71,10 +72,52 @@ public final class RebornGameplayEvents {
         }
         BlockPos center = event.player.blockPosition();
         for (BlockPos pos : BlockPos.betweenClosed(center.offset(-8, -8, -8), center.offset(8, 8, 8))) {
-            if (server.getBlockState(pos).getBlock() instanceof SpecialSpawnerBlock spawner) {
+            var state = DragonSummoning.convertAutomaticSpawner(server, pos, server.getBlockState(pos));
+            if (state.getBlock() instanceof SpecialSpawnerBlock spawner) {
                 spawner.checkPlayerProximity(server, pos, event.player);
             }
         }
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public static void onDragonSpawnerInteraction(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
+        Level level = event.getLevel();
+        BlockPos pos = event.getPos();
+        var state = level.getBlockState(pos);
+        if (!DragonSummoning.isKeySpawner(state) && !DragonSummoning.isAutomaticSpawner(level, pos, state)) {
+            return;
+        }
+        event.setCanceled(true);
+        event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+        if (event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND || !(level instanceof ServerLevel server)) {
+            return;
+        }
+        state = DragonSummoning.convertAutomaticSpawner(server, pos, state);
+        if (DragonSummoning.isKeySpawner(state) && state.getBlock() instanceof SpecialSpawnerBlock spawner) {
+            spawner.activate(server, pos, event.getEntity());
+        }
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public static void onAutomaticDragonSpawn(net.minecraftforge.event.entity.living.MobSpawnEvent.PositionCheck event) {
+        if (event.getSpawnType() == net.minecraft.world.entity.MobSpawnType.SPAWNER && DragonSummoning.isDragon(event.getEntity())) {
+            event.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDragonSpawnerChunkLoad(net.minecraftforge.event.level.ChunkEvent.Load event) {
+        if (event.getChunk() instanceof net.minecraft.world.level.chunk.LevelChunk chunk) {
+            DragonSummoning.queueChunk(chunk);
+        }
+    }
+
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
+    public static void onDragonSpawnerServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.START) {
+            return;
+        }
+        DragonSummoning.processPendingChunks(event.getServer());
     }
 
     @SubscribeEvent
