@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -40,6 +42,7 @@ public class ShulkerSkillEntity extends Entity {
     private static final EntityDataAccessor<Integer> KIND = SynchedEntityData.defineId(ShulkerSkillEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DELAY = SynchedEntityData.defineId(ShulkerSkillEntity.class, EntityDataSerializers.INT);
     private int ownerId = -1;
+    private double ownerAttackDamage;
     private int targetId = -1;
     private boolean silent;
 
@@ -57,6 +60,7 @@ public class ShulkerSkillEntity extends Entity {
         entity.entityData.set(KIND, kind);
         entity.entityData.set(DELAY, delay);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         if (target != null) {
             entity.targetId = target.getId();
         }
@@ -117,10 +121,10 @@ public class ShulkerSkillEntity extends Entity {
             if (hit != null && hit.getEntity() instanceof LivingEntity living) {
                 if (orb) {
                     // 潜影弹命中：伤害并短暂浮空
-                    living.hurt(skillDamage(), 5.0F);
+                    living.hurt(skillDamage(), skillDamageAmount(SHULKER_ORB));
                     living.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 30, 0));
                 } else {
-                    living.hurt(skillDamage(), 6.0F);
+                    living.hurt(skillDamage(), skillDamageAmount(SHULKER_SHARD));
                 }
                 burst(hit.getLocation());
                 return;
@@ -170,7 +174,7 @@ public class ShulkerSkillEntity extends Entity {
             // 缠藤破土：伤害并缠住（强力减速）
             AABB box = new AABB(position(), position()).inflate(1.4D, 0.0D, 1.4D).expandTowards(0.0D, VINE_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 7.0F);
+                living.hurt(skillDamage(), skillDamageAmount(SHULKER_VINE));
                 living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 50, 3));
                 living.setDeltaMovement(Vec3.ZERO);
                 living.hurtMarked = true;
@@ -211,6 +215,10 @@ public class ShulkerSkillEntity extends Entity {
 
     private boolean canHit(Entity entity) {
         return entity.isAlive() && entity.isPickable() && entity.getId() != this.ownerId && !(entity instanceof RebornMobEntity) && !entity.isSpectator();
+    }
+
+    private float skillDamageAmount(com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill skill) {
+        return BossSkillDamage.calculate(level().getEntity(this.ownerId), this.ownerAttackDamage, skill);
     }
 
     private DamageSource skillDamage() {
