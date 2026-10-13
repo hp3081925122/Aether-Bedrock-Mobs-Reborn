@@ -158,7 +158,7 @@ final class NagaCombat {
             }
         } else {
             this.naga.getNavigation().stop();
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         }
         if (this.gap > 0) {
             this.gap--;
@@ -221,7 +221,7 @@ final class NagaCombat {
     private void tickBite(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 9) {
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), 12.0F);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), 12.0F);
         }
         if (t == 2) {
             ModSounds.play(this.naga.level(), "naga_hiss", this.naga.getX(), this.naga.getY() + 1.0D, this.naga.getZ(), 1.5F, 1.0F);
@@ -234,7 +234,7 @@ final class NagaCombat {
             Vec3 center = this.naga.position().add(forward().scale(1.6D)).add(0.0D, 0.8D, 0.0D);
             boolean landed = false;
             AABB box = new AABB(center, center).inflate(2.8D, 2.0D, 2.8D);
-            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
+            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canBossSkillHit)) {
                 if (living.position().distanceToSqr(center) > 3.2D * 3.2D) {
                     continue;
                 }
@@ -263,7 +263,7 @@ final class NagaCombat {
             Vec3 left = new Vec3(forward.z, 0.0D, -forward.x);
             Vec3 body = this.naga.position().subtract(forward.scale(3.5D));
             AABB box = new AABB(body, body).inflate(8.0D, 2.5D, 8.0D);
-            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
+            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(body);
                 double distance = Math.sqrt(offset.x * offset.x + offset.z * offset.z);
                 Vec3 fromHead = living.position().subtract(this.naga.position());
@@ -285,7 +285,7 @@ final class NagaCombat {
     private void tickBurrow(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 8) {
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), 15.0F);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), 15.0F);
         }
         if (t == 8) {
             ModSounds.play(this.naga.level(), "naga_burrow", this.naga.getX(), this.naga.getY(), this.naga.getZ(), 2.5F, 1.0F);
@@ -305,7 +305,7 @@ final class NagaCombat {
                 double nz = this.naga.getZ() + move.z;
                 double ny = this.naga.findGroundY(nx, this.naga.getY() + 3.0D, nz, 8.0D, this.naga.getY());
                 this.naga.setPos(nx, ny, nz);
-                this.naga.faceDragonTowards(this.burrowTarget.x, this.burrowTarget.z, 30.0F);
+                this.naga.faceBossTowards(this.burrowTarget.x, this.burrowTarget.z, 30.0F);
             }
             this.naga.setDeltaMovement(Vec3.ZERO);
             if (t % 6 == 0) {
@@ -316,7 +316,7 @@ final class NagaCombat {
             // 破土：脚下范围大幅挑飞
             Vec3 center = this.naga.position();
             AABB box = new AABB(center, center).inflate(4.5D, 3.0D, 4.5D);
-            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
+            for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z > 4.5D * 4.5D) {
                     continue;
@@ -343,9 +343,9 @@ final class NagaCombat {
             turn = 3.2F;
         }
         if (t < BEAM_START) {
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         } else {
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), turn);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), turn);
         }
         if (t == 2) {
             ModSounds.play(this.naga.level(), "naga_beam_charge", this.naga.getX(), this.naga.getY() + 2.0D, this.naga.getZ(), 2.0F, 1.0F);
@@ -385,7 +385,7 @@ final class NagaCombat {
         Vec3 segment = end.subtract(start);
         double lengthSqr = Math.max(1.0E-4D, segment.lengthSqr());
         AABB box = new AABB(start, end).inflate(1.5D);
-        for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
+        for (LivingEntity living : this.naga.level().getEntitiesOfClass(LivingEntity.class, box, this.naga::canBossSkillHit)) {
             Vec3 center = living.position().add(0.0D, living.getBbHeight() * 0.5D, 0.0D);
             double along = Mth.clamp(center.subtract(start).dot(segment) / lengthSqr, 0.0D, 1.0D);
             Vec3 closest = start.add(segment.scale(along));
@@ -399,7 +399,7 @@ final class NagaCombat {
     private void tickPillars(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 13) {
-            this.naga.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.naga.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
         if (t == 2) {
             ModSounds.play(server, "naga_hiss", this.naga.getX(), this.naga.getY() + 1.5D, this.naga.getZ(), 1.5F, 1.1F);
@@ -429,7 +429,7 @@ final class NagaCombat {
     // 甩尾掷岩：第 17 tick 尾尖甩出三块巨石，落点在目标及其移动方向附近
     private void tickBoulder(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.naga.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+        this.naga.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         if (t == 17) {
             Vec3 forward = forward();
             Vec3 tail = this.naga.position().subtract(forward.scale(6.9D)).add(0.0D, 3.0D, 0.0D);
@@ -455,7 +455,7 @@ final class NagaCombat {
     private void tickEnrage(ServerLevel server) {
         if (this.skillTicks == 10) {
             AABB box = this.naga.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.naga::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.naga::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.naga.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
@@ -494,7 +494,7 @@ final class NagaCombat {
                 if (t >= BURROW_HIDE && t < BURROW_ERUPT) {
                     // 地下潜行：地面鼓包翻起，碎石与尘土
                     if (t % 2 == 0) {
-                        DragonSkillEntity.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 1.6D, 0.22D, random);
+                        GroundQuakeEffects.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 1.6D, 0.22D, random);
                     }
                     BlockParticleOption dirt = new BlockParticleOption(ParticleTypes.BLOCK, level.getBlockState(this.naga.blockPosition().below()));
                     for (int i = 0; i < 4; i++) {
@@ -567,7 +567,7 @@ final class NagaCombat {
                 Vec3 dir = right.scale(Math.cos(angle)).subtract(forward.scale(Math.sin(angle)));
                 Vec3 at = body.add(dir.scale(6.0D));
                 if (previous != null) {
-                    DragonSkillEntity.spawnQuakeLine(level, previous.x, pos.y, previous.z, at.x, at.z, 0.8D, 0.25D, random);
+                    GroundQuakeEffects.spawnQuakeLine(level, previous.x, pos.y, previous.z, at.x, at.z, 0.8D, 0.25D, random);
                 }
                 level.addParticle(ParticleTypes.CLOUD, at.x, pos.y + 0.3D, at.z, -right.x * 0.2D, 0.05D, -right.z * 0.2D);
                 previous = at;
@@ -577,7 +577,7 @@ final class NagaCombat {
         if (id == EVENT_DIVE) {
             // 入地：头部扎入处地面炸开
             Vec3 head = pos.add(forward.scale(1.0D));
-            DragonSkillEntity.spawnQuakeRing(level, head.x, pos.y, head.z, 0.0D, 2.8D, 0.35D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, head.x, pos.y, head.z, 0.0D, 2.8D, 0.35D, random);
             level.addAlwaysVisibleParticle(ModParticles.NAGA_RING.get(), true, head.x, pos.y + 0.12D, head.z, 3.5D, 10.0D, 0.0D);
             for (int i = 0; i < 20; i++) {
                 level.addParticle(stone, head.x, pos.y + 0.4D, head.z, random.nextGaussian() * 0.25D, 0.3D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.25D);
@@ -586,7 +586,7 @@ final class NagaCombat {
         }
         if (id == EVENT_ERUPT) {
             // 破土：大范围震起地面 + 双层冲击环 + 冲天碎石
-            DragonSkillEntity.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 4.5D, 0.45D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 4.5D, 0.45D, random);
             level.addAlwaysVisibleParticle(ModParticles.NAGA_RING.get(), true, pos.x, pos.y + 0.15D, pos.z, 6.0D, 14.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.NAGA_RING.get(), true, pos.x, pos.y + 0.2D, pos.z, 3.5D, 10.0D, 0.0D);
             for (int i = 0; i < 36; i++) {
@@ -598,13 +598,13 @@ final class NagaCombat {
         if (id == EVENT_RESURFACE) {
             // 浮出：沿身体长度一路翻起地面
             Vec3 tail = pos.subtract(forward.scale(8.0D));
-            DragonSkillEntity.spawnQuakeLine(level, pos.x, pos.y, pos.z, tail.x, tail.z, 1.4D, 0.3D, random);
+            GroundQuakeEffects.spawnQuakeLine(level, pos.x, pos.y, pos.z, tail.x, tail.z, 1.4D, 0.3D, random);
             return;
         }
         if (id == EVENT_SLAM) {
             // 头砸地面：冲击环 + 震起 + 秘符碎光
             Vec3 head = pos.add(forward.scale(1.0D));
-            DragonSkillEntity.spawnQuakeRing(level, head.x, pos.y, head.z, 0.0D, 2.5D, 0.35D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, head.x, pos.y, head.z, 0.0D, 2.5D, 0.35D, random);
             level.addAlwaysVisibleParticle(ModParticles.NAGA_RING.get(), true, head.x, pos.y + 0.12D, head.z, 4.0D, 12.0D, 0.0D);
             for (int i = 0; i < 16; i++) {
                 level.addParticle(ParticleTypes.WITCH, head.x, pos.y + 0.5D, head.z, random.nextGaussian() * 0.3D, random.nextDouble() * 0.3D, random.nextGaussian() * 0.3D);

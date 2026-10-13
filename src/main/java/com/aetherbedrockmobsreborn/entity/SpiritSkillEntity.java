@@ -250,7 +250,7 @@ public class SpiritSkillEntity extends Entity {
                 double gy = getGroundY() + 0.15D;
                 level().addAlwaysVisibleParticle(ModParticles.SPIRIT_RING.get(), true, getX(), gy, getZ(), 4.5D, 12.0D, 0.0D);
                 level().addAlwaysVisibleParticle(ModParticles.SPIRIT_RING.get(), true, getX(), gy + 0.05D, getZ(), 2.5D, 8.0D, 0.0D);
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getGroundY(), getZ(), 0.8D, 2.6D, 0.3D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getGroundY(), getZ(), 0.8D, 2.6D, 0.3D, random);
                 for (int i = 0; i < 20; i++) {
                     double angle = random.nextDouble() * Math.PI * 2.0D;
                     level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, getX(), gy + 0.3D, getZ(), Math.cos(angle) * 0.25D, 0.15D + random.nextDouble() * 0.25D, Math.sin(angle) * 0.25D);

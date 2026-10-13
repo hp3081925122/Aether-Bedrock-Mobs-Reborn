@@ -13,12 +13,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 // 水平爪痕刀光：xd 为半尺寸，yd 为朝向角度，zd 为 1 时左右镜像
-public class DragonDecalParticle extends GeometryParticle {
+public class DecalParticle extends GeometryParticle {
     private final float size;
     private final float yaw;
     private final boolean mirror;
 
-    protected DragonDecalParticle(ClientLevel level, double x, double y, double z, double size, double yaw, double mirror, SpriteSet sprites) {
+    protected DecalParticle(ClientLevel level, double x, double y, double z, double size, double yaw, double mirror, SpriteSet sprites) {
         super(level, x, y, z);
         // 刀光一闪而过
         this.size = (float) Math.max(0.5D, size);
@@ -93,7 +93,7 @@ public class DragonDecalParticle extends GeometryParticle {
 
         @Override
         public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
-            return new DragonDecalParticle(level, x, y, z, xd, yd, zd, this.sprites);
+            return new DecalParticle(level, x, y, z, xd, yd, zd, this.sprites);
         }
     }
 }

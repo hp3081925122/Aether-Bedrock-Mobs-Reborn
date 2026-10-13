@@ -8,7 +8,7 @@ import com.geckolib.model.GeoModel;
 public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     public static boolean supports(String id) {
         return switch (id) {
-            case "aetherdragon", "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
+            case "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
             default -> false;
         };
     }
@@ -16,7 +16,6 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     @Override
     public Identifier getModelResource(com.geckolib.renderer.base.GeoRenderState state) {
         String model = switch (((RebornRenderState) state).id) {
-            case "aetherdragon" -> "aether_dragon";
             case "aether_naga" -> "slider";
             case "crystalitegolem" -> "crystalite_golem";
             case "crystaliteminion" -> "crystalite_minion";
@@ -41,7 +40,6 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     @Override
     public Identifier getAnimationResource(RebornMobEntity entity) {
         String animation = switch (entity.getIdPath()) {
-            case "aetherdragon" -> "aether_dragon";
             case "aether_naga" -> "slider";
             case "crystalitegolem" -> "crystalite_golem";
             case "crystaliteminion" -> "crystalite_minion";

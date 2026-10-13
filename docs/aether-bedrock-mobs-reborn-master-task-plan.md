@@ -1,3 +1,5 @@
+> 历史记录说明（2026-10-13）：本文中的巨龙实现和“当前 27”统计属于早期移植快照。现版本模组注册 13 种生物、5 种其他 Boss 技能实体和 2 种投射物（共 20 个实体类型）；巨龙专用 AI、技能、模型与动画已移除，天境巨龙由独立 Aether Dragon 模组提供。原 JAR 的 ID 与行为清单作为来源证据保留。
+
 # Aether Bedrock Mobs Reborn — 总任务表
 
 > 来源：[重写设计文档](./aether-bedrock-mobs-reborn-design.md)。范围：Minecraft 1.20.1 Forge 的功能等价重写。复杂度仅表示工作量级别，不表示时间。
