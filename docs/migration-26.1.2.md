@@ -46,3 +46,9 @@ The Aether II 的群系体系与旧 Aether 不同，新的选址范围存在变�
 娜迦保留五个 PartEntity 碰撞代理，构造、ID 分配及每 tick 的位置更新均存在。目标版本 EntityHitboxDebugRenderer 只显示 EnderDragon 的分节，因此 F3+B 看不到娜迦分节。修复通过 NeoForge 的 RegisterDebugRenderersEvent 注册娜迦分节调试显示，仅在碰撞箱调试开启时工作。实际碰撞查询、尾段受击转发与移除清理另外进行针对性服务端验证。
 
 本次构建的是当前 1.3 版本。娜迦专项 26 项服务端检查通过，覆盖每节 ID 查询、空间查询、射线命中、伤害转发，以及尾段在主碰撞箱之外命中、转向跟随、父实体无敌和清理。无窗口的粒子几何回放检查 10 项通过，确认原生粒子管线、混合模式、RGBA 与透明度、NO_OVERLAY 默认值和显式叠加层保留。build 通过；正式 JAR 包含娜迦分节调试渲染器且不包含临时测试类。游戏内颜色及 F3+B 显示仍需客户端实测。
+
+## 激光黑边修复
+
+娜迦与远古潜影贝的光束纹理和宽度与 1.21.1 一致，贴图 alpha 全为 255，黑色边缘依赖加法混合隐藏。旧 RenderType.eyes 使用 ONE/ONE 加法混合，26.1.2 RenderPipelines.EYES 使用普通透明混合，导致黑色像素遮住背景。修复从目标版本 EYES 管线克隆专用光束管线并恢复 ADDITIVE 混合，保留自发光、无叠加层、深度测试及不写深度的设置，不修改贴图、双层宽度、口部起点或伤害判定。
+
+专用管线通过 RegisterRenderPipelinesEvent 注册，按光束贴图缓存 RenderType。旧版剔除默认值为 CULL，修复同样保留。无窗口验证通过，覆盖混合状态、管线注册、深度、剔除、自发光标记、两张贴图的黑色边缘与渲染类型缓存；build 通过，正式包不包含临时测试类。日志为 `D:/AI临时文件/aether-reborn-2612/full-server-tests/beam-geometry-validation.log`。实际游戏画面仍需观察。
