@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 // 被震起的地面方块：渲染真实方块模型，弹起后落回原位消失；坐标为方块最小角，yd 为起跳速度
-public class DragonQuakeBlockParticle extends Particle {
+public class DragonQuakeBlockParticle extends Particle implements CapturedParticle {
     private final BlockState state;
     private final BlockPos blockPos;
     private final double baseY;
@@ -53,8 +53,8 @@ public class DragonQuakeBlockParticle extends Particle {
     }
 
     @Override
-    public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
-        Vec3 cam = camera.getPosition();
+    public void extractGeometry(com.aetherbedrockmobsreborn.client.GeometryCapture geometry, Camera camera, float partialTicks) {
+        Vec3 cam = camera.position();
         double x = Mth.lerp(partialTicks, this.xo, this.x) - cam.x();
         double y = Math.max(this.baseY, Mth.lerp(partialTicks, this.yo, this.y)) - cam.y();
         double z = Mth.lerp(partialTicks, this.zo, this.z) - cam.z();
@@ -67,20 +67,20 @@ public class DragonQuakeBlockParticle extends Particle {
         poseStack.mulPose(Axis.ZP.rotationDegrees(this.tiltZ * tilt));
         poseStack.scale(0.98F, 0.98F, 0.98F);
         poseStack.translate(-0.5D, -0.5D, -0.5D);
-        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
-        int light = LevelRenderer.getLightColor(this.level, this.blockPos.above());
-        Minecraft.getInstance().getBlockRenderer().renderSingleBlock(this.state, poseStack, buffers, light, OverlayTexture.NO_OVERLAY);
-        buffers.endBatch();
+
+        int light = LevelRenderer.getLightCoords(this.level, this.blockPos.above());
+        geometry.renderBlock(this.state, poseStack, light, OverlayTexture.NO_OVERLAY);
+
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.CUSTOM;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     public static final class Provider implements ParticleProvider<BlockParticleOption> {
         @Override
-        public Particle createParticle(BlockParticleOption options, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(BlockParticleOption options, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new DragonQuakeBlockParticle(level, x, y, z, yd, options.getState());
         }
     }

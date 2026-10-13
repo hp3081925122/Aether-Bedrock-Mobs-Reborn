@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "aether_bedrock_mobs_reborn:item/mutatedcritter_spawn_egg",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -4234544
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -11778986
+      }
+    ]
+  }
+}

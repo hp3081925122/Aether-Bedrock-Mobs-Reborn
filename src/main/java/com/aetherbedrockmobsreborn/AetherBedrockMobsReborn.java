@@ -20,7 +20,7 @@ public final class AetherBedrockMobsReborn {
     public static final String MOD_ID = "aether_bedrock_mobs_reborn";
 
     public AetherBedrockMobsReborn(IEventBus bus) {
-        ModArmorMaterials.ARMOR_MATERIALS.register(bus);
+
         ModBlocks.BLOCKS.register(bus);
         ModEntities.ENTITIES.register(bus);
         ModItems.ITEMS.register(bus);

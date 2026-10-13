@@ -7,14 +7,14 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 // 咬合粒子：一对齿列在朝向平面内相向合拢后淡出；xd 为尺寸，yd 为朝向角度，zd 为 0/1 表示两半中的哪一半
 // 贴图约定：图像底边为齿尖，顶边为颚背
-public class JawParticle extends TextureSheetParticle {
+public class JawParticle extends GeometryParticle {
     // 合拢用时与总时长
     private static final float CLOSE_TICKS = 3.0F;
     private final float size;
@@ -40,7 +40,7 @@ public class JawParticle extends TextureSheetParticle {
 
     @Override
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
-        Vec3 cam = camera.getPosition();
+        Vec3 cam = camera.position();
         float px = (float) (Mth.lerp(partialTicks, this.xo, this.x) - cam.x());
         float py = (float) (Mth.lerp(partialTicks, this.yo, this.y) - cam.y());
         float pz = (float) (Mth.lerp(partialTicks, this.zo, this.z) - cam.z());
@@ -112,8 +112,8 @@ public class JawParticle extends TextureSheetParticle {
 
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     // 撕咬：上下合拢
@@ -125,7 +125,7 @@ public class JawParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new JawParticle(level, x, y, z, xd, yd, zd, true, this.sprites);
         }
     }
@@ -139,7 +139,7 @@ public class JawParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new JawParticle(level, x, y, z, xd, yd, zd, false, this.sprites);
         }
     }

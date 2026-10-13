@@ -68,12 +68,12 @@ final class CrabCombat {
         return "animation.salt_crab_king." + ANIMATIONS[skill];
     }
 
-    void save(CompoundTag tag) {
+    void save(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean(ENRAGE_TAG, this.crab.isCrabEnraged());
     }
 
-    void load(CompoundTag tag) {
-        this.crab.setBossEnraged(tag.getBoolean(ENRAGE_TAG));
+    void load(net.minecraft.world.level.storage.ValueInput tag) {
+        this.crab.setBossEnraged(tag.getBooleanOr(ENRAGE_TAG, false));
     }
 
     void stop() {
@@ -217,7 +217,7 @@ final class CrabCombat {
                 if (distance > 4.8D || (distance > 1.0D && flat.normalize().dot(forward) < 0.35D)) {
                     continue;
                 }
-                if (living.hurt(source(), 12.0F)) {
+                if (living.hurtOrSimulate(source(), 12.0F)) {
                     landed = true;
                     RebornMobEntity.applyBossKnockback(living, new Vec3(forward.x * 0.35D, 0.15D, forward.z * 0.35D));
                     living.hurtMarked = true;
@@ -246,7 +246,7 @@ final class CrabCombat {
             AABB box = new AABB(center, center).inflate(4.0D, 2.0D, 4.0D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.crab::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurt(source(), 15.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 16.0D && living.hurtOrSimulate(source(), 15.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.4D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -296,7 +296,7 @@ final class CrabCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), 13.0F)) {
+                if (living.hurtOrSimulate(source(), 13.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(this.rushDir.x * 0.7D, 0.225D, this.rushDir.z * 0.7D));
                     living.hurtMarked = true;
                     ModSounds.play(server, "crab_snap_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
@@ -406,9 +406,9 @@ final class CrabCombat {
                 double angle = Math.toRadians(this.crab.yBodyRot) + Math.PI * 2.0D * i / 3.0D;
                 double x = this.crab.getX() + Math.cos(angle) * 3.0D;
                 double z = this.crab.getZ() + Math.sin(angle) * 3.0D;
-                RebornMobEntity minion = ModEntities.MOBS.get("saltcrab").get().create(server);
+                RebornMobEntity minion = ModEntities.MOBS.get("saltcrab").get().create(server, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
                 if (minion != null) {
-                    minion.moveTo(x, ground(x, z, this.crab.getY()), z, this.crab.getYRot(), 0.0F);
+                    minion.snapTo(x, ground(x, z, this.crab.getY()), z, this.crab.getYRot(), 0.0F);
                     server.addFreshEntity(minion);
                 }
                 CrabSkillEntity.spawn(server, this.crab, CrabSkillEntity.GEYSER, new Vec3(x, ground(x, z, this.crab.getY()), z), Vec3.ZERO, 0.0F, 0, null, true);

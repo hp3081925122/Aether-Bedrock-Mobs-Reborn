@@ -7,13 +7,13 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 // 水平爪痕刀光：xd 为半尺寸，yd 为朝向角度，zd 为 1 时左右镜像
-public class DragonDecalParticle extends TextureSheetParticle {
+public class DragonDecalParticle extends GeometryParticle {
     private final float size;
     private final float yaw;
     private final boolean mirror;
@@ -35,7 +35,7 @@ public class DragonDecalParticle extends TextureSheetParticle {
 
     @Override
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
-        Vec3 cam = camera.getPosition();
+        Vec3 cam = camera.position();
         float px = (float) (Mth.lerp(partialTicks, this.xo, this.x) - cam.x());
         float py = (float) (Mth.lerp(partialTicks, this.yo, this.y) - cam.y());
         float pz = (float) (Mth.lerp(partialTicks, this.zo, this.z) - cam.z());
@@ -80,8 +80,8 @@ public class DragonDecalParticle extends TextureSheetParticle {
 
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     public static final class SlashProvider implements ParticleProvider<SimpleParticleType> {
@@ -92,7 +92,7 @@ public class DragonDecalParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new DragonDecalParticle(level, x, y, z, xd, yd, zd, this.sprites);
         }
     }

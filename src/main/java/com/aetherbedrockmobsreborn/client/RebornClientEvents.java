@@ -18,11 +18,11 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.particle.FlameParticle;
 import net.minecraft.client.particle.SmokeParticle;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
@@ -34,9 +34,9 @@ import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.GeoEntityRenderer;
 
-@EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = AetherBedrockMobsReborn.MOD_ID, value = Dist.CLIENT)
 public final class RebornClientEvents {
     private RebornClientEvents() {
     }
@@ -47,14 +47,14 @@ public final class RebornClientEvents {
             if (RebornGeoModel.supports(entry.getKey())) {
                 event.registerEntityRenderer(entry.getValue().get(), RebornGeoRenderer::new);
             } else {
-                event.registerEntityRenderer(entry.getValue().get(), RebornMobRenderer::new);
+                event.registerEntityRenderer(entry.getValue().get(), RebornGeoRenderer::new);
             }
         }
         for (var entry : ModEntities.PROJECTILES.entrySet()) {
             if (entry.getKey().equals("shulkercrysta")) {
                 event.registerEntityRenderer(entry.getValue().get(), PyreSpearProjectileRenderer::new);
             } else {
-                event.registerEntityRenderer(entry.getValue().get(), RebornProjectileRenderer::new);
+                event.registerEntityRenderer(entry.getValue().get(), RebornArrowRenderer::new);
             }
         }
         // 艾瑟龙技能实体
@@ -74,6 +74,20 @@ public final class RebornClientEvents {
     @SubscribeEvent
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(ShadayArmorModel.LAYER_LOCATION, ShadayArmorModel::createBodyLayer);
+    }
+
+    @SubscribeEvent
+    public static void registerParticleGroups(net.neoforged.neoforge.client.event.RegisterParticleGroupsEvent event) {
+        event.register(com.aetherbedrockmobsreborn.client.particle.RebornParticleGroup.TYPE,
+                com.aetherbedrockmobsreborn.client.particle.RebornParticleGroup::new);
+    }
+
+    @SubscribeEvent
+    public static void registerClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        for (var entry : com.aetherbedrockmobsreborn.registry.ModItems.ALL.values()) {
+            if (entry.get() instanceof com.aetherbedrockmobsreborn.item.ShadayArmorItem armor)
+                event.registerItem(armor.clientExtensions(), armor);
+        }
     }
 
     @SubscribeEvent
@@ -117,107 +131,4 @@ public final class RebornClientEvents {
         event.registerSpriteSet(ModParticles.PYRE_EMBER.get(), DragonShardParticle.Provider::new);
     }
 
-    private static final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity> {
-        private static final ResourceLocation DRAGON_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_beam.png");
-        private static final ResourceLocation NAGA_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/naga_skill/naga_beam.png");
-        private static final ResourceLocation SHULKER_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_beam.png");
-
-        private RebornGeoRenderer(EntityRendererProvider.Context context) {
-            super(context, new RebornGeoModel());
-            this.shadowRadius = 0.5F;
-        }
-
-        @Override
-        public void render(RebornMobEntity entity, float yaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {
-            boolean nagaBeam = entity.isNagaBeamActive();
-            boolean shulkerBeam = entity.isShulkerBeamActive();
-            boolean beam = entity.isDragonBeamActive() || nagaBeam || shulkerBeam;
-            // 光束起点骨骼：龙为下颚，娜迦为嘴部定位点
-            String boneName = "jaw";
-            ResourceLocation texture = DRAGON_BEAM;
-            if (nagaBeam) {
-                boneName = "mouth";
-                texture = NAGA_BEAM;
-            }
-            if (shulkerBeam) {
-                boneName = "mouth";
-                texture = SHULKER_BEAM;
-            }
-            // 光束期间追踪起点骨骼的世界坐标
-            if (beam) {
-                getGeoModel().getBone(boneName).ifPresent(bone -> bone.setTrackingMatrices(true));
-            }
-            super.render(entity, yaw, partialTick, poseStack, buffers, light);
-            if (beam) {
-                ResourceLocation beamTexture = texture;
-                getGeoModel().getBone(boneName).ifPresent(bone -> renderDragonBeam(entity, yaw, partialTick, poseStack, buffers, bone.getWorldPosition(), beamTexture));
-            }
-        }
-
-        private void renderDragonBeam(RebornMobEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, Vector3d jaw, ResourceLocation texture) {
-            // 以实体插值位置为原点，计算光束起止点
-            double ox = Mth.lerp(partialTick, entity.xo, entity.getX());
-            double oy = Mth.lerp(partialTick, entity.yo, entity.getY());
-            double oz = Mth.lerp(partialTick, entity.zo, entity.getZ());
-            // GeckoLib 的骨骼世界坐标基于未插值的实体位置
-            Vec3 worldStart = new Vec3(jaw.x, jaw.y, jaw.z);
-            Vec3 start = worldStart.subtract(ox, oy, oz);
-            Vec3 worldEnd = entity.getDragonBeamEnd();
-            Vec3 end = worldEnd.subtract(ox, oy, oz);
-            if (entity.getIdPath().equals("eldershulker")) {
-                Vec3 delta = worldEnd.subtract(worldStart);
-                double horizontalLength = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
-                float renderYaw = entityYaw * Mth.DEG_TO_RAD;
-                Vec3 direction = new Vec3(-Mth.sin(renderYaw), 0.0D, Mth.cos(renderYaw));
-                end = start.add(direction.scale(horizontalLength)).add(0.0D, delta.y, 0.0D);
-            }
-            Vec3 dir = end.subtract(start);
-            double length = dir.length();
-            if (length < 0.5D) {
-                return;
-            }
-            // 面向相机展开光束宽度
-            Vec3 cam = this.entityRenderDispatcher.camera.getPosition().subtract(ox, oy, oz);
-            Vec3 side = dir.cross(cam.subtract(start)).normalize();
-            float time = entity.tickCount + partialTick;
-            float scroll = -time * 0.35F;
-            float pulse = 1.0F + Mth.sin(time * 0.9F) * 0.12F;
-            float vLength = (float) (length / 4.0D);
-            VertexConsumer consumer = buffers.getBuffer(RenderType.eyes(texture));
-            Matrix4f pose = poseStack.last().pose();
-            Matrix3f normal = poseStack.last().normal();
-            // 外层光晕与内层核心
-            for (float width : new float[]{2.4F * pulse, 1.0F * pulse}) {
-                Vec3 s = side.scale(width * 0.5F);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x - s.x), (float) (start.y - s.y), (float) (start.z - s.z), 0.0F, scroll);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x + s.x), (float) (start.y + s.y), (float) (start.z + s.z), 1.0F, scroll);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x + s.x), (float) (end.y + s.y), (float) (end.z + s.z), 1.0F, scroll + vLength);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x - s.x), (float) (end.y - s.y), (float) (end.z - s.z), 0.0F, scroll + vLength);
-            }
-        }
-    }
-
-    private static final class RebornMobRenderer extends MobRenderer<RebornMobEntity, HumanoidModel<RebornMobEntity>> {
-        private RebornMobRenderer(EntityRendererProvider.Context context) {
-            super(context, new HumanoidModel<>(context.bakeLayer(ModelLayers.ZOMBIE)), 0.5F);
-        }
-
-        @Override
-        public ResourceLocation getTextureLocation(RebornMobEntity entity) {
-            return ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entities/" + entity.getTextureName() + ".png");
-        }
-    }
-
-    private static final class RebornProjectileRenderer extends ArrowRenderer<RebornProjectileEntity> {
-        private RebornProjectileRenderer(EntityRendererProvider.Context context) {
-            super(context);
-        }
-
-        @Override
-        public ResourceLocation getTextureLocation(RebornProjectileEntity entity) {
-            return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/projectiles/arrow.png");
-        }
-    }
 }
-
-

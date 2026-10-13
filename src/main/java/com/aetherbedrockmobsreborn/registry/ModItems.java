@@ -14,13 +14,13 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.core.registries.Registries;
-import net.neoforged.neoforge.common.DeferredSpawnEggItem;
+
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 public final class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, AetherBedrockMobsReborn.MOD_ID);
@@ -28,21 +28,21 @@ public final class ModItems {
 
     static {
         for (Map.Entry<String, DeferredHolder<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.Block>> entry : ModBlocks.ALL.entrySet()) {
-            register(entry.getKey(), () -> new BlockItem(entry.getValue().get(), new Item.Properties()));
+            register(entry.getKey(), properties -> new BlockItem(entry.getValue().get(), properties));
         }
-        register("citykey", () -> new Item(new Item.Properties().stacksTo(64).rarity(Rarity.RARE)));
-        register("crabmeat", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(4).saturationModifier(0.3F).build())));
-        register("crabmeatcooked", () -> new Item(new Item.Properties().stacksTo(64).food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.6F).build())));
-        register("crystalite", () -> new Item(new Item.Properties().stacksTo(64)));
-        register("crystalitedust", () -> new Item(new Item.Properties().stacksTo(64)));
+        register("citykey", properties -> new Item(properties.stacksTo(64).rarity(Rarity.RARE)));
+        register("crabmeat", properties -> new Item(properties.stacksTo(64).food(new FoodProperties.Builder().nutrition(4).saturationModifier(0.3F).build())));
+        register("crabmeatcooked", properties -> new Item(properties.stacksTo(64).food(new FoodProperties.Builder().nutrition(8).saturationModifier(0.6F).build())));
+        register("crystalite", properties -> new Item(properties.stacksTo(64)));
+        register("crystalitedust", properties -> new Item(properties.stacksTo(64)));
         register("crystalitesword", CrystaliteSwordItem::new);
         register("dungeondagger", DungeonDaggerItem::new);
-        register("finalkey", () -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+        register("finalkey", properties -> new Item(properties.stacksTo(1).rarity(Rarity.EPIC)));
         register("pyrespear", PyreSpearItem::new);
         register("saltinstrument", SaltInstrumentItem::new);
-        register("shaday_helmet", () -> new ShadayArmorItem(net.minecraft.world.item.ArmorItem.Type.HELMET));
-        register("shaday_chestplate", () -> new ShadayArmorItem(net.minecraft.world.item.ArmorItem.Type.CHESTPLATE));
-        register("shaday_leggings", () -> new ShadayArmorItem(net.minecraft.world.item.ArmorItem.Type.LEGGINGS));
+        register("shaday_helmet", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.HELMET, properties));
+        register("shaday_chestplate", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.CHESTPLATE, properties));
+        register("shaday_leggings", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.LEGGINGS, properties));
         register("spiritsword", SpiritSwordItem::new);
         String[] spawnEggs = {
                 "aether_naga", "buterfly",
@@ -52,33 +52,13 @@ public final class ModItems {
         for (String id : spawnEggs) {
             DeferredHolder<net.minecraft.world.entity.EntityType<?>, net.minecraft.world.entity.EntityType<RebornMobEntity>> entity = ModEntities.MOBS.get(id);
             if (entity != null) {
-                int[] colors = spawnEggColors(id);
-                register(id + "_spawn_egg", () -> new DeferredSpawnEggItem(entity::get, colors[0], colors[1], new Item.Properties()));
+                register(id + "_spawn_egg", properties -> new net.minecraft.world.item.SpawnEggItem(properties.spawnEgg(entity.get())));
             }
         }
     }
 
-    private static int[] spawnEggColors(String id) {
-        return switch (id) {
-            case "shimaenaga" -> new int[]{-1908244, -8350532};
-            case "twinkler", "buterfly" -> new int[]{-1252895, -4423552};
-            case "crystalitegolem" -> new int[]{-14755911, -1450953};
-            case "percipitus" -> new int[]{-8482125, -2164745};
-            case "crystaliteminion" -> new int[]{-15532088, -14887803};
-            case "mutatedcritter" -> new int[]{-4234544, -11778986};
-            case "aether_naga" -> new int[]{-11778986, -4234544};
-            case "spirit" -> new int[]{-9858064, -1586885};
-            case "saltcrab" -> new int[]{-527894, -2829364};
-            case "saltcrabking" -> new int[]{-527894, -1256960};
-            case "eldershulker" -> new int[]{-1727951, -12985922};
-            case "guardianangel" -> new int[]{-394759, -6018};
-            case "aetherdragon" -> new int[]{-1783512, -14637313};
-            default -> new int[]{-1, -1};
-        };
-    }
-
-    private static void register(String id, Supplier<? extends Item> supplier) {
-        ALL.put(id, ITEMS.register(id, supplier));
+    private static void register(String id, Function<Item.Properties, ? extends Item> factory) {
+        ALL.put(id, ITEMS.register(id, () -> factory.apply(new Item.Properties().setId(net.minecraft.resources.ResourceKey.create(Registries.ITEM, net.minecraft.resources.Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, id))))));
     }
 
     private ModItems() {

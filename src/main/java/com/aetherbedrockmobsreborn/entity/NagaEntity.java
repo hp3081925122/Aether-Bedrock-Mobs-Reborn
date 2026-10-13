@@ -60,12 +60,12 @@ public final class NagaEntity extends RebornMobEntity {
     public void tick() {
         super.tick();
         int skill = getNagaSkill();
-        if (!level().isClientSide && skill != this.hitboxSkill) {
+        if (!level().isClientSide() && skill != this.hitboxSkill) {
             this.hitboxSkill = skill;
             this.entityData.set(ANIMATION_START, level().getGameTime() - getNagaCombat().getSkillTicks());
         }
         updateParts();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             // 尾部拖拽：转得越快甩得越开，停止转身后缓慢回正
             float turn = Mth.wrapDegrees(this.yBodyRot - this.yBodyRotO);
             float target = Mth.clamp(turn * 3.0F, -40.0F, 40.0F);

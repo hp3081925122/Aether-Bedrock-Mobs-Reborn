@@ -9,7 +9,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EntityType;
@@ -31,10 +31,10 @@ public class SpecialSpawnerBlock extends Block {
     private static final BooleanProperty POWERED = BlockStateProperties.POWERED;
     private final String action;
 
-    public SpecialSpawnerBlock(String action) {
+    public SpecialSpawnerBlock(String action, BlockBehaviour.Properties properties) {
         super(action.equals("lamp")
-                ? BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4).noOcclusion()
-                : BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
+                ? properties.mapColor(MapColor.COLOR_PURPLE).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4).noOcclusion()
+                : properties.mapColor(MapColor.METAL).strength(3.0F, 3600000.0F).sound(SoundType.METAL).lightLevel(state -> 4));
         this.action = action;
         this.registerDefaultState(this.stateDefinition.any().setValue(POWERED, false));
     }
@@ -57,12 +57,12 @@ public class SpecialSpawnerBlock extends Block {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND || (!action.equals("dragon") && !action.equals("lamp"))) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         activate(level, pos, player);
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     private boolean isProximityAction() {
@@ -70,19 +70,19 @@ public class SpecialSpawnerBlock extends Block {
     }
 
     private boolean activate(Level level, BlockPos pos, Player player) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return false;
         }
         if (action.equals("dragon") && player != null) {
             DeferredHolder<net.minecraft.world.item.Item, net.minecraft.world.item.Item> key = ModItems.ALL.get("finalkey");
             if (key == null || !player.getMainHandItem().is(key.get())) {
-                player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
+                ((net.minecraft.server.level.ServerPlayer) player).sendSystemMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
                 return false;
             }
         }
-        if ((action.equals("elder") || action.equals("crystalite") || action.equals("labyrinth")) && level.isDay()) {
+        if ((action.equals("elder") || action.equals("crystalite") || action.equals("labyrinth")) && level.isBrightOutside()) {
             if (player != null) {
-                player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.night_only"), true);
+                ((net.minecraft.server.level.ServerPlayer) player).sendSystemMessage(Component.translatable("message.aether_bedrock_mobs_reborn.night_only"), true);
             }
             return false;
         }
@@ -102,12 +102,12 @@ public class SpecialSpawnerBlock extends Block {
         if (type == null) {
             return false;
         }
-        RebornMobEntity entity = type.get().create(level);
+        RebornMobEntity entity = type.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return false;
         }
         double y = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
-        entity.moveTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
+        entity.snapTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
         level.addFreshEntity(entity);
         if (level instanceof ServerLevel server) {
             double particleY = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);

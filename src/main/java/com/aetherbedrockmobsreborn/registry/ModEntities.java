@@ -28,37 +28,37 @@ public final class ModEntities {
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("dragon_skill"));
+            .build(key("dragon_skill")));
     // 灵魂技能实体：圣环符文、天剑
     public static final DeferredHolder<EntityType<?>, EntityType<SpiritSkillEntity>> SPIRIT_SKILL = ENTITIES.register("spirit_skill", () -> EntityType.Builder.<SpiritSkillEntity>of(SpiritSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("spirit_skill"));
+            .build(key("spirit_skill")));
     // 天境娜迦技能实体：石柱、巨石
     public static final DeferredHolder<EntityType<?>, EntityType<NagaSkillEntity>> NAGA_SKILL = ENTITIES.register("naga_skill", () -> EntityType.Builder.<NagaSkillEntity>of(NagaSkillEntity::new, MobCategory.MISC)
             .sized(1.0F, 1.0F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("naga_skill"));
+            .build(key("naga_skill")));
     // 水晶石傀儡技能实体：晶刺、晶笼、晶核
     public static final DeferredHolder<EntityType<?>, EntityType<GolemSkillEntity>> GOLEM_SKILL = ENTITIES.register("golem_skill", () -> EntityType.Builder.<GolemSkillEntity>of(GolemSkillEntity::new, MobCategory.MISC)
             .sized(1.0F, 1.0F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("golem_skill"));
+            .build(key("golem_skill")));
     // 盐蟹王技能实体：泡泡、盐泉、浪墙、盐晶
     public static final DeferredHolder<EntityType<?>, EntityType<CrabSkillEntity>> CRAB_SKILL = ENTITIES.register("crab_skill", () -> EntityType.Builder.<CrabSkillEntity>of(CrabSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("crab_skill"));
+            .build(key("crab_skill")));
     // 远古潜影贝技能实体：潜影弹、碎刃、缠藤
     public static final DeferredHolder<EntityType<?>, EntityType<ShulkerSkillEntity>> SHULKER_SKILL = ENTITIES.register("shulker_skill", () -> EntityType.Builder.<ShulkerSkillEntity>of(ShulkerSkillEntity::new, MobCategory.MISC)
             .sized(0.6F, 0.6F)
             .clientTrackingRange(8)
             .updateInterval(1)
-            .build("shulker_skill"));
+            .build(key("shulker_skill")));
 
     static {
         String[] ambient = {
@@ -84,13 +84,18 @@ public final class ModEntities {
         registerProjectile("shulkercrysta");
     }
 
+    private static net.minecraft.resources.ResourceKey<EntityType<?>> key(String id) {
+        return net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE,
+                net.minecraft.resources.Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, id));
+    }
+
     private static void registerMob(String id, MobCategory category, float width, float height, int updateInterval) {
         EntityType.EntityFactory<RebornMobEntity> factory = id.equals("aether_naga") ? NagaEntity::new : RebornMobEntity::new;
         MOBS.put(id, ENTITIES.register(id, () -> EntityType.Builder.of(factory, category)
                 .sized(width, height)
                 .clientTrackingRange(64)
                 .updateInterval(updateInterval)
-                .build(id)));
+                .build(key(id))));
     }
 
     private static void registerProjectile(String id) {
@@ -98,7 +103,7 @@ public final class ModEntities {
                 .sized(0.5F, 0.5F)
                 .clientTrackingRange(64)
                 .updateInterval(1)
-                .build(id)));
+                .build(key(id))));
     }
 
     private ModEntities() {

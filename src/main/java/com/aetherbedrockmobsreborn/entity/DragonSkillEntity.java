@@ -59,7 +59,7 @@ public class DragonSkillEntity extends Entity {
 
     // 生成技能实体并加入世界
     public static DragonSkillEntity spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, double groundY, int delay, LivingEntity target) {
-        DragonSkillEntity entity = ModEntities.DRAGON_SKILL.get().create(level);
+        DragonSkillEntity entity = ModEntities.DRAGON_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return null;
         }
@@ -75,6 +75,11 @@ public class DragonSkillEntity extends Entity {
         entity.faceVelocity();
         level.addFreshEntity(entity);
         return entity;
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -109,7 +114,7 @@ public class DragonSkillEntity extends Entity {
 
     private void tickFeather() {
         Vec3 velocity = getDeltaMovement();
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             // 前 15 tick 轻微追踪目标
             Entity target = level().getEntity(this.targetId);
             if (this.tickCount < 15 && target instanceof LivingEntity living && living.isAlive()) {
@@ -124,9 +129,9 @@ public class DragonSkillEntity extends Entity {
             if (block.getType() != HitResult.Type.MISS) {
                 end = block.getLocation();
             }
-            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.6D), this::canHit);
+            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.6D), this::canHit, 0.3F);
             if (hit != null) {
-                hit.getEntity().hurt(skillDamage(), 6.0F);
+                hit.getEntity().hurtOrSimulate(skillDamage(), 6.0F);
                 burst(hit.getLocation());
                 return;
             }
@@ -143,7 +148,7 @@ public class DragonSkillEntity extends Entity {
     }
 
     private void tickCrystal() {
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             // 落点收缩预警环，寿命等于下落时间
             if (this.tickCount == 1) {
                 int fallTicks = Math.max(4, Mth.ceil((getY() - getGroundY()) / CRYSTAL_FALL_SPEED));
@@ -152,7 +157,7 @@ public class DragonSkillEntity extends Entity {
             level().addParticle(ModParticles.DRAGON_SHARD.get(), getX() + (this.random.nextDouble() - 0.5D), getY() + 2.5D, getZ() + (this.random.nextDouble() - 0.5D), 0.0D, 0.15D, 0.0D);
         }
         setPos(getX(), getY() - CRYSTAL_FALL_SPEED, getZ());
-        if (!level().isClientSide && getY() <= getGroundY()) {
+        if (!level().isClientSide() && getY() <= getGroundY()) {
             // 落地爆裂
             damageArea(new Vec3(getX(), getGroundY(), getZ()), 3.0D, 10.0F);
             ModSounds.play(level(), "dragon_crystal_impact", getX(), getGroundY(), getZ(), 3.0F, 1.0F);
@@ -162,7 +167,7 @@ public class DragonSkillEntity extends Entity {
     }
 
     private void tickThunder() {
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             // 预警：收缩金环 + 上升符文
             if (this.tickCount == 1) {
                 level().addAlwaysVisibleParticle(ModParticles.DRAGON_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 3.0D, THUNDER_DELAY, 1.0D);
@@ -187,7 +192,7 @@ public class DragonSkillEntity extends Entity {
 
     private void tickSpike() {
         int delay = getDelay();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             // 预警：小范围橙红收缩环，收到最小即突起
             if (this.tickCount == 1) {
                 level().addAlwaysVisibleParticle(ModParticles.DRAGON_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.6D, Math.max(4, delay), 0.0D);
@@ -198,7 +203,7 @@ public class DragonSkillEntity extends Entity {
             // 晶棘突起：伤害并挑飞
             AABB box = new AABB(position(), position()).inflate(1.5D, 3.0D, 1.5D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 9.0F);
+                living.hurtOrSimulate(skillDamage(), 9.0F);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 living.hurtMarked = true;
             }
@@ -306,7 +311,7 @@ public class DragonSkillEntity extends Entity {
         AABB box = new AABB(center, center).inflate(radius, radius + 1.0D, radius);
         for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
             if (living.position().distanceToSqr(center) <= (radius + 0.5D) * (radius + 0.5D)) {
-                living.hurt(skillDamage(), amount);
+                living.hurtOrSimulate(skillDamage(), amount);
             }
         }
     }
@@ -381,11 +386,11 @@ public class DragonSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -35,7 +35,7 @@ public class RebornProjectileEntity extends AbstractArrow {
             return null;
         }
         EntityType<RebornProjectileEntity> type = ModEntities.PROJECTILES.get("shulkercrysta").get();
-        RebornProjectileEntity projectile = type.create(server);
+        RebornProjectileEntity projectile = type.create(server, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (projectile == null) {
             return null;
         }
@@ -56,7 +56,7 @@ public class RebornProjectileEntity extends AbstractArrow {
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide && getIdPath().equals("shulkercrysta")) {
+        if (level().isClientSide() && getIdPath().equals("shulkercrysta")) {
             spawnPyreTrail();
         }
         if (++lifetime >= 100) {
@@ -66,12 +66,12 @@ public class RebornProjectileEntity extends AbstractArrow {
 
     // 燔祭长矛弹体是否已插在方块上（客户端渲染用）
     public boolean isStuck() {
-        return this.inGround;
+        return this.isInGround();
     }
 
     // 燔祭长矛弹体拖尾：飞行时尾部洒落火星，插地后偶尔冒火苗
     private void spawnPyreTrail() {
-        if (this.inGround) {
+        if (this.isInGround()) {
             if (this.random.nextInt(6) == 0) {
                 level().addParticle(ParticleTypes.SMALL_FLAME, getX(), getY(), getZ(), 0.0D, 0.02D, 0.0D);
             }

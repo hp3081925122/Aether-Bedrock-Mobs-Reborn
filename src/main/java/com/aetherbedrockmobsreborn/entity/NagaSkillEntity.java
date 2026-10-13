@@ -52,7 +52,7 @@ public class NagaSkillEntity extends Entity {
 
     // 生成石柱：pos 为地面位置，delay tick 后升起
     public static void spawnPillar(ServerLevel level, LivingEntity owner, Vec3 pos, int delay) {
-        NagaSkillEntity entity = ModEntities.NAGA_SKILL.get().create(level);
+        NagaSkillEntity entity = ModEntities.NAGA_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return;
         }
@@ -65,7 +65,7 @@ public class NagaSkillEntity extends Entity {
 
     // 生成巨石：按飞行时长反推初速度，正好落在 landing
     public static void spawnBoulder(ServerLevel level, LivingEntity owner, Vec3 from, Vec3 landing, int flightTicks) {
-        NagaSkillEntity entity = ModEntities.NAGA_SKILL.get().create(level);
+        NagaSkillEntity entity = ModEntities.NAGA_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return;
         }
@@ -80,6 +80,11 @@ public class NagaSkillEntity extends Entity {
         entity.setPos(from.x, from.y, from.z);
         entity.setDeltaMovement(velocity);
         level.addFreshEntity(entity);
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -111,7 +116,7 @@ public class NagaSkillEntity extends Entity {
 
     private void tickPillar() {
         int delay = getDelay();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1) {
                 // 预警：紫色收缩环，收到最小时石柱升起
                 level().addAlwaysVisibleParticle(ModParticles.NAGA_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.5D, Math.max(4, delay), 0.0D);
@@ -125,7 +130,7 @@ public class NagaSkillEntity extends Entity {
             // 石柱升起：伤害并挑飞
             AABB box = new AABB(position(), position()).inflate(1.3D, 0.0D, 1.3D).expandTowards(0.0D, 3.0D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), 10.0F);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
             }
             ModSounds.play(level(), "naga_pillar", getX(), getY(), getZ(), 1.2F, 0.9F + this.random.nextFloat() * 0.2F);
@@ -153,7 +158,7 @@ public class NagaSkillEntity extends Entity {
 
     private void tickBoulder() {
         Vec3 velocity = getDeltaMovement();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1) {
                 // 落点预警，寿命等于飞行时长
                 level().addAlwaysVisibleParticle(ModParticles.NAGA_WARNING.get(), true, this.entityData.get(TARGET_X), this.entityData.get(TARGET_Y) + 0.1D, this.entityData.get(TARGET_Z), 3.0D, Math.max(4, getDelay()), 0.0D);
@@ -184,7 +189,7 @@ public class NagaSkillEntity extends Entity {
         AABB box = new AABB(at, at).inflate(2.8D, 2.0D, 2.8D);
         for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
             if (living.position().distanceToSqr(at) <= 3.0D * 3.0D) {
-                living.hurt(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), 10.0F);
                 Vec3 push = living.position().subtract(at);
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.3D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
@@ -246,11 +251,11 @@ public class NagaSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

@@ -3,7 +3,7 @@ package com.aetherbedrockmobsreborn.item;
 import com.aetherbedrockmobsreborn.entity.RebornProjectileEntity;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +16,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.level.Level;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
@@ -24,19 +24,19 @@ import net.minecraft.ChatFormatting;
 import java.util.List;
 
 public final class PyreSpearItem extends Item {
-    public PyreSpearItem() {
-        super(new Item.Properties().durability(400).rarity(Rarity.EPIC));
+    public PyreSpearItem(Item.Properties properties) {
+        super(properties.durability(400).rarity(Rarity.EPIC));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.pyrespear").withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, context, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.aether_bedrock_mobs_reborn.pyrespear").withStyle(ChatFormatting.AQUA));
+        super.appendHoverText(stack, context, display, tooltip, flag);
     }
 
     @Override
-    public UseAnim getUseAnimation(ItemStack stack) {
-        return UseAnim.SPEAR;
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.SPEAR;
     }
 
     @Override
@@ -50,18 +50,18 @@ public final class PyreSpearItem extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (player.getAbilities().instabuild || !findAmmo(player).isEmpty()) {
             player.startUsingItem(hand);
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+            return InteractionResult.SUCCESS;
         }
-        return InteractionResultHolder.fail(stack);
+        return InteractionResult.FAIL;
     }
 
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int count) {
-        if (level.isClientSide || !(entity instanceof Player player)) {
+        if (level.isClientSide() || !(entity instanceof Player player)) {
             return;
         }
         ItemStack ammo = findAmmo(player);
@@ -74,7 +74,7 @@ public final class PyreSpearItem extends Item {
             return;
         }
         if (player.getAbilities().instabuild) {
-            projectile.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.CREATIVE_ONLY;
+            projectile.pickup = net.minecraft.world.entity.projectile.arrow.AbstractArrow.Pickup.CREATIVE_ONLY;
         }
         if (!player.getAbilities().instabuild) {
             ammo.shrink(1);
@@ -82,7 +82,7 @@ public final class PyreSpearItem extends Item {
         stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         if (level instanceof ServerLevel server) {
             server.playSound(null, player.blockPosition(), ModSounds.ALL.get("sword").get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-            player.getCooldowns().addCooldown(this, 60);
+            player.getCooldowns().addCooldown(stack, 60);
         }
         player.stopUsingItem();
     }

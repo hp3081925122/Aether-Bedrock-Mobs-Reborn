@@ -6,22 +6,22 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 // 艾瑟龙技能实体渲染：羽刃、陨晶、雷柱
-public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
-    private static final ResourceLocation FEATHER = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_feather.png");
-    private static final ResourceLocation CRYSTAL = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_crystal.png");
-    private static final ResourceLocation LIGHTNING = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_lightning.png");
+public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity, SkillRenderState> {
+    private static final Identifier FEATHER = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_feather.png");
+    private static final Identifier CRYSTAL = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_crystal.png");
+    private static final Identifier LIGHTNING = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_lightning.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public DragonSkillRenderer(EntityRendererProvider.Context context) {
@@ -29,7 +29,23 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
     }
 
     @Override
-    public void render(DragonSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
+    public SkillRenderState createRenderState() { return new SkillRenderState(); }
+
+    @Override
+    public void extractRenderState(DragonSkillEntity entity, SkillRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.geometry = new GeometryCapture();
+        extractGeometry(entity, entity.getYRot(), partialTick, new PoseStack(), state.geometry, state.lightCoords);
+    }
+
+    @Override
+    public void submit(SkillRenderState state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+            net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        super.submit(state, pose, collector, camera);
+        state.geometry.submit(pose, collector);
+    }
+
+    private void extractGeometry(DragonSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
         switch (entity.getKind()) {
             case DragonSkillEntity.FEATHER -> {
                 // 羽刃：沿速度方向的十字面片，绕自身轴旋转
@@ -37,7 +53,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
                 poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, entity.yRotO, entity.getYRot()) - 90.0F));
                 poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(partialTicks, entity.xRotO, entity.getXRot())));
                 poseStack.mulPose(Axis.XP.rotationDegrees((entity.tickCount + partialTicks) * 25.0F));
-                VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(FEATHER));
+                VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(FEATHER));
                 drawCross(poseStack, consumer, -1.0F, 1.0F, -1.0F, 1.0F, true);
                 poseStack.popPose();
             }
@@ -45,7 +61,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
                 // 陨晶：竖直十字面片，尖端在实体位置，缓慢自转
                 poseStack.pushPose();
                 poseStack.mulPose(Axis.YP.rotationDegrees((entity.tickCount + partialTicks) * 12.0F));
-                VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(CRYSTAL));
+                VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(CRYSTAL));
                 drawCross(poseStack, consumer, -0.9F, 0.9F, 0.0F, 3.6F, false);
                 poseStack.popPose();
             }
@@ -57,7 +73,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
                     poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() * 37.0F));
                     poseStack.translate(0.0D, 3.0F * height, 0.0D);
                     poseStack.scale(1.0F, -height, 1.0F);
-                    VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(CRYSTAL));
+                    VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(CRYSTAL));
                     drawCross(poseStack, consumer, -0.8F, 0.8F, 0.0F, 3.0F, false);
                     poseStack.popPose();
                 }
@@ -70,7 +86,6 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
                 }
             }
         }
-        super.render(entity, yaw, partialTicks, poseStack, buffers, light);
     }
 
     // 两片交叉面片；horizontal 为真时沿 X 轴铺开（羽刃），否则沿 Y 轴竖立（陨晶）
@@ -101,7 +116,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
 
     private void renderLightning(DragonSkillEntity entity, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, float flash) {
         // 面向相机的竖直面片，高 40 格
-        Vec3 cam = this.entityRenderDispatcher.camera.getPosition();
+        Vec3 cam = this.entityRenderDispatcher.camera.position();
         double ex = Mth.lerp(partialTicks, entity.xo, entity.getX());
         double ez = Mth.lerp(partialTicks, entity.zo, entity.getZ());
         float dx = (float) (cam.x - ex);
@@ -114,7 +129,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
         float[] widths = {2.6F * flash, 1.0F * flash};
         // 每 tick 换一段 UV 制造闪烁
         float v0 = (entity.tickCount % 4) * 0.25F;
-        VertexConsumer consumer = buffers.getBuffer(RenderType.eyes(LIGHTNING));
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.eyes(LIGHTNING));
         Matrix4f pose = poseStack.last().pose();
         Matrix3f normal = poseStack.last().normal();
         for (float width : widths) {
@@ -137,8 +152,7 @@ public class DragonSkillRenderer extends EntityRenderer<DragonSkillEntity> {
         return true;
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(DragonSkillEntity entity) {
+    public Identifier getTextureLocation(DragonSkillEntity entity) {
         return FEATHER;
     }
 }

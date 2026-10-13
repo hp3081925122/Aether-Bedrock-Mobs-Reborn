@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "aether_bedrock_mobs_reborn:item/saltcrab_spawn_egg",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -527894
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -2829364
+      }
+    ]
+  }
+}

@@ -81,12 +81,12 @@ final class NagaCombat {
         return this.skillTicks;
     }
 
-    void save(CompoundTag tag) {
+    void save(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean(ENRAGE_TAG, this.enraged);
     }
 
-    void load(CompoundTag tag) {
-        this.enraged = tag.getBoolean(ENRAGE_TAG);
+    void load(net.minecraft.world.level.storage.ValueInput tag) {
+        this.enraged = tag.getBooleanOr(ENRAGE_TAG, false);
     }
 
     void stop() {
@@ -238,7 +238,7 @@ final class NagaCombat {
                 if (living.position().distanceToSqr(center) > 3.2D * 3.2D) {
                     continue;
                 }
-                if (living.hurt(source(), 12.0F)) {
+                if (living.hurtOrSimulate(source(), 12.0F)) {
                     landed = true;
                     Vec3 push = forward().scale(0.4D);
                     RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.15D, push.z));
@@ -272,7 +272,7 @@ final class NagaCombat {
                 if (distance > 8.0D || (flat.lengthSqr() > 1.0E-4D && flat.normalize().dot(forward) > 0.5D)) {
                     continue;
                 }
-                if (living.hurt(source(), 12.0F)) {
+                if (living.hurtOrSimulate(source(), 12.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(left.x * 0.65D, 0.225D, left.z * 0.65D));
                 }
             }
@@ -321,7 +321,7 @@ final class NagaCombat {
                 if (offset.x * offset.x + offset.z * offset.z > 4.5D * 4.5D) {
                     continue;
                 }
-                if (living.hurt(source(), 15.0F)) {
+                if (living.hurtOrSimulate(source(), 15.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.06D, 0.325D, offset.z * 0.06D));
                 }
             }
@@ -390,7 +390,7 @@ final class NagaCombat {
             double along = Mth.clamp(center.subtract(start).dot(segment) / lengthSqr, 0.0D, 1.0D);
             Vec3 closest = start.add(segment.scale(along));
             if (closest.distanceToSqr(center) <= 1.2D * 1.2D + living.getBbWidth() * living.getBbWidth()) {
-                living.hurt(this.naga.damageSources().indirectMagic(this.naga, this.naga), 4.0F);
+                living.hurtOrSimulate(this.naga.damageSources().indirectMagic(this.naga, this.naga), 4.0F);
             }
         }
     }

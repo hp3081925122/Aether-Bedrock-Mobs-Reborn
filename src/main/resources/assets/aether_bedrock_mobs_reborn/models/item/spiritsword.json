@@ -3,13 +3,5 @@
   "textures": {
     "0": "aether_bedrock_mobs_reborn:block/mystic",
     "particle": "aether_bedrock_mobs_reborn:item/mystic"
-  },
-  "overrides": [
-    {
-      "predicate": {
-        "blocking": 1
-      },
-      "model": "aether_bedrock_mobs_reborn:item/spiritsword_0"
-    }
-  ]
+  }
 }

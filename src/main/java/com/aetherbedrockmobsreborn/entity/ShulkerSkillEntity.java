@@ -51,7 +51,7 @@ public class ShulkerSkillEntity extends Entity {
 
     // 生成技能实体；silent 为真时不播放出现音效
     public static void spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, int delay, LivingEntity target, boolean silent) {
-        ShulkerSkillEntity entity = ModEntities.SHULKER_SKILL.get().create(level);
+        ShulkerSkillEntity entity = ModEntities.SHULKER_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return;
         }
@@ -66,6 +66,11 @@ public class ShulkerSkillEntity extends Entity {
         entity.setDeltaMovement(velocity);
         entity.faceVelocity();
         level.addFreshEntity(entity);
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -95,7 +100,7 @@ public class ShulkerSkillEntity extends Entity {
     private void tickProjectile() {
         boolean orb = getKind() == ORB;
         Vec3 velocity = getDeltaMovement();
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             Entity target = level().getEntity(this.targetId);
             if (orb && this.tickCount > 6 && this.tickCount < 70 && target instanceof LivingEntity living && living.isAlive()) {
                 // 潜影弹：先向外飞散，再缓慢转向目标
@@ -114,14 +119,14 @@ public class ShulkerSkillEntity extends Entity {
             if (block.getType() != HitResult.Type.MISS) {
                 end = block.getLocation();
             }
-            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.4D), this::canHit);
+            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.4D), this::canHit, 0.3F);
             if (hit != null && hit.getEntity() instanceof LivingEntity living) {
                 if (orb) {
                     // 潜影弹命中：伤害并短暂浮空
-                    living.hurt(skillDamage(), 5.0F);
+                    living.hurtOrSimulate(skillDamage(), 5.0F);
                     living.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 30, 0));
                 } else {
-                    living.hurt(skillDamage(), 6.0F);
+                    living.hurtOrSimulate(skillDamage(), 6.0F);
                 }
                 burst(hit.getLocation());
                 return;
@@ -157,7 +162,7 @@ public class ShulkerSkillEntity extends Entity {
     private void tickVine() {
         int delay = getDelay();
         int end = delay + VINE_HOLD;
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1) {
                 // 预警：金青收缩环 + 地面草屑
                 level().addAlwaysVisibleParticle(ModParticles.SHULKER_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.6D, Math.max(4, delay), 0.0D);
@@ -171,8 +176,8 @@ public class ShulkerSkillEntity extends Entity {
             // 缠藤破土：伤害并缠住（强力减速）
             AABB box = new AABB(position(), position()).inflate(1.4D, 0.0D, 1.4D).expandTowards(0.0D, VINE_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 7.0F);
-                living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 50, 3));
+                living.hurtOrSimulate(skillDamage(), 7.0F);
+                living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 50, 3));
                 living.setDeltaMovement(Vec3.ZERO);
                 living.hurtMarked = true;
             }
@@ -251,11 +256,11 @@ public class ShulkerSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

@@ -10,8 +10,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.core.BlockPos;
 
 public final class CrystaliteCapstoneBlock extends RotatedPillarBlock {
-    public CrystaliteCapstoneBlock() {
-        super(BlockBehaviour.Properties.of()
+    public CrystaliteCapstoneBlock(BlockBehaviour.Properties properties) {
+        super(properties
                 .mapColor(MapColor.DIAMOND)
                 .instrument(NoteBlockInstrument.BASEDRUM)
                 .sound(SoundType.STONE)
@@ -22,12 +22,8 @@ public final class CrystaliteCapstoneBlock extends RotatedPillarBlock {
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter getter, BlockPos pos) {
+    public boolean propagatesSkylightDown(BlockState state) {
         return true;
     }
 
-    @Override
-    public int getLightBlock(BlockState state, BlockGetter getter, BlockPos pos) {
-        return 0;
-    }
 }

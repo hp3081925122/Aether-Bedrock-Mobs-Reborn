@@ -69,12 +69,12 @@ final class GolemCombat {
         return "animation.crystalite_golem." + ANIMATIONS[skill];
     }
 
-    void save(CompoundTag tag) {
+    void save(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean(ENRAGE_TAG, this.golem.isGolemEnraged());
     }
 
-    void load(CompoundTag tag) {
-        this.golem.setBossEnraged(tag.getBoolean(ENRAGE_TAG));
+    void load(net.minecraft.world.level.storage.ValueInput tag) {
+        this.golem.setBossEnraged(tag.getBooleanOr(ENRAGE_TAG, false));
     }
 
     void stop() {
@@ -236,7 +236,7 @@ final class GolemCombat {
                 if (distance > 5.5D || (distance > 1.0D && flat.normalize().dot(forward) < 0.3D)) {
                     continue;
                 }
-                if (living.hurt(source(), amount)) {
+                if (living.hurtOrSimulate(source(), amount)) {
                     landed = true;
                     RebornMobEntity.applyBossKnockback(living, new Vec3(forward.x * 0.5D, 0.2D, forward.z * 0.5D));
                 }
@@ -263,7 +263,7 @@ final class GolemCombat {
             AABB box = new AABB(center, center).inflate(3.5D, 2.5D, 3.5D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurt(source(), 16.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurtOrSimulate(source(), 16.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 }
             }
@@ -314,7 +314,7 @@ final class GolemCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), 14.0F)) {
+                if (living.hurtOrSimulate(source(), 14.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(this.chargeDir.x * 0.75D, 0.25D, this.chargeDir.z * 0.75D));
                     ModSounds.play(server, "golem_punch_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
                     server.broadcastEntityEvent(this.golem, EVENT_CHARGE_HIT);
@@ -407,11 +407,11 @@ final class GolemCombat {
             int count = Math.min(summonCount(), MINION_LIMIT - countMinions());
             for (int i = 0; i < count; i++) {
                 Vec3 at = summonPoint(i);
-                RebornMobEntity minion = ModEntities.MOBS.get("crystaliteminion").get().create(server);
+                RebornMobEntity minion = ModEntities.MOBS.get("crystaliteminion").get().create(server, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
                 if (minion == null) {
                     continue;
                 }
-                minion.moveTo(at.x, ground(at.x, at.z, this.golem.getY()), at.z, this.golem.getYRot(), 0.0F);
+                minion.snapTo(at.x, ground(at.x, at.z, this.golem.getY()), at.z, this.golem.getYRot(), 0.0F);
                 server.addFreshEntity(minion);
             }
             ModSounds.play(server, "golem_impact", this.golem.getX(), this.golem.getY(), this.golem.getZ(), 2.0F, 1.2F);
