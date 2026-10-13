@@ -38,7 +38,6 @@ public final class RebornGameplayEvents {
             "crystaliteminion", RebornGameplayEvents::handleMinionJoin
     );
     private static final Map<String, Consumer<RebornMobEntity>> DEATH_HANDLERS = Map.ofEntries(
-            Map.entry("aetherdragon", RebornGameplayEvents::handleDragonDeath),
             Map.entry("aether_naga", RebornGameplayEvents::handleNagaDeath),
             Map.entry("saltcrabking", RebornGameplayEvents::handleSaltCrabKingDeath),
             Map.entry("eldershulker", RebornGameplayEvents::handleElderShulkerDeath),
@@ -119,18 +118,7 @@ public final class RebornGameplayEvents {
         }
     }
 
-    private static void handleDragonDeath(RebornMobEntity entity) {
-        if (!entity.isDragonPhaseTwo() || !(entity.level() instanceof ServerLevel server)) {
-            return;
-        }
-        drop(server, entity, ModItems.ALL.get("shaday_helmet").get());
-        drop(server, entity, ModItems.ALL.get("shaday_chestplate").get());
-        drop(server, entity, ModItems.ALL.get("shaday_leggings").get());
-        explode(server, entity, Level.ExplosionInteraction.NONE);
-        playVictory(server, entity);
-        sendParticles(server, ParticleTypes.EXPLOSION, entity, 7);
-        sendParticles(server, ModParticles.FIRE.get(), entity, 17);
-    }
+
 
     private static void handleNagaDeath(RebornMobEntity entity) {
         playVictory((ServerLevel) entity.level(), entity);

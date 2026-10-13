@@ -2,10 +2,10 @@ package com.aetherbedrockmobsreborn.client;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
 import com.aetherbedrockmobsreborn.client.model.ShadayArmorModel;
-import com.aetherbedrockmobsreborn.client.particle.DragonDecalParticle;
-import com.aetherbedrockmobsreborn.client.particle.DragonQuakeBlockParticle;
-import com.aetherbedrockmobsreborn.client.particle.DragonShardParticle;
-import com.aetherbedrockmobsreborn.client.particle.DragonShockwaveParticle;
+import com.aetherbedrockmobsreborn.client.particle.DecalParticle;
+import com.aetherbedrockmobsreborn.client.particle.QuakeBlockParticle;
+import com.aetherbedrockmobsreborn.client.particle.ShardParticle;
+import com.aetherbedrockmobsreborn.client.particle.ShockwaveParticle;
 import com.aetherbedrockmobsreborn.client.particle.JawParticle;
 import com.aetherbedrockmobsreborn.client.particle.PunchRingParticle;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
@@ -57,8 +57,6 @@ public final class RebornClientEvents {
                 event.registerEntityRenderer(entry.getValue().get(), RebornProjectileRenderer::new);
             }
         }
-        // 艾瑟龙技能实体
-        event.registerEntityRenderer(ModEntities.DRAGON_SKILL.get(), DragonSkillRenderer::new);
         // 灵魂技能实体
         event.registerEntityRenderer(ModEntities.SPIRIT_SKILL.get(), SpiritSkillRenderer::new);
         // 天境娜迦技能实体
@@ -81,44 +79,38 @@ public final class RebornClientEvents {
         event.registerSpriteSet(ModParticles.FIRE.get(), FlameParticle.Provider::new);
         event.registerSpriteSet(ModParticles.RUNESEFFECT.get(), SmokeParticle.Provider::new);
         event.registerSpriteSet(ModParticles.WHITESMOKE.get(), SmokeParticle.Provider::new);
-        // 艾瑟龙转阶段特效
-        event.registerSpriteSet(ModParticles.DRAGON_SHOCKWAVE.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.DRAGON_SHARD.get(), DragonShardParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.DRAGON_WARNING.get(), DragonShockwaveParticle.WarningProvider::new);
-        event.registerSpriteSet(ModParticles.DRAGON_SLASH.get(), DragonDecalParticle.SlashProvider::new);
-        event.registerSpecial(ModParticles.DRAGON_QUAKE_BLOCK.get(), new DragonQuakeBlockParticle.Provider());
+        event.registerSpecial(ModParticles.QUAKE_BLOCK.get(), new QuakeBlockParticle.Provider());
         // 灵魂技能特效
-        event.registerSpriteSet(ModParticles.SPIRIT_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SPIRIT_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
-        event.registerSpriteSet(ModParticles.SPIRIT_SLASH.get(), DragonDecalParticle.SlashProvider::new);
-        event.registerSpriteSet(ModParticles.SPIRIT_SHARD.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SPIRIT_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SPIRIT_WARNING.get(), ShockwaveParticle.PlainWarningProvider::new);
+        event.registerSpriteSet(ModParticles.SPIRIT_SLASH.get(), DecalParticle.SlashProvider::new);
+        event.registerSpriteSet(ModParticles.SPIRIT_SHARD.get(), ShardParticle.Provider::new);
         // 水晶石傀儡专属粒子
-        event.registerSpriteSet(ModParticles.GOLEM_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.GOLEM_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
-        event.registerSpriteSet(ModParticles.GOLEM_SHARD.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.GOLEM_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.GOLEM_WARNING.get(), ShockwaveParticle.PlainWarningProvider::new);
+        event.registerSpriteSet(ModParticles.GOLEM_SHARD.get(), ShardParticle.Provider::new);
         event.registerSpriteSet(ModParticles.GOLEM_PUNCH.get(), PunchRingParticle.Provider::new);
         // 天境娜迦技能特效
-        event.registerSpriteSet(ModParticles.NAGA_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.NAGA_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
-        event.registerSpriteSet(ModParticles.NAGA_SLASH.get(), DragonDecalParticle.SlashProvider::new);
+        event.registerSpriteSet(ModParticles.NAGA_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.NAGA_WARNING.get(), ShockwaveParticle.PlainWarningProvider::new);
+        event.registerSpriteSet(ModParticles.NAGA_SLASH.get(), DecalParticle.SlashProvider::new);
         event.registerSpriteSet(ModParticles.NAGA_BITE.get(), JawParticle.BiteProvider::new);
         // 盐蟹王技能特效
-        event.registerSpriteSet(ModParticles.SALT_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SALT_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
-        event.registerSpriteSet(ModParticles.SALT_SHARD.get(), DragonShardParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SALT_SPRAY.get(), DragonShardParticle.ShortProvider::new);
+        event.registerSpriteSet(ModParticles.SALT_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SALT_WARNING.get(), ShockwaveParticle.PlainWarningProvider::new);
+        event.registerSpriteSet(ModParticles.SALT_SHARD.get(), ShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SALT_SPRAY.get(), ShardParticle.ShortProvider::new);
         event.registerSpriteSet(ModParticles.CRAB_PINCH.get(), JawParticle.PinchProvider::new);
         // 远古潜影贝技能特效
-        event.registerSpriteSet(ModParticles.SHULKER_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.SHULKER_WARNING.get(), DragonShockwaveParticle.PlainWarningProvider::new);
-        event.registerSpriteSet(ModParticles.SHULKER_SPARK.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SHULKER_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.SHULKER_WARNING.get(), ShockwaveParticle.PlainWarningProvider::new);
+        event.registerSpriteSet(ModParticles.SHULKER_SPARK.get(), ShardParticle.Provider::new);
         // 燔祭长矛投射物：熔火冲击环、火星
-        event.registerSpriteSet(ModParticles.PYRE_RING.get(), DragonShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModParticles.PYRE_EMBER.get(), DragonShardParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.PYRE_RING.get(), ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.PYRE_EMBER.get(), ShardParticle.Provider::new);
     }
 
     private static final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity> {
-        private static final ResourceLocation DRAGON_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/dragon_skill/dragon_beam.png");
         private static final ResourceLocation NAGA_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/naga_skill/naga_beam.png");
         private static final ResourceLocation SHULKER_BEAM = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_beam.png");
 
@@ -131,18 +123,9 @@ public final class RebornClientEvents {
         public void render(RebornMobEntity entity, float yaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, int light) {
             boolean nagaBeam = entity.isNagaBeamActive();
             boolean shulkerBeam = entity.isShulkerBeamActive();
-            boolean beam = entity.isDragonBeamActive() || nagaBeam || shulkerBeam;
-            // 光束起点骨骼：龙为下颚，娜迦为嘴部定位点
-            String boneName = "jaw";
-            ResourceLocation texture = DRAGON_BEAM;
-            if (nagaBeam) {
-                boneName = "mouth";
-                texture = NAGA_BEAM;
-            }
-            if (shulkerBeam) {
-                boneName = "mouth";
-                texture = SHULKER_BEAM;
-            }
+            boolean beam = nagaBeam || shulkerBeam;
+            String boneName = "mouth";
+            ResourceLocation texture = shulkerBeam ? SHULKER_BEAM : NAGA_BEAM;
             // 光束期间追踪起点骨骼的世界坐标
             if (beam) {
                 getGeoModel().getBone(boneName).ifPresent(bone -> bone.setTrackingMatrices(true));
@@ -150,11 +133,11 @@ public final class RebornClientEvents {
             super.render(entity, yaw, partialTick, poseStack, buffers, light);
             if (beam) {
                 ResourceLocation beamTexture = texture;
-                getGeoModel().getBone(boneName).ifPresent(bone -> renderDragonBeam(entity, yaw, partialTick, poseStack, buffers, bone.getWorldPosition(), beamTexture));
+                getGeoModel().getBone(boneName).ifPresent(bone -> renderBossBeam(entity, yaw, partialTick, poseStack, buffers, bone.getWorldPosition(), beamTexture));
             }
         }
 
-        private void renderDragonBeam(RebornMobEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, Vector3d jaw, ResourceLocation texture) {
+        private void renderBossBeam(RebornMobEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffers, Vector3d jaw, ResourceLocation texture) {
             // 以实体插值位置为原点，计算光束起止点
             double ox = Mth.lerp(partialTick, entity.xo, entity.getX());
             double oy = Mth.lerp(partialTick, entity.yo, entity.getY());
@@ -162,7 +145,7 @@ public final class RebornClientEvents {
             // GeckoLib 的骨骼世界坐标基于未插值的实体位置
             Vec3 worldStart = new Vec3(jaw.x, jaw.y, jaw.z);
             Vec3 start = worldStart.subtract(ox, oy, oz);
-            Vec3 worldEnd = entity.getDragonBeamEnd();
+            Vec3 worldEnd = entity.getBossBeamEnd();
             Vec3 end = worldEnd.subtract(ox, oy, oz);
             if (entity.getIdPath().equals("eldershulker")) {
                 Vec3 delta = worldEnd.subtract(worldStart);
@@ -189,10 +172,10 @@ public final class RebornClientEvents {
             // 外层光晕与内层核心
             for (float width : new float[]{2.4F * pulse, 1.0F * pulse}) {
                 Vec3 s = side.scale(width * 0.5F);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x - s.x), (float) (start.y - s.y), (float) (start.z - s.z), 0.0F, scroll);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (start.x + s.x), (float) (start.y + s.y), (float) (start.z + s.z), 1.0F, scroll);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x + s.x), (float) (end.y + s.y), (float) (end.z + s.z), 1.0F, scroll + vLength);
-                DragonSkillRenderer.vertex(consumer, pose, normal, (float) (end.x - s.x), (float) (end.y - s.y), (float) (end.z - s.z), 0.0F, scroll + vLength);
+                BeamRenderUtil.vertex(consumer, pose, normal, (float) (start.x - s.x), (float) (start.y - s.y), (float) (start.z - s.z), 0.0F, scroll);
+                BeamRenderUtil.vertex(consumer, pose, normal, (float) (start.x + s.x), (float) (start.y + s.y), (float) (start.z + s.z), 1.0F, scroll);
+                BeamRenderUtil.vertex(consumer, pose, normal, (float) (end.x + s.x), (float) (end.y + s.y), (float) (end.z + s.z), 1.0F, scroll + vLength);
+                BeamRenderUtil.vertex(consumer, pose, normal, (float) (end.x - s.x), (float) (end.y - s.y), (float) (end.z - s.z), 0.0F, scroll + vLength);
             }
         }
     }

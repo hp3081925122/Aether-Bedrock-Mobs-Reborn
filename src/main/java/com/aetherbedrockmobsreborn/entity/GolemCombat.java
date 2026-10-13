@@ -153,7 +153,7 @@ final class GolemCombat {
             }
         } else {
             this.golem.getNavigation().stop();
-            this.golem.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+            this.golem.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         }
         if (this.gap > 0) {
             this.gap--;
@@ -215,7 +215,7 @@ final class GolemCombat {
     private void tickCombo(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 8 || (t >= 14 && t <= 19)) {
-            this.golem.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.golem.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
         if (t == 7 || t == 18) {
             ModSounds.play(this.golem.level(), "golem_punch", this.golem.getX(), this.golem.getY() + 2.0D, this.golem.getZ(), 1.5F, 1.0F);
@@ -229,7 +229,7 @@ final class GolemCombat {
             Vec3 forward = forward();
             boolean landed = false;
             AABB box = this.golem.getBoundingBox().inflate(5.0D, 2.0D, 5.0D);
-            for (LivingEntity living : this.golem.level().getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
+            for (LivingEntity living : this.golem.level().getEntitiesOfClass(LivingEntity.class, box, this.golem::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(this.golem.position());
                 Vec3 flat = new Vec3(offset.x, 0.0D, offset.z);
                 double distance = flat.length();
@@ -256,12 +256,12 @@ final class GolemCombat {
     private void tickSlam(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 25) {
-            this.golem.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+            this.golem.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         }
         if (t == 35) {
             Vec3 center = this.golem.position().add(forward().scale(3.8D));
             AABB box = new AABB(center, center).inflate(3.5D, 2.5D, 3.5D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurt(source(), 16.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
@@ -291,7 +291,7 @@ final class GolemCombat {
     private void tickCharge(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t < CHARGE_START) {
-            this.golem.faceDragonTowards(target.getX(), target.getZ(), 12.0F);
+            this.golem.faceBossTowards(target.getX(), target.getZ(), 12.0F);
         }
         if (t == 2) {
             ModSounds.play(server, "golem_charge", this.golem.getX(), this.golem.getY() + 2.0D, this.golem.getZ(), 1.5F, 1.0F);
@@ -310,7 +310,7 @@ final class GolemCombat {
                 crystal(server, GolemSkillEntity.SPIKE, back.x, back.z, this.golem.getY(), 4, 0.6F, true);
             }
             AABB box = this.golem.getBoundingBox().inflate(1.0D, 0.5D, 1.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canBossSkillHit)) {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
@@ -340,7 +340,7 @@ final class GolemCombat {
     private void tickFissure(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 14) {
-            this.golem.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+            this.golem.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         }
         if (t == 17) {
             Vec3 origin = this.golem.position().add(forward().scale(2.1D)).add(right().scale(1.3D));
@@ -364,7 +364,7 @@ final class GolemCombat {
     // 晶笼禁锢：第 8 tick 在目标周围预警，第 14 tick 晶笼升起，第 30 tick 中心晶核爆发
     private void tickPrison(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.golem.faceDragonTowards(target.getX(), target.getZ(), 8.0F);
+        this.golem.faceBossTowards(target.getX(), target.getZ(), 8.0F);
         if (t == 2) {
             ModSounds.play(server, "golem_charge", this.golem.getX(), this.golem.getY() + 2.0D, this.golem.getZ(), 1.5F, 1.2F);
         }
@@ -440,7 +440,7 @@ final class GolemCombat {
     private void tickEnrage(ServerLevel server) {
         if (this.skillTicks == 17) {
             AABB box = this.golem.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.golem.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
@@ -541,7 +541,7 @@ final class GolemCombat {
             Vec3 center = pos.add(forward.scale(3.8D));
             level.addAlwaysVisibleParticle(ModParticles.GOLEM_RING.get(), true, center.x, center.y + 0.15D, center.z, 7.0D, 14.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.GOLEM_RING.get(), true, center.x, center.y + 0.2D, center.z, 4.0D, 10.0D, 0.0D);
-            DragonSkillEntity.spawnQuakeRing(level, center.x, center.y, center.z, 0.0D, 3.5D, 0.4D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, center.x, center.y, center.z, 0.0D, 3.5D, 0.4D, random);
             for (int i = 0; i < 30; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
                 level.addParticle(ModParticles.GOLEM_SHARD.get(), center.x, center.y + 0.3D, center.z, Math.cos(angle) * 0.35D, 0.4D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.35D);
@@ -552,7 +552,7 @@ final class GolemCombat {
             // 裂地：拳落点冲击环 + 震起
             Vec3 origin = pos.add(forward.scale(2.1D)).add(right().scale(1.3D));
             level.addAlwaysVisibleParticle(ModParticles.GOLEM_RING.get(), true, origin.x, origin.y + 0.15D, origin.z, 4.0D, 10.0D, 0.0D);
-            DragonSkillEntity.spawnQuakeRing(level, origin.x, origin.y, origin.z, 0.0D, 2.2D, 0.35D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, origin.x, origin.y, origin.z, 0.0D, 2.2D, 0.35D, random);
             for (int i = 0; i < 16; i++) {
                 level.addParticle(ModParticles.GOLEM_SHARD.get(), origin.x, origin.y + 0.3D, origin.z, random.nextGaussian() * 0.2D, 0.4D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.2D);
             }

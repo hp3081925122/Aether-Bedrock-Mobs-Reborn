@@ -20,7 +20,7 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
 
     public static boolean supports(String id) {
         return switch (id) {
-            case "aetherdragon", "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
+            case "aether_naga", "buterfly", "crystalitegolem", "crystaliteminion", "guardianangel", "mutatedcritter", "percipitus", "saltcrab", "eldershulker", "saltcrabking", "shimaenaga", "spirit", "twinkler" -> true;
             default -> false;
         };
     }
@@ -28,7 +28,6 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     @Override
     public ResourceLocation getModelResource(RebornMobEntity entity) {
         String model = switch (entity.getIdPath()) {
-            case "aetherdragon" -> "aether_dragon";
             case "aether_naga" -> "slider";
             case "crystalitegolem" -> "crystalite_golem";
             case "crystaliteminion" -> "crystalite_minion";
@@ -53,7 +52,6 @@ public final class RebornGeoModel extends GeoModel<RebornMobEntity> {
     @Override
     public ResourceLocation getAnimationResource(RebornMobEntity entity) {
         String animation = switch (entity.getIdPath()) {
-            case "aetherdragon" -> "aether_dragon";
             case "aether_naga" -> "slider";
             case "crystalitegolem" -> "crystalite_golem";
             case "crystaliteminion" -> "crystalite_minion";

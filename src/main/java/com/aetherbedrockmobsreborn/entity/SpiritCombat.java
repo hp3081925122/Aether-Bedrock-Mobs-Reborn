@@ -212,7 +212,7 @@ final class SpiritCombat {
     private void tickSlash(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 9 || (t >= 13 && t <= 16)) {
-            this.spirit.faceDragonTowards(target.getX(), target.getZ(), 15.0F);
+            this.spirit.faceBossTowards(target.getX(), target.getZ(), 15.0F);
         }
         if (t == 2) {
             ModSounds.play(this.spirit.level(), "spirit_charge", this.spirit.getX(), this.spirit.getY(), this.spirit.getZ(), 1.0F, 1.4F);
@@ -242,7 +242,7 @@ final class SpiritCombat {
         }
         AABB box = this.spirit.getBoundingBox().inflate(radius, 2.0D, radius);
         boolean landed = false;
-        for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+        for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
             Vec3 offset = living.position().subtract(this.spirit.position());
             Vec3 flat = new Vec3(offset.x, 0.0D, offset.z);
             double distance = flat.length();
@@ -264,7 +264,7 @@ final class SpiritCombat {
     private void tickCleave(LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 16) {
-            this.spirit.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.spirit.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
         if (t == 2) {
             ModSounds.play(this.spirit.level(), "spirit_charge", this.spirit.getX(), this.spirit.getY(), this.spirit.getZ(), 2.0F, 0.8F);
@@ -294,7 +294,7 @@ final class SpiritCombat {
     // 圆形范围伤害；hitOnce 不为空时每个目标只命中一次
     private void damageCircle(Vec3 center, double radius, float amount, double lift, Set<Integer> hitOnce) {
         AABB box = new AABB(center, center).inflate(radius, 2.5D, radius);
-        for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+        for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
             Vec3 offset = living.position().subtract(center);
             if (offset.x * offset.x + offset.z * offset.z > radius * radius) {
                 continue;
@@ -311,7 +311,7 @@ final class SpiritCombat {
     // 圣环符弹：第 10 tick 光环散出七枚符文，24-42 tick 依次射出
     private void tickRunes(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.spirit.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+        this.spirit.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         if (t == 10) {
             Vec3 forward = forward();
             Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
@@ -331,7 +331,7 @@ final class SpiritCombat {
     private void tickDash(LivingEntity target) {
         int t = this.skillTicks;
         if (t < DASH_START) {
-            this.spirit.faceDragonTowards(target.getX(), target.getZ(), 20.0F);
+            this.spirit.faceBossTowards(target.getX(), target.getZ(), 20.0F);
         }
         if (t == 2) {
             ModSounds.play(this.spirit.level(), "spirit_charge", this.spirit.getX(), this.spirit.getY(), this.spirit.getZ(), 1.5F, 1.2F);
@@ -349,7 +349,7 @@ final class SpiritCombat {
             this.spirit.move(MoverType.SELF, new Vec3(this.dashDir.x * this.dashSpeed, -0.2D, this.dashDir.z * this.dashSpeed));
             // 突进途中撞到的目标各受一次伤害并被甩向两侧
             AABB box = this.spirit.getBoundingBox().inflate(1.5D, 0.5D, 1.5D);
-            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
@@ -376,7 +376,7 @@ final class SpiritCombat {
             Vec3 path = end.subtract(start);
             double lengthSqr = Math.max(1.0E-4D, path.x * path.x + path.z * path.z);
             AABB box = new AABB(start, end).inflate(2.0D, 2.5D, 2.0D);
-            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(start);
                 double along = Mth.clamp((offset.x * path.x + offset.z * path.z) / lengthSqr, 0.0D, 1.0D);
                 double dx = offset.x - path.x * along;
@@ -396,7 +396,7 @@ final class SpiritCombat {
     private void tickSkyfall(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t <= 16) {
-            this.spirit.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.spirit.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
         if (t == 2) {
             ModSounds.play(server, "spirit_charge", this.spirit.getX(), this.spirit.getY(), this.spirit.getZ(), 2.0F, 0.9F);
@@ -444,7 +444,7 @@ final class SpiritCombat {
             double radius = age * NOVA_SPEED;
             double groundY = this.spirit.getY();
             AABB box = this.spirit.getBoundingBox().inflate(radius + 1.0D, 2.0D, radius + 1.0D);
-            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
                 double dx = living.getX() - this.spirit.getX();
                 double dz = living.getZ() - this.spirit.getZ();
                 double distance = Math.sqrt(dx * dx + dz * dz);
@@ -472,7 +472,7 @@ final class SpiritCombat {
         }
         if (this.skillTicks == 12) {
             AABB box = this.spirit.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
-            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canDragonSkillHit)) {
+            for (LivingEntity living : this.spirit.level().getEntitiesOfClass(LivingEntity.class, box, this.spirit::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.spirit.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
@@ -514,7 +514,7 @@ final class SpiritCombat {
                     // 裂地魂焰：逐格向前喷发，并震起沿途地面
                     Vec3 from = this.clientCleaveOrigin.add(this.clientCleaveDir.scale(age - 1));
                     Vec3 point = this.clientCleaveOrigin.add(this.clientCleaveDir.scale(age));
-                    DragonSkillEntity.spawnQuakeLine(level, from.x, point.y, from.z, point.x, point.z, 1.2D, 0.35D, random);
+                    GroundQuakeEffects.spawnQuakeLine(level, from.x, point.y, from.z, point.x, point.z, 1.2D, 0.35D, random);
                     flameColumn(level, random, point, 6);
                     if (age % 2 == 0) {
                         level.addAlwaysVisibleParticle(ModParticles.SPIRIT_RING.get(), true, point.x, point.y + 0.1D, point.z, 1.8D, 8.0D, 0.0D);
@@ -628,7 +628,7 @@ final class SpiritCombat {
             this.clientCleaveDir = forward;
             this.clientCleaveStart = this.clientTicks;
             level.addAlwaysVisibleParticle(ModParticles.SPIRIT_RING.get(), true, origin.x, origin.y + 0.15D, origin.z, 5.0D, 12.0D, 0.0D);
-            DragonSkillEntity.spawnQuakeRing(level, origin.x, origin.y, origin.z, 0.0D, 2.8D, 0.35D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, origin.x, origin.y, origin.z, 0.0D, 2.8D, 0.35D, random);
             flameColumn(level, random, origin, 16);
             level.addParticle(ParticleTypes.EXPLOSION, origin.x, origin.y + 0.5D, origin.z, 0.0D, 0.0D, 0.0D);
             return;
@@ -649,7 +649,7 @@ final class SpiritCombat {
             Vec3 start = this.spirit.getBossSkillPoint();
             Vec3 path = pos.subtract(start);
             double length = path.horizontalDistance();
-            DragonSkillEntity.spawnQuakeLine(level, start.x, pos.y, start.z, pos.x, pos.z, 1.5D, 0.4D, random);
+            GroundQuakeEffects.spawnQuakeLine(level, start.x, pos.y, start.z, pos.x, pos.z, 1.5D, 0.4D, random);
             for (double d = 0.0D; d <= length; d += 1.5D) {
                 Vec3 point = start.add(path.scale(d / Math.max(0.01D, length)));
                 flameColumn(level, random, new Vec3(point.x, pos.y, point.z), 5);
@@ -671,7 +671,7 @@ final class SpiritCombat {
             // 焰环出现：匀速扩张的魂焰环贴图，与判定同速
             this.clientNovaStarts[id - EVENT_NOVA] = this.clientTicks;
             level.addAlwaysVisibleParticle(ModParticles.SPIRIT_RING.get(), true, pos.x, pos.y + 0.15D, pos.z, NOVA_SPEED * NOVA_LIFE, NOVA_LIFE, 1.0D);
-            DragonSkillEntity.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 2.0D, 0.3D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, pos.x, pos.y, pos.z, 0.0D, 2.0D, 0.3D, random);
             return;
         }
         if (id == EVENT_ENRAGE) {

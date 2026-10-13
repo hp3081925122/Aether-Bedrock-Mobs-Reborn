@@ -1,7 +1,6 @@
 package com.aetherbedrockmobsreborn.registry;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
-import com.aetherbedrockmobsreborn.entity.DragonSkillEntity;
 import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import com.aetherbedrockmobsreborn.entity.CrabSkillEntity;
 import com.aetherbedrockmobsreborn.entity.GolemSkillEntity;
@@ -23,12 +22,6 @@ public final class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, AetherBedrockMobsReborn.MOD_ID);
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<RebornMobEntity>>> MOBS = new LinkedHashMap<>();
     public static final Map<String, DeferredHolder<EntityType<?>, EntityType<RebornProjectileEntity>>> PROJECTILES = new LinkedHashMap<>();
-    // 艾瑟龙技能实体：羽刃、陨晶、雷击标记
-    public static final DeferredHolder<EntityType<?>, EntityType<DragonSkillEntity>> DRAGON_SKILL = ENTITIES.register("dragon_skill", () -> EntityType.Builder.<DragonSkillEntity>of(DragonSkillEntity::new, MobCategory.MISC)
-            .sized(0.8F, 0.8F)
-            .clientTrackingRange(8)
-            .updateInterval(1)
-            .build("dragon_skill"));
     // 灵魂技能实体：圣环符文、天剑
     public static final DeferredHolder<EntityType<?>, EntityType<SpiritSkillEntity>> SPIRIT_SKILL = ENTITIES.register("spirit_skill", () -> EntityType.Builder.<SpiritSkillEntity>of(SpiritSkillEntity::new, MobCategory.MISC)
             .sized(0.8F, 0.8F)
