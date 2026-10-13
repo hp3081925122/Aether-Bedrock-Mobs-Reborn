@@ -41,7 +41,10 @@ public final class NagaPart extends PartEntity<NagaEntity> {
         if (!getParent().isAlive() || source.getEntity() == getParent()) {
             return false;
         }
+        float before = getParent().getHealth();
         boolean accepted = getParent().hurtOrSimulate(source, amount);
+        com.mojang.logging.LogUtils.getLogger().debug("Naga part hit: bone={} part={} parent={} requestedDamage={} accepted={} healthBefore={} healthAfter={}",
+                this.bone, getId(), getParent().getId(), amount, accepted, before, getParent().getHealth());
         return accepted;
     }
 

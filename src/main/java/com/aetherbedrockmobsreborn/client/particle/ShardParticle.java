@@ -49,6 +49,11 @@ public class ShardParticle extends GeometryParticle {
     }
 
     @Override
+    protected Layer getLayer() {
+        return Layer.OPAQUE;
+    }
+
+    @Override
     public ParticleRenderType getGroup() {
         return RebornParticleGroup.TYPE;
     }

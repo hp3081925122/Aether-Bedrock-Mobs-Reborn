@@ -4,6 +4,20 @@
 
 羽刃和陨晶已恢复真实技能实体，远程攻击通过目标实际掉血判定。技能时间轴完成与命中结果分别记录。
 
+## 粒子颜色与娜迦分节显示回归
+
+当前版本为 1.3。本次修复五类自定义粒子的共用实体红染和表面光照路径，恢复原生粒子管线及碎片的不透明模式，新增仅 F3+B 开启时注册的娜迦分节调试显示。
+
+- 娜迦专项：26 项通过，包括每节 ID 查询、空间查询、射线命中和伤害转发、主碰撞箱外尾段命中、位置与转向跟随、父实体无敌保护及部位清理。
+- 无窗口粒子几何回放：10 项通过，验证原生管线、混合模式、RGBA、透明度、默认 NO_OVERLAY 和显式叠加层保留。
+- build 通过；JAR 内包含 NagaHitboxDebugRenderer，不包含 ServerValidation、ToastDiagnostic 或 ClientGeometryValidation。
+
+当前修复包为 `aether_bedrock_mobs_reborn-26.1.2-neoforge-1.3.jar`，SHA-256 为 `9D19BB7F77E4E397031178B3F2678F45769E30C340BFACC845653A0372F269B5`。日志为 `naga-regression.log` 和 `client-geometry-validation.log`，原始服务端断言为 `results-naga-regression.json`。这些文件均在前述隔离测试目录中。
+
+无窗口回放验证没有启动 Minecraft 客户端，不能代替实际游戏画面验收。客户端需要观察各 Boss 的冲击环、预警、爪痕及碎片颜色，打开 F3+B 检查娜迦五节绿色碰撞箱随转向移动，并实际攻击尾段确认反馈。
+
+下表和旧版本 JAR 校验值属于此前 1.2 的完整迁移验收。本轮对已定位的问题做针对性回归，没有重跑完整 535 项检查。
+
 ## 检查结果
 
 | 检查 | 结果 | 主要范围 |

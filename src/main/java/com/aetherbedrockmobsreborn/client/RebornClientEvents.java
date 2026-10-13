@@ -42,6 +42,14 @@ public final class RebornClientEvents {
     }
 
     @SubscribeEvent
+    public static void registerDebugRenderers(net.neoforged.neoforge.client.event.RegisterDebugRenderersEvent event) {
+        if (net.minecraft.client.Minecraft.getInstance().debugEntries.isCurrentlyEnabled(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES)) {
+            event.register(NagaHitboxDebugRenderer::new);
+            com.mojang.logging.LogUtils.getLogger().debug("Registered Naga multipart hitbox debug renderer");
+        }
+    }
+
+    @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         for (var entry : ModEntities.MOBS.entrySet()) {
             if (RebornGeoModel.supports(entry.getKey())) {

@@ -7,13 +7,28 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SingleQuadParticle;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.util.Mth;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public abstract class GeometryParticle extends SingleQuadParticle implements CapturedParticle {
+    private static final RenderType TRANSLUCENT_PARTICLES = RenderType.create("aether_bedrock_mobs_reborn_translucent_particles",
+            RenderSetup.builder(RenderPipelines.TRANSLUCENT_PARTICLE)
+                    .withTexture("Sampler0", TextureAtlas.LOCATION_PARTICLES)
+                    .useLightmap().sortOnUpload().createRenderSetup());
+    private static final RenderType OPAQUE_PARTICLES = RenderType.create("aether_bedrock_mobs_reborn_opaque_particles",
+            RenderSetup.builder(RenderPipelines.OPAQUE_PARTICLE)
+                    .withTexture("Sampler0", TextureAtlas.LOCATION_PARTICLES)
+                    .useLightmap().createRenderSetup());
+
+    static {
+        com.mojang.logging.LogUtils.getLogger().debug("Reborn geometry particles use the vanilla particle pipeline without entity overlay or face lighting");
+    }
+
     protected GeometryParticle(ClientLevel level, double x, double y, double z) { super(level, x, y, z, null); }
     protected GeometryParticle(ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
         super(level, x, y, z, xd, yd, zd, null);
@@ -25,7 +40,7 @@ public abstract class GeometryParticle extends SingleQuadParticle implements Cap
     public ParticleRenderType getGroup() { return RebornParticleGroup.TYPE; }
     @Override
     public void extractGeometry(GeometryCapture geometry, Camera camera, float partialTicks) {
-        render(geometry.getBuffer(RenderTypes.entityTranslucent(TextureAtlas.LOCATION_PARTICLES)), camera, partialTicks);
+        render(geometry.getBuffer(getLayer() == Layer.OPAQUE ? OPAQUE_PARTICLES : TRANSLUCENT_PARTICLES), camera, partialTicks);
     }
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
         Quaternionf rotation = new Quaternionf();
