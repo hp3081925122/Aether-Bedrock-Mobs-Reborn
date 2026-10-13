@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -52,6 +54,7 @@ public class CrabSkillEntity extends Entity {
     private static final EntityDataAccessor<Integer> KIND = SynchedEntityData.defineId(CrabSkillEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DELAY = SynchedEntityData.defineId(CrabSkillEntity.class, EntityDataSerializers.INT);
     private int ownerId = -1;
+    private double ownerAttackDamage;
     private int targetId = -1;
     private boolean silent;
     private final Set<Integer> waveHits = new HashSet<>();
@@ -70,6 +73,7 @@ public class CrabSkillEntity extends Entity {
         entity.entityData.set(KIND, kind);
         entity.entityData.set(DELAY, delay);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         if (target != null) {
             entity.targetId = target.getId();
         }
@@ -130,7 +134,7 @@ public class CrabSkillEntity extends Entity {
             EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.5D), this::canHit, 0.3F);
             if (hit != null && hit.getEntity() instanceof LivingEntity living) {
                 // 命中：伤害并减速
-                living.hurtOrSimulate(skillDamage(), 6.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(CRAB_BUBBLE));
                 living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 1));
                 pop(hit.getLocation());
                 return;
@@ -178,7 +182,7 @@ public class CrabSkillEntity extends Entity {
             // 喷发：伤害并高高托起
             AABB box = new AABB(position(), position()).inflate(1.6D, 0.0D, 1.6D).expandTowards(0.0D, GEYSER_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurtOrSimulate(skillDamage(), 9.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(CRAB_GEYSER));
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.65D, 0.0D));
                 living.hurtMarked = true;
             }
@@ -251,7 +255,7 @@ public class CrabSkillEntity extends Entity {
                 if (!this.waveHits.add(living.getId())) {
                     continue;
                 }
-                living.hurtOrSimulate(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(CRAB_WAVE));
                 RebornMobEntity.applyBossKnockback(living, new Vec3(dir.x * 0.8D, 0.25D, dir.z * 0.8D));
                 living.hurtMarked = true;
             }
@@ -299,7 +303,7 @@ public class CrabSkillEntity extends Entity {
             // 盐晶破土：伤害并挑起
             AABB box = new AABB(position(), position()).inflate(1.2D, 0.0D, 1.2D).expandTowards(0.0D, 2.5D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurtOrSimulate(skillDamage(), 9.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(CRAB_SALT));
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                 living.hurtMarked = true;
             }
@@ -325,6 +329,10 @@ public class CrabSkillEntity extends Entity {
 
     private boolean canHit(Entity entity) {
         return entity.isAlive() && entity.isPickable() && entity.getId() != this.ownerId && !(entity instanceof RebornMobEntity) && !entity.isSpectator();
+    }
+
+    private float skillDamageAmount(com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill skill) {
+        return BossSkillDamage.calculate(level().getEntity(this.ownerId), this.ownerAttackDamage, skill);
     }
 
     private DamageSource skillDamage() {

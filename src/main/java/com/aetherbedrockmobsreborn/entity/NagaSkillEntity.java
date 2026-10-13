@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -44,6 +46,7 @@ public class NagaSkillEntity extends Entity {
     private static final EntityDataAccessor<Float> TARGET_Y = SynchedEntityData.defineId(NagaSkillEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> TARGET_Z = SynchedEntityData.defineId(NagaSkillEntity.class, EntityDataSerializers.FLOAT);
     private int ownerId = -1;
+    private double ownerAttackDamage;
 
     public NagaSkillEntity(EntityType<? extends NagaSkillEntity> type, Level level) {
         super(type, level);
@@ -59,6 +62,7 @@ public class NagaSkillEntity extends Entity {
         entity.entityData.set(KIND, PILLAR);
         entity.entityData.set(DELAY, delay);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         entity.setPos(pos.x, pos.y, pos.z);
         level.addFreshEntity(entity);
     }
@@ -77,6 +81,7 @@ public class NagaSkillEntity extends Entity {
         entity.entityData.set(TARGET_Y, (float) landing.y);
         entity.entityData.set(TARGET_Z, (float) landing.z);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         entity.setPos(from.x, from.y, from.z);
         entity.setDeltaMovement(velocity);
         level.addFreshEntity(entity);
@@ -130,7 +135,7 @@ public class NagaSkillEntity extends Entity {
             // 石柱升起：伤害并挑飞
             AABB box = new AABB(position(), position()).inflate(1.3D, 0.0D, 1.3D).expandTowards(0.0D, 3.0D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurtOrSimulate(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(NAGA_PILLAR));
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
             }
             ModSounds.play(level(), "naga_pillar", getX(), getY(), getZ(), 1.2F, 0.9F + this.random.nextFloat() * 0.2F);
@@ -189,7 +194,7 @@ public class NagaSkillEntity extends Entity {
         AABB box = new AABB(at, at).inflate(2.8D, 2.0D, 2.8D);
         for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
             if (living.position().distanceToSqr(at) <= 3.0D * 3.0D) {
-                living.hurtOrSimulate(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), skillDamageAmount(NAGA_BOULDER));
                 Vec3 push = living.position().subtract(at);
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.3D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
@@ -202,6 +207,10 @@ public class NagaSkillEntity extends Entity {
 
     private boolean canHit(Entity entity) {
         return entity.isAlive() && entity.getId() != this.ownerId && !(entity instanceof RebornMobEntity) && !entity.isSpectator();
+    }
+
+    private float skillDamageAmount(com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill skill) {
+        return BossSkillDamage.calculate(level().getEntity(this.ownerId), this.ownerAttackDamage, skill);
     }
 
     private DamageSource skillDamage() {

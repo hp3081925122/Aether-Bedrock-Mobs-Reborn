@@ -52,3 +52,7 @@ Aether II 没有四个旧 Aether 群系的逐项对应 ID，本分支使用官�
 刷怪蛋兼容纹理 `textures/item/spawn_egg.png` 和 `spawn_egg_overlay.png` 来自 Mojang 的 Minecraft 1.21.1 原版资源，用于替代新版移除的通用模板。Forge 模板的原许可证说明保留在 [LICENSE-Forge.txt](LICENSE-Forge.txt)。The Aether II、Aether Dragon、GeckoLib 与其他依赖按各自许可证使用。
 
 本模组内的巨龙 AI、技能实体、模型、动画及专用音效已移除；天境巨龙由独立的 Aether Dragon 模组提供。共享地面震起与光束渲染保留为通用实现，兼容刷怪器与地牢结构继续引用独立模组。
+
+## Boss 技能伤害配置
+
+五个本模组 Boss 的 36 个直接伤害结算项使用当前攻击力乘技能倍率。配置文件为 `aether_bedrock_mobs_reborn-boss-skills.toml`，默认位于实例的 `config/`。默认倍率保持原伤害水平，详细键、默认值和示例见 [技能倍率说明](docs/boss-skill-damage-multipliers.md)。

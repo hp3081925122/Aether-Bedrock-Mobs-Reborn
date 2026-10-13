@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.minecraft.core.particles.ParticleTypes;
@@ -100,10 +102,6 @@ final class SpiritCombat {
     private Vec3 forward() {
         float yaw = this.spirit.yBodyRot * Mth.DEG_TO_RAD;
         return new Vec3(-Mth.sin(yaw), 0.0D, Mth.cos(yaw));
-    }
-
-    private float damage(float scale) {
-        return (float) this.spirit.getAttributeValue(Attributes.ATTACK_DAMAGE) * scale;
     }
 
     private DamageSource source() {
@@ -219,11 +217,7 @@ final class SpiritCombat {
         }
         if (t == 11 || t == 18) {
             boolean second = t == 18;
-            float scale = 1.0F;
-            if (second) {
-                scale = 1.15F;
-            }
-            hitArc(6.0D, damage(scale), second);
+            hitArc(6.0D, BossSkillDamage.calculate(this.spirit, second ? SPIRIT_REVERSE_SLASH : SPIRIT_SLASH), second);
             ModSounds.play(this.spirit.level(), "spirit_slash", this.spirit.getX(), this.spirit.getY() + 1.5D, this.spirit.getZ(), 2.0F, 1.0F);
             byte event = EVENT_SLASH_1;
             if (second) {
@@ -277,14 +271,14 @@ final class SpiritCombat {
             this.cleaveDir = forward;
             this.cleaveOrigin = this.spirit.position().add(forward.scale(2.5D));
             // 剑落点：范围重击
-            damageCircle(this.cleaveOrigin, 3.0D, damage(1.3F), 0.2D, null);
+            damageCircle(this.cleaveOrigin, 3.0D, BossSkillDamage.calculate(this.spirit, SPIRIT_CLEAVE), 0.2D, null);
             ModSounds.play(this.spirit.level(), "spirit_impact", this.cleaveOrigin.x, this.cleaveOrigin.y, this.cleaveOrigin.z, 3.0F, 1.0F);
             this.spirit.level().broadcastEntityEvent(this.spirit, EVENT_CLEAVE);
         }
         if (t > 20 && t <= 20 + CLEAVE_LENGTH) {
             // 裂地魂焰：每 tick 向前推进 1 格
             Vec3 point = this.cleaveOrigin.add(this.cleaveDir.scale(t - 20));
-            damageCircle(point, 1.6D, damage(0.9F), 0.35D, this.hits);
+            damageCircle(point, 1.6D, BossSkillDamage.calculate(this.spirit, SPIRIT_CLEAVE_FIRE), 0.35D, this.hits);
             if ((t - 20) % 3 == 1) {
                 ModSounds.play(this.spirit.level(), "spirit_erupt", point.x, point.y, point.z, 1.5F, 1.0F);
             }
@@ -353,7 +347,7 @@ final class SpiritCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurtOrSimulate(source(), damage(1.2F))) {
+                if (living.hurtOrSimulate(source(), BossSkillDamage.calculate(this.spirit, SPIRIT_DASH))) {
                     Vec3 offset = living.position().subtract(this.spirit.position());
                     Vec3 side = new Vec3(-this.dashDir.z, 0.0D, this.dashDir.x);
                     if (offset.dot(side) < 0.0D) {
@@ -381,7 +375,7 @@ final class SpiritCombat {
                 double along = Mth.clamp((offset.x * path.x + offset.z * path.z) / lengthSqr, 0.0D, 1.0D);
                 double dx = offset.x - path.x * along;
                 double dz = offset.z - path.z * along;
-                if (dx * dx + dz * dz <= 2.0D * 2.0D && living.hurtOrSimulate(source(), damage(0.9F))) {
+                if (dx * dx + dz * dz <= 2.0D * 2.0D && living.hurtOrSimulate(source(), BossSkillDamage.calculate(this.spirit, SPIRIT_DASH_BURST))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -455,7 +449,7 @@ final class SpiritCombat {
                 if (!this.novaHits.get(i).add(living.getId())) {
                     continue;
                 }
-                if (living.hurtOrSimulate(source(), damage(0.8F))) {
+                if (living.hurtOrSimulate(source(), BossSkillDamage.calculate(this.spirit, SPIRIT_NOVA))) {
                     living.igniteForSeconds(3.0F);
                     double scale = 0.4D / Math.max(0.5D, distance);
                     RebornMobEntity.applyBossKnockback(living, new Vec3(dx * scale, 0.175D, dz * scale));

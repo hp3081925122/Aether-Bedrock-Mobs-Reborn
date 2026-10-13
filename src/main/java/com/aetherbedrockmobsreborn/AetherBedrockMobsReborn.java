@@ -19,7 +19,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public final class AetherBedrockMobsReborn {
     public static final String MOD_ID = "aether_bedrock_mobs_reborn";
 
-    public AetherBedrockMobsReborn(IEventBus bus) {
+    public AetherBedrockMobsReborn(IEventBus bus, net.neoforged.fml.ModContainer container) {
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
+                com.aetherbedrockmobsreborn.config.BossSkillConfig.SPEC, MOD_ID + "-boss-skills.toml");
 
         ModBlocks.BLOCKS.register(bus);
         ModEntities.ENTITIES.register(bus);
