@@ -1,14 +1,16 @@
 package com.aetherbedrockmobsreborn.block;
 
-import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
+import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import com.mojang.logging.LogUtils;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
@@ -24,7 +26,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 public class SpecialSpawnerBlock extends Block {
@@ -98,17 +99,22 @@ public class SpecialSpawnerBlock extends Block {
         if (entityId == null) {
             return false;
         }
-        DeferredHolder<EntityType<?>, EntityType<RebornMobEntity>> type = ModEntities.MOBS.get(entityId);
+        Identifier entityKey = Identifier.fromNamespaceAndPath(action.equals("dragon") ? "aether_dragon" : AetherBedrockMobsReborn.MOD_ID, entityId);
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entityKey).orElse(null);
         if (type == null) {
+            LogUtils.getLogger().warn("Spawner activation failed: entity type {} is not registered at {}", entityKey, pos);
             return false;
         }
-        RebornMobEntity entity = type.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+        net.minecraft.world.entity.Entity entity = type.create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return false;
         }
         double y = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
         entity.snapTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
-        level.addFreshEntity(entity);
+        if (!level.addFreshEntity(entity)) {
+            LogUtils.getLogger().warn("Spawner activation failed: could not add entity {} at {}", entityKey, pos);
+            return false;
+        }
         if (level instanceof ServerLevel server) {
             double particleY = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
             server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5D, particleY, pos.getZ() + 0.5D, 5, 3.0D, 3.0D, 3.0D, 1.0D);

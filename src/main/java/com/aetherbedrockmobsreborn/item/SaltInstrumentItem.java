@@ -70,7 +70,10 @@ public final class SaltInstrumentItem extends Item {
 
     @Override
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        stack.hurtAndBreak(2, target, EquipmentSlot.MAINHAND);
+        stack.hurtAndBreak(2, attacker, EquipmentSlot.MAINHAND);
+        if (stack.isEmpty()) {
+            com.mojang.logging.LogUtils.getLogger().debug("Salt instrument broke for attacker {}", attacker.getUUID());
+        }
     }
 }
 
