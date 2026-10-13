@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -222,9 +224,9 @@ final class GolemCombat {
         }
         if (t == 11 || t == 22) {
             boolean left = t == 22;
-            float amount = 11.0F;
+            float amount = BossSkillDamage.calculate(this.golem, GOLEM_PUNCH_RIGHT);
             if (left) {
-                amount = 13.0F;
+                amount = BossSkillDamage.calculate(this.golem, GOLEM_PUNCH_LEFT);
             }
             Vec3 forward = forward();
             boolean landed = false;
@@ -263,7 +265,7 @@ final class GolemCombat {
             AABB box = new AABB(center, center).inflate(3.5D, 2.5D, 3.5D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.golem::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurt(source(), 16.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 3.5D * 3.5D && living.hurt(source(), BossSkillDamage.calculate(this.golem, GOLEM_SLAM))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.45D, 0.0D));
                 }
             }
@@ -314,7 +316,7 @@ final class GolemCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), 14.0F)) {
+                if (living.hurt(source(), BossSkillDamage.calculate(this.golem, GOLEM_CHARGE))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(this.chargeDir.x * 0.75D, 0.25D, this.chargeDir.z * 0.75D));
                     ModSounds.play(server, "golem_punch_hit", living.getX(), living.getY(), living.getZ(), 1.5F, 0.8F);
                     server.broadcastEntityEvent(this.golem, EVENT_CHARGE_HIT);
