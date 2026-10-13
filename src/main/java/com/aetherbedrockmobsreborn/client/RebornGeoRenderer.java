@@ -9,7 +9,6 @@ import com.geckolib.renderer.base.RenderPassInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -98,7 +97,7 @@ public final class RebornGeoRenderer extends GeoEntityRenderer<RebornMobEntity, 
         float scroll = -state.ageInTicks*0.35F;
         float pulse = 1+Mth.sin(state.ageInTicks*0.9F)*0.12F;
         Vec3 endpoint = end;
-        collector.submitCustomGeometry(pose, RenderTypes.eyes(state.beamTexture), (entry, vertices) -> {
+        collector.submitCustomGeometry(pose, BeamRenderUtil.renderType(state.beamTexture), (entry, vertices) -> {
             for (float width : new float[]{2.4F*pulse, 1.0F*pulse}) {
                 Vec3 half = side.scale(width*0.5F);
                 Vec3[] corners = {start.subtract(half),start.add(half),endpoint.add(half),endpoint.subtract(half)};

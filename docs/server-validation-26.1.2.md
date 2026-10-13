@@ -4,6 +4,14 @@
 
 羽刃和陨晶已恢复真实技能实体，远程攻击通过目标实际掉血判定。技能时间轴完成与命中结果分别记录。
 
+## 激光黑边修复与最新产物
+
+娜迦与远古潜影贝激光改用专用 ONE/ONE 加法混合管线，恢复旧版黑色贴图边缘不遮盖背景的效果。原有双层宽度、UV、口部起点与伤害逻辑保持一致，保留自发光、无叠加层、深度测试及不写深度和 CULL 设置。
+
+无窗口检查验证了管线注册、加法混合、深度与剔除、自发光标记、渲染类型缓存，以及两张光束贴图的尺寸和不透明黑色边缘。build 通过，正式包无临时测试类；未运行客户端画面或重跑服务端完整检查。日志为 `beam-geometry-validation.log`，位于隔离测试目录。
+
+最新包为 `aether_bedrock_mobs_reborn-26.1.2-neoforge-1.3.jar`，SHA-256 为 `525746E2EF63C4C19398F0644029E208D5463E3EBC203AEE66FD15D3F20BD519`。它包含下节的粒子颜色与娜迦分节显示修复，并替代下节的前次构建。客户端验证应观察两个 Boss 的激光黑边是否消失，原有外层发光和内层核心是否正常。
+
 ## 粒子颜色与娜迦分节显示回归
 
 当前版本为 1.3。本次修复五类自定义粒子的共用实体红染和表面光照路径，恢复原生粒子管线及碎片的不透明模式，新增仅 F3+B 开启时注册的娜迦分节调试显示。
@@ -12,7 +20,7 @@
 - 无窗口粒子几何回放：10 项通过，验证原生管线、混合模式、RGBA、透明度、默认 NO_OVERLAY 和显式叠加层保留。
 - build 通过；JAR 内包含 NagaHitboxDebugRenderer，不包含 ServerValidation、ToastDiagnostic 或 ClientGeometryValidation。
 
-当前修复包为 `aether_bedrock_mobs_reborn-26.1.2-neoforge-1.3.jar`，SHA-256 为 `9D19BB7F77E4E397031178B3F2678F45769E30C340BFACC845653A0372F269B5`。日志为 `naga-regression.log` 和 `client-geometry-validation.log`，原始服务端断言为 `results-naga-regression.json`。这些文件均在前述隔离测试目录中。
+前次粒子与娜迦修复包为 `aether_bedrock_mobs_reborn-26.1.2-neoforge-1.3.jar`，SHA-256 为 `9D19BB7F77E4E397031178B3F2678F45769E30C340BFACC845653A0372F269B5`。日志为 `naga-regression.log` 和 `client-geometry-validation.log`，原始服务端断言为 `results-naga-regression.json`。这些文件均在前述隔离测试目录中。
 
 无窗口回放验证没有启动 Minecraft 客户端，不能代替实际游戏画面验收。客户端需要观察各 Boss 的冲击环、预警、爪痕及碎片颜色，打开 F3+B 检查娜迦五节绿色碰撞箱随转向移动，并实际攻击尾段确认反馈。
 

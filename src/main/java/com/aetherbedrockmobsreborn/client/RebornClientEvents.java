@@ -42,6 +42,12 @@ public final class RebornClientEvents {
     }
 
     @SubscribeEvent
+    public static void registerRenderPipelines(net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent event) {
+        event.registerPipeline(BeamRenderUtil.PIPELINE);
+        com.mojang.logging.LogUtils.getLogger().debug("Registered additive boss beam pipeline: source=ONE destination=ONE depthWrite=false");
+    }
+
+    @SubscribeEvent
     public static void registerDebugRenderers(net.neoforged.neoforge.client.event.RegisterDebugRenderersEvent event) {
         if (net.minecraft.client.Minecraft.getInstance().debugEntries.isCurrentlyEnabled(net.minecraft.client.gui.components.debug.DebugScreenEntries.ENTITY_HITBOXES)) {
             event.register(NagaHitboxDebugRenderer::new);
