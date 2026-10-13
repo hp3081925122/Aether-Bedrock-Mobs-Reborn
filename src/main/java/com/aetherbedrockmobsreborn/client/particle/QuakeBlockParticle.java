@@ -19,14 +19,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 // 被震起的地面方块：渲染真实方块模型，弹起后落回原位消失；坐标为方块最小角，yd 为起跳速度
-public class DragonQuakeBlockParticle extends Particle {
+public class QuakeBlockParticle extends Particle {
     private final BlockState state;
     private final BlockPos blockPos;
     private final double baseY;
     private final float tiltX;
     private final float tiltZ;
 
-    protected DragonQuakeBlockParticle(ClientLevel level, double x, double y, double z, double lift, BlockState state) {
+    protected QuakeBlockParticle(ClientLevel level, double x, double y, double z, double lift, BlockState state) {
         super(level, x, y, z);
         this.state = state;
         this.blockPos = BlockPos.containing(x + 0.5D, y + 0.5D, z + 0.5D);
@@ -81,7 +81,7 @@ public class DragonQuakeBlockParticle extends Particle {
     public static final class Provider implements ParticleProvider<BlockParticleOption> {
         @Override
         public Particle createParticle(BlockParticleOption options, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
-            return new DragonQuakeBlockParticle(level, x, y, z, yd, options.getState());
+            return new QuakeBlockParticle(level, x, y, z, yd, options.getState());
         }
     }
 }

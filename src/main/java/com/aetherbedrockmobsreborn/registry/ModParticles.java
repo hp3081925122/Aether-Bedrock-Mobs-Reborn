@@ -14,13 +14,6 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> RUNESEFFECT = PARTICLES.register("runeseffect", () -> new SimpleParticleType(false));
     public static final RegistryObject<SimpleParticleType> WHITESMOKE = PARTICLES.register("whitesmoke", () -> new SimpleParticleType(false));
     public static final RegistryObject<SimpleParticleType> FIRE = PARTICLES.register("fire", () -> new SimpleParticleType(false));
-    // 艾瑟龙转阶段冲击波与碎鳞
-    public static final RegistryObject<SimpleParticleType> DRAGON_SHOCKWAVE = PARTICLES.register("dragon_shockwave", () -> new SimpleParticleType(true));
-    public static final RegistryObject<SimpleParticleType> DRAGON_SHARD = PARTICLES.register("dragon_shard", () -> new SimpleParticleType(true));
-    // 艾瑟龙技能落点预警环
-    public static final RegistryObject<SimpleParticleType> DRAGON_WARNING = PARTICLES.register("dragon_warning", () -> new SimpleParticleType(true));
-    // 艾瑟龙二阶段：爪痕刀光、被震起的地面方块
-    public static final RegistryObject<SimpleParticleType> DRAGON_SLASH = PARTICLES.register("dragon_slash", () -> new SimpleParticleType(true));
     // 灵魂：魂焰冲击环、预警环、剑气
     public static final RegistryObject<SimpleParticleType> SPIRIT_RING = PARTICLES.register("spirit_ring", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> SPIRIT_WARNING = PARTICLES.register("spirit_warning", () -> new SimpleParticleType(true));
@@ -49,7 +42,7 @@ public final class ModParticles {
     // 燔祭长矛投射物粒子
     public static final RegistryObject<SimpleParticleType> PYRE_RING = PARTICLES.register("pyre_ring", () -> new SimpleParticleType(true));
     public static final RegistryObject<SimpleParticleType> PYRE_EMBER = PARTICLES.register("pyre_ember", () -> new SimpleParticleType(true));
-    public static final RegistryObject<ParticleType<BlockParticleOption>> DRAGON_QUAKE_BLOCK = PARTICLES.register("dragon_quake_block", () -> new ParticleType<BlockParticleOption>(true, BlockParticleOption.DESERIALIZER) {
+    public static final RegistryObject<ParticleType<BlockParticleOption>> QUAKE_BLOCK = PARTICLES.register("quake_block", () -> new ParticleType<BlockParticleOption>(true, BlockParticleOption.DESERIALIZER) {
         @Override
         public Codec<BlockParticleOption> codec() {
             return BlockParticleOption.codec(this);

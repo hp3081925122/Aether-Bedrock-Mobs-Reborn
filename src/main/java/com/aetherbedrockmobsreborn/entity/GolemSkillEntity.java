@@ -175,7 +175,7 @@ public class GolemSkillEntity extends Entity {
         switch (id) {
             case 1 -> {
                 // 破土：地面顶起 + 碎晶上溅
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 0.8D + scale * 0.8D, 0.22D + scale * 0.06D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 0.8D + scale * 0.8D, 0.22D + scale * 0.06D, random);
                 int count = 4 + (int) (scale * 6.0F);
                 for (int i = 0; i < count; i++) {
                     level().addParticle(ModParticles.GOLEM_SHARD.get(), getX(), getY() + 0.3D, getZ(), random.nextGaussian() * 0.15D, 0.35D + random.nextDouble() * 0.35D, random.nextGaussian() * 0.15D);

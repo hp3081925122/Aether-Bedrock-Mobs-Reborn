@@ -54,7 +54,7 @@ public class JawParticle extends TextureSheetParticle {
         // 淡出
         float fade = Mth.clamp((age - 6.0F) / 6.0F, 0.0F, 1.0F);
         float alpha = 1.0F - fade * fade;
-        // 右方向与上方向（与 DragonDecalParticle 一致：前方为 (-sin, cos)）
+        // 右方向与上方向（与 DecalParticle 一致：前方为 (-sin, cos)）
         float rx = -Mth.cos(this.yaw);
         float rz = -Mth.sin(this.yaw);
         // 合拢轴 a 与齿列展开轴 s

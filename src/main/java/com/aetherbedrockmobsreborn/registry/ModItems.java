@@ -72,7 +72,6 @@ public final class ModItems {
             case "saltcrabking" -> new int[]{-527894, -1256960};
             case "eldershulker" -> new int[]{-1727951, -12985922};
             case "guardianangel" -> new int[]{-394759, -6018};
-            case "aetherdragon" -> new int[]{-1783512, -14637313};
             default -> new int[]{-1, -1};
         };
     }

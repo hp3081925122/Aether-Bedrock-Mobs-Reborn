@@ -1,6 +1,5 @@
 package com.aetherbedrockmobsreborn.block;
 
-import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import net.minecraft.core.BlockPos;
@@ -22,7 +21,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import com.aetherbedrockmobsreborn.entity.RebornMobEntity;
 import net.minecraftforge.registries.RegistryObject;
 
 public class SpecialSpawnerBlock extends Block {
@@ -96,17 +94,22 @@ public class SpecialSpawnerBlock extends Block {
         if (entityId == null) {
             return false;
         }
-        RegistryObject<EntityType<RebornMobEntity>> type = ModEntities.MOBS.get(entityId);
+        var entityKey = new net.minecraft.resources.ResourceLocation(action.equals("dragon") ? "aether_dragon" : com.aetherbedrockmobsreborn.AetherBedrockMobsReborn.MOD_ID, entityId);
+        EntityType<?> type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(entityKey).orElse(null);
         if (type == null) {
+            com.mojang.logging.LogUtils.getLogger().warn("Spawner activation failed: entity type {} is not registered at {}", entityKey, pos);
             return false;
         }
-        RebornMobEntity entity = type.get().create(level);
+        net.minecraft.world.entity.Entity entity = type.create(level);
         if (entity == null) {
             return false;
         }
         double y = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
         entity.moveTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
-        level.addFreshEntity(entity);
+        if (!level.addFreshEntity(entity)) {
+            com.mojang.logging.LogUtils.getLogger().warn("Spawner activation failed: could not add entity {} at {}", entityKey, pos);
+            return false;
+        }
         if (level instanceof ServerLevel server) {
             double particleY = pos.getY() + (action.equals("dragon") ? 10.0D : 1.0D);
             server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5D, particleY, pos.getZ() + 0.5D, 5, 3.0D, 3.0D, 3.0D, 1.0D);
