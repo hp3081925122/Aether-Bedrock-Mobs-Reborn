@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 
@@ -45,7 +46,7 @@ public final class GeometryCapture implements MultiBufferSource {
 
     private static final class Vertex {
         float x, y, z, u, v, nx, ny, nz;
-        int color = -1, overlay, light;
+        int color = -1, overlay = OverlayTexture.NO_OVERLAY, light;
         Vertex(float x, float y, float z) { this.x = x; this.y = y; this.z = z; }
     }
 

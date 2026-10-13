@@ -20,6 +20,7 @@ public final class NagaEntity extends RebornMobEntity {
         this.parts = NagaHitboxes.createParts(this);
         setId(ENTITY_COUNTER.getAndAdd(this.parts.length + 1) + 1);
         updateParts();
+        com.mojang.logging.LogUtils.getLogger().debug("Created Naga multipart hitboxes: entity={} parts={}", getId(), this.parts.length);
     }
 
     @Override
