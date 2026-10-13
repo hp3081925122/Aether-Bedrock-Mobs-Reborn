@@ -1,5 +1,7 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -40,6 +42,7 @@ public class SpiritSkillEntity extends Entity {
     private static final EntityDataAccessor<Float> GROUND_Y = SynchedEntityData.defineId(SpiritSkillEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Integer> DELAY = SynchedEntityData.defineId(SpiritSkillEntity.class, EntityDataSerializers.INT);
     private int ownerId = -1;
+    private double ownerAttackDamage;
     private int targetId = -1;
 
     public SpiritSkillEntity(EntityType<? extends SpiritSkillEntity> type, Level level) {
@@ -57,6 +60,7 @@ public class SpiritSkillEntity extends Entity {
         entity.entityData.set(GROUND_Y, (float) groundY);
         entity.entityData.set(DELAY, delay);
         entity.ownerId = owner.getId();
+        entity.ownerAttackDamage = BossSkillDamage.attackDamage(owner);
         if (target != null) {
             entity.targetId = target.getId();
         }
@@ -134,7 +138,7 @@ public class SpiritSkillEntity extends Entity {
             }
             EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.6D), this::canHit);
             if (hit != null) {
-                hit.getEntity().hurt(skillDamage(), 7.0F);
+                hit.getEntity().hurt(skillDamage(), skillDamageAmount(SPIRIT_RUNE));
                 burst(hit.getLocation());
                 return;
             }
@@ -180,7 +184,7 @@ public class SpiritSkillEntity extends Entity {
             AABB box = new AABB(center, center).inflate(3.2D, 3.0D, 3.2D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 if (living.position().distanceToSqr(center) <= 3.4D * 3.4D) {
-                    living.hurt(skillDamage(), 12.0F);
+                    living.hurt(skillDamage(), skillDamageAmount(SPIRIT_SWORD));
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -229,6 +233,10 @@ public class SpiritSkillEntity extends Entity {
 
     private boolean canHit(Entity entity) {
         return entity.isAlive() && entity.isPickable() && entity.getId() != this.ownerId && !(entity instanceof RebornMobEntity);
+    }
+
+    private float skillDamageAmount(com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill skill) {
+        return BossSkillDamage.calculate(level().getEntity(this.ownerId), this.ownerAttackDamage, skill);
     }
 
     private DamageSource skillDamage() {
