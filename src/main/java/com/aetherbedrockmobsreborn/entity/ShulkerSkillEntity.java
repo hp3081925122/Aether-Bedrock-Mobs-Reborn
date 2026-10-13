@@ -231,7 +231,7 @@ public class ShulkerSkillEntity extends Entity {
             }
             case 2 -> {
                 // 缠藤破土：地面翻起 + 草叶飞散
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 1.5D, 0.22D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 1.5D, 0.22D, random);
                 for (int i = 0; i < 12; i++) {
                     level().addParticle(ParticleTypes.COMPOSTER, getX() + random.nextGaussian() * 0.6D, getY() + random.nextDouble() * 2.5D, getZ() + random.nextGaussian() * 0.6D, 0.0D, 0.05D, 0.0D);
                 }

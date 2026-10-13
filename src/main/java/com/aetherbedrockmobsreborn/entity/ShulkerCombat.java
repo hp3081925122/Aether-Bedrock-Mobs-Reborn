@@ -160,7 +160,7 @@ final class ShulkerCombat {
 
     private void tickIdle(LivingEntity target) {
         // 原地炮台：缓慢转向目标
-        this.shulker.faceDragonTowards(target.getX(), target.getZ(), 4.0F);
+        this.shulker.faceBossTowards(target.getX(), target.getZ(), 4.0F);
         this.shulker.getLookControl().setLookAt(target, 30.0F, 30.0F);
         if (this.gap > 0) {
             this.gap--;
@@ -214,7 +214,7 @@ final class ShulkerCombat {
     // 潜影弹幕：14-38 tick 连续向四周抛出潜影弹，之后自动追踪目标
     private void tickBarrage(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.shulker.faceDragonTowards(target.getX(), target.getZ(), 4.0F);
+        this.shulker.faceBossTowards(target.getX(), target.getZ(), 4.0F);
         if (t == 2) {
             ModSounds.play(server, "shulker_open", this.shulker.getX(), this.shulker.getY() + 2.0D, this.shulker.getZ(), 2.0F, 1.0F);
         }
@@ -236,7 +236,7 @@ final class ShulkerCombat {
     private void tickBeam(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
         if (t < BEAM_START) {
-            this.shulker.faceDragonTowards(target.getX(), target.getZ(), 10.0F);
+            this.shulker.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
         if (t == 2) {
             ModSounds.play(server, "shulker_beam_charge", this.shulker.getX(), this.shulker.getY() + 2.5D, this.shulker.getZ(), 2.0F, 1.0F);
@@ -283,7 +283,7 @@ final class ShulkerCombat {
         }
         Vec3 dir = flat.scale(1.0D / length);
         AABB box = new AABB(start, end).inflate(1.5D);
-        for (LivingEntity living : this.shulker.level().getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+        for (LivingEntity living : this.shulker.level().getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
             this.beamCandidates++;
             Vec3 offset = living.getBoundingBox().getCenter().subtract(start);
             double along = offset.x * dir.x + offset.z * dir.z;
@@ -305,7 +305,7 @@ final class ShulkerCombat {
     // 缠藤禁锢：第 14 tick 藤蔓从脚下一路冲向目标，最后在目标周围合围
     private void tickVine(ServerLevel server, LivingEntity target) {
         int t = this.skillTicks;
-        this.shulker.faceDragonTowards(target.getX(), target.getZ(), 6.0F);
+        this.shulker.faceBossTowards(target.getX(), target.getZ(), 6.0F);
         if (t == 14) {
             Vec3 lead = target.getDeltaMovement().multiply(10.0D, 0.0D, 10.0D);
             Vec3 center = target.position().add(lead);
@@ -360,12 +360,12 @@ final class ShulkerCombat {
             if (server.noCollision(this.shulker, box)) {
                 this.shulker.teleportTo(x, y, z);
             }
-            this.shulker.faceDragonTowards(target.getX() + 0.01D, target.getZ() + 1.0D, 360.0F);
+            this.shulker.faceBossTowards(target.getX() + 0.01D, target.getZ() + 1.0D, 360.0F);
         }
         if (t == PHASE_IMPACT) {
             Vec3 center = this.shulker.position();
             AABB box = new AABB(center, center).inflate(4.5D, 3.0D, 4.5D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
                 if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurt(this.shulker.damageSources().mobAttack(this.shulker), 14.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.075D, 0.5D, offset.z * 0.075D));
@@ -385,7 +385,7 @@ final class ShulkerCombat {
         }
         if (t == 18) {
             AABB box = this.shulker.getBoundingBox().inflate(12.0D, 4.0D, 12.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 if (living.distanceTo(this.shulker) > 12.0F) {
                     continue;
                 }
@@ -397,7 +397,7 @@ final class ShulkerCombat {
         }
         if (t == 40) {
             AABB box = this.shulker.getBoundingBox().inflate(16.0D, 12.0D, 16.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 if (living.onGround()) {
                     continue;
                 }
@@ -439,7 +439,7 @@ final class ShulkerCombat {
                 }
             }
             AABB box = this.shulker.getBoundingBox().inflate(5.0D, 2.0D, 5.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.shulker.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.65D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.2D, push.z));
@@ -456,7 +456,7 @@ final class ShulkerCombat {
         }
         if (this.skillTicks == 12) {
             AABB box = this.shulker.getBoundingBox().inflate(7.0D, 3.0D, 7.0D);
-            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
+            for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canBossSkillHit)) {
                 Vec3 push = living.position().subtract(this.shulker.position());
                 push = new Vec3(push.x, 0.0D, push.z).normalize().scale(0.7D);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.25D, push.z));
@@ -553,7 +553,7 @@ final class ShulkerCombat {
             // 砸落：双层冲击环 + 大范围震起地面 + 金色碎光冲天
             level.addAlwaysVisibleParticle(ModParticles.SHULKER_RING.get(), true, pos.x, pos.y + 0.15D, pos.z, 7.0D, 14.0D, 0.0D);
             level.addAlwaysVisibleParticle(ModParticles.SHULKER_RING.get(), true, pos.x, pos.y + 0.2D, pos.z, 4.0D, 10.0D, 0.0D);
-            DragonSkillEntity.spawnQuakeRing(level, pos.x, pos.y, pos.z, 1.5D, 4.5D, 0.4D, random);
+            GroundQuakeEffects.spawnQuakeRing(level, pos.x, pos.y, pos.z, 1.5D, 4.5D, 0.4D, random);
             for (int i = 0; i < 30; i++) {
                 double angle = random.nextDouble() * Math.PI * 2.0D;
                 level.addParticle(ModParticles.SHULKER_SPARK.get(), pos.x + Math.cos(angle) * 2.5D, pos.y + 0.3D, pos.z + Math.sin(angle) * 2.5D, Math.cos(angle) * 0.35D, 0.4D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.35D);

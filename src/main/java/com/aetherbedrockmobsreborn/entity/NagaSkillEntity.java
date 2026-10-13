@@ -210,7 +210,7 @@ public class NagaSkillEntity extends Entity {
         switch (id) {
             case 1 -> {
                 // 石柱破土：周围地面被顶起 + 碎石
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.9D, 1.8D, 0.25D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.9D, 1.8D, 0.25D, random);
                 for (int i = 0; i < 12; i++) {
                     level().addParticle(stone, getX() + random.nextGaussian() * 0.5D, getY() + 0.3D, getZ() + random.nextGaussian() * 0.5D, random.nextGaussian() * 0.15D, 0.3D + random.nextDouble() * 0.3D, random.nextGaussian() * 0.15D);
                 }
@@ -219,7 +219,7 @@ public class NagaSkillEntity extends Entity {
             case 2 -> {
                 // 巨石砸落：秘符冲击环 + 震起地面 + 大量碎石
                 level().addAlwaysVisibleParticle(ModParticles.NAGA_RING.get(), true, getX(), getY() + 0.15D, getZ(), 4.0D, 12.0D, 0.0D);
-                DragonSkillEntity.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 2.6D, 0.3D, random);
+                GroundQuakeEffects.spawnQuakeRing(level(), getX(), getY(), getZ(), 0.0D, 2.6D, 0.3D, random);
                 for (int i = 0; i < 30; i++) {
                     double angle = random.nextDouble() * Math.PI * 2.0D;
                     level().addParticle(stone, getX(), getY() + 0.5D, getZ(), Math.cos(angle) * 0.35D, 0.3D + random.nextDouble() * 0.4D, Math.sin(angle) * 0.35D);
