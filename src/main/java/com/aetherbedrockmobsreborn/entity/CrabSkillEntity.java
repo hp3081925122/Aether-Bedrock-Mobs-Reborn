@@ -63,7 +63,7 @@ public class CrabSkillEntity extends Entity {
 
     // 生成技能实体；yaw 决定浪墙推进方向，silent 为真时不播放出现音效
     public static void spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, float yaw, int delay, LivingEntity target, boolean silent) {
-        CrabSkillEntity entity = ModEntities.CRAB_SKILL.get().create(level);
+        CrabSkillEntity entity = ModEntities.CRAB_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return;
         }
@@ -79,6 +79,11 @@ public class CrabSkillEntity extends Entity {
         entity.setYRot(yaw);
         entity.yRotO = yaw;
         level.addFreshEntity(entity);
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -108,7 +113,7 @@ public class CrabSkillEntity extends Entity {
 
     private void tickBubble() {
         Vec3 velocity = getDeltaMovement();
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             // 前 30 tick 缓慢追踪目标
             Entity target = level().getEntity(this.targetId);
             if (this.tickCount < 30 && target instanceof LivingEntity living && living.isAlive()) {
@@ -122,11 +127,11 @@ public class CrabSkillEntity extends Entity {
             if (block.getType() != HitResult.Type.MISS) {
                 end = block.getLocation();
             }
-            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.5D), this::canHit);
+            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.5D), this::canHit, 0.3F);
             if (hit != null && hit.getEntity() instanceof LivingEntity living) {
                 // 命中：伤害并减速
-                living.hurt(skillDamage(), 6.0F);
-                living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+                living.hurtOrSimulate(skillDamage(), 6.0F);
+                living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, 1));
                 pop(hit.getLocation());
                 return;
             }
@@ -150,7 +155,7 @@ public class CrabSkillEntity extends Entity {
     private void tickGeyser() {
         int delay = getDelay();
         int end = delay + GEYSER_HOLD;
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1) {
                 // 预警：金色收缩环 + 地面冒出光点
                 level().addAlwaysVisibleParticle(ModParticles.SALT_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 2.2D, Math.max(4, delay), 0.0D);
@@ -173,7 +178,7 @@ public class CrabSkillEntity extends Entity {
             // 喷发：伤害并高高托起
             AABB box = new AABB(position(), position()).inflate(1.6D, 0.0D, 1.6D).expandTowards(0.0D, GEYSER_HEIGHT, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 9.0F);
+                living.hurtOrSimulate(skillDamage(), 9.0F);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.65D, 0.0D));
                 living.hurtMarked = true;
             }
@@ -218,7 +223,7 @@ public class CrabSkillEntity extends Entity {
 
     private void tickWave() {
         Vec3 dir = getWaveDirection();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             // 浪尖盐沫与光点
             Vec3 side = new Vec3(-dir.z, 0.0D, dir.x);
             for (int i = 0; i < 6; i++) {
@@ -246,7 +251,7 @@ public class CrabSkillEntity extends Entity {
                 if (!this.waveHits.add(living.getId())) {
                     continue;
                 }
-                living.hurt(skillDamage(), 10.0F);
+                living.hurtOrSimulate(skillDamage(), 10.0F);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(dir.x * 0.8D, 0.25D, dir.z * 0.8D));
                 living.hurtMarked = true;
             }
@@ -284,7 +289,7 @@ public class CrabSkillEntity extends Entity {
     private void tickSalt() {
         int delay = getDelay();
         int end = delay + 3 + SALT_HOLD;
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1 && delay > 0) {
                 level().addAlwaysVisibleParticle(ModParticles.SALT_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.4D, Math.max(4, delay), 0.0D);
             }
@@ -294,7 +299,7 @@ public class CrabSkillEntity extends Entity {
             // 盐晶破土：伤害并挑起
             AABB box = new AABB(position(), position()).inflate(1.2D, 0.0D, 1.2D).expandTowards(0.0D, 2.5D, 0.0D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
-                living.hurt(skillDamage(), 9.0F);
+                living.hurtOrSimulate(skillDamage(), 9.0F);
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                 living.hurtMarked = true;
             }
@@ -374,11 +379,11 @@ public class CrabSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

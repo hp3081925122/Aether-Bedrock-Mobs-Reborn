@@ -50,7 +50,7 @@ public class SpiritSkillEntity extends Entity {
 
     // 生成技能实体并加入世界
     public static SpiritSkillEntity spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, Vec3 velocity, double groundY, int delay, LivingEntity target) {
-        SpiritSkillEntity entity = ModEntities.SPIRIT_SKILL.get().create(level);
+        SpiritSkillEntity entity = ModEntities.SPIRIT_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return null;
         }
@@ -65,6 +65,11 @@ public class SpiritSkillEntity extends Entity {
         entity.setDeltaMovement(velocity);
         level.addFreshEntity(entity);
         return entity;
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -104,12 +109,12 @@ public class SpiritSkillEntity extends Entity {
             velocity = velocity.scale(0.82D);
             setDeltaMovement(velocity);
             setPos(getX() + velocity.x, getY() + velocity.y, getZ() + velocity.z);
-            if (level().isClientSide && this.tickCount % 3 == 0) {
+            if (level().isClientSide() && this.tickCount % 3 == 0) {
                 level().addParticle(ParticleTypes.SOUL_FIRE_FLAME, getX() + (this.random.nextDouble() - 0.5D) * 0.6D, getY() + (this.random.nextDouble() - 0.5D) * 0.6D, getZ() + (this.random.nextDouble() - 0.5D) * 0.6D, 0.0D, 0.02D, 0.0D);
             }
             return;
         }
-        if (!level().isClientSide) {
+        if (!level().isClientSide()) {
             Entity target = level().getEntity(this.targetId);
             if (this.tickCount == delay) {
                 // 射出：直指目标胸口
@@ -133,9 +138,9 @@ public class SpiritSkillEntity extends Entity {
             if (block.getType() != HitResult.Type.MISS) {
                 end = block.getLocation();
             }
-            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.6D), this::canHit);
+            EntityHitResult hit = ProjectileUtil.getEntityHitResult(level(), this, start, end, getBoundingBox().expandTowards(velocity).inflate(0.6D), this::canHit, 0.3F);
             if (hit != null) {
-                hit.getEntity().hurt(skillDamage(), 7.0F);
+                hit.getEntity().hurtOrSimulate(skillDamage(), 7.0F);
                 burst(hit.getLocation());
                 return;
             }
@@ -158,7 +163,7 @@ public class SpiritSkillEntity extends Entity {
         int landTick = getSwordLandTick();
         // 位置由时间决定，客户端与服务端一致
         setPos(getX(), getSwordY(this.tickCount), getZ());
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1) {
                 // 落点收缩预警环，收到最小时天剑落地
                 level().addAlwaysVisibleParticle(ModParticles.SPIRIT_WARNING.get(), true, getX(), getGroundY() + 0.1D, getZ(), 3.2D, landTick - 1, 0.0D);
@@ -181,7 +186,7 @@ public class SpiritSkillEntity extends Entity {
             AABB box = new AABB(center, center).inflate(3.2D, 3.0D, 3.2D);
             for (LivingEntity living : level().getEntitiesOfClass(LivingEntity.class, box, this::canHit)) {
                 if (living.position().distanceToSqr(center) <= 3.4D * 3.4D) {
-                    living.hurt(skillDamage(), 12.0F);
+                    living.hurtOrSimulate(skillDamage(), 12.0F);
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.25D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -276,11 +281,11 @@ public class SpiritSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

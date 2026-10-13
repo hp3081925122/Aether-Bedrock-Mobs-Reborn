@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "aether_bedrock_mobs_reborn:shaday"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "aether_bedrock_mobs_reborn:shaday"
+      }
+    ]
+  }
+}

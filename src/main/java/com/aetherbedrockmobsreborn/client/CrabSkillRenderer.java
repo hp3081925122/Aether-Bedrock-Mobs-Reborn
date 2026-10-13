@@ -6,22 +6,22 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 // 盐蟹王技能实体渲染：泡泡为面向相机的半透明球面，水柱与浪墙为滚动 UV 的半透明面片，盐晶为阶梯晶簇
-public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
-    private static final ResourceLocation BUBBLE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
-    private static final ResourceLocation WATER = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_water.png");
-    private static final ResourceLocation WAVE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_wave.png");
-    private static final ResourceLocation SALT = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_salt.png");
+public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity, SkillRenderState> {
+    private static final Identifier BUBBLE = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_bubble.png");
+    private static final Identifier WATER = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_water.png");
+    private static final Identifier WAVE = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_wave.png");
+    private static final Identifier SALT = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/crab_skill/crab_salt.png");
     private static final int FULL_BRIGHT = 15728880;
     // 浪墙沿宽度切成的段数
     private static final int WAVE_SEGMENTS = 12;
@@ -31,7 +31,23 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
     }
 
     @Override
-    public void render(CrabSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
+    public SkillRenderState createRenderState() { return new SkillRenderState(); }
+
+    @Override
+    public void extractRenderState(CrabSkillEntity entity, SkillRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.geometry = new GeometryCapture();
+        extractGeometry(entity, entity.getYRot(), partialTick, new PoseStack(), state.geometry, state.lightCoords);
+    }
+
+    @Override
+    public void submit(SkillRenderState state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+            net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        super.submit(state, pose, collector, camera);
+        state.geometry.submit(pose, collector);
+    }
+
+    private void extractGeometry(CrabSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
         float age = entity.tickCount + partialTicks;
         switch (entity.getKind()) {
             case CrabSkillEntity.GEYSER -> renderGeyser(entity, partialTicks, age, poseStack, buffers);
@@ -39,7 +55,6 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
             case CrabSkillEntity.SALT -> renderSalt(entity, partialTicks, poseStack, buffers);
             default -> renderBubble(age, poseStack, buffers);
         }
-        super.render(entity, yaw, partialTicks, poseStack, buffers, light);
     }
 
     private void renderBubble(float age, PoseStack poseStack, MultiBufferSource buffers) {
@@ -49,8 +64,8 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
         size *= grow;
         float stretch = 1.0F + 0.06F * Mth.sin(age * 0.8F);
         poseStack.pushPose();
-        poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucentEmissive(BUBBLE));
+        poseStack.mulPose(this.entityRenderDispatcher.camera.rotation());
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(BUBBLE));
         Matrix4f pose = poseStack.last().pose();
         Matrix3f normal = poseStack.last().normal();
         vertex(consumer, pose, normal, -size * stretch, -size, 0.0F, 0.0F, 1.0F, 0.75F);
@@ -66,7 +81,7 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
             return;
         }
         // 水柱：四片面片围成柱体，UV 向上滚动；外层更宽更淡
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucentEmissive(WATER));
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(WATER));
         float scroll = -age * 0.12F;
         float vLength = height / 2.0F;
         float[] widths = {1.4F, 0.9F};
@@ -93,7 +108,7 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
             return;
         }
         // 浪墙：横向分段的弧形墙，两端落后于中央，顶部前倾卷起
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucentEmissive(WAVE));
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(WAVE));
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-Mth.lerp(partialTicks, entity.yRotO, entity.getYRot())));
         Matrix4f pose = poseStack.last().pose();
@@ -127,7 +142,7 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
             return;
         }
         // 盐晶：三片交叉面片，从地下顶出
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(SALT));
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(SALT));
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() * 37.0F));
         poseStack.translate(0.0D, (rise - 1.0F) * 2.4F, 0.0D);
@@ -156,8 +171,7 @@ public class CrabSkillRenderer extends EntityRenderer<CrabSkillEntity> {
         return true;
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(CrabSkillEntity entity) {
+    public Identifier getTextureLocation(CrabSkillEntity entity) {
         return BUBBLE;
     }
 }

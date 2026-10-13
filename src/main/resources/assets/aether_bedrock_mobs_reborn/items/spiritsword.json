@@ -1,0 +1,14 @@
+{
+  "model": {
+    "type": "minecraft:condition",
+    "property": "minecraft:using_item",
+    "on_true": {
+      "type": "minecraft:model",
+      "model": "aether_bedrock_mobs_reborn:item/spiritsword_0"
+    },
+    "on_false": {
+      "type": "minecraft:model",
+      "model": "aether_bedrock_mobs_reborn:item/spiritsword"
+    }
+  }
+}

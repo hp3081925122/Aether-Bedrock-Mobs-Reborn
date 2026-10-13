@@ -7,12 +7,8 @@
     "aba"
   ],
   "key": {
-    "a": {
-      "item": "aether_bedrock_mobs_reborn:crystalitedust"
-    },
-    "b": {
-      "item": "minecraft:brick"
-    }
+    "a": "aether_bedrock_mobs_reborn:crystalitedust",
+    "b": "minecraft:brick"
   },
   "result": {
     "count": 1,

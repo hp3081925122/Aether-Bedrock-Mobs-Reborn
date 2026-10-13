@@ -1,139 +1,88 @@
 plugins {
     id 'java-library'
-    id 'eclipse'
-    id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.1.37'
-}
-
-repositories {
-    mavenLocal()
-    maven { url = 'https://maven.neoforged.net/releases' }
-    maven {
-        name = 'CurseMaven'
-        url = 'https://www.cursemaven.com'
-        content {
-            includeGroup 'curse.maven'
-        }
-    }
-    maven {
-        name = 'ForgifiedFabricAPI'
-        url = 'https://dl.cloudsmith.io/public/thinkingstudio/forgifiedfabricapi/maven/'
-        content {
-            includeGroup 'org.sinytra.forgified-fabric-api'
-        }
-    }
-    maven {
-        name = 'GeckoLib'
-        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroup 'software.bernie.geckolib'
-        }
-    }
-    maven {
-        name = 'Jared Maven'
-        url = 'https://maven.blamejared.com'
-        content {
-            includeGroup 'mezz.jei'
-        }
-    }
+    id 'net.neoforged.moddev' version '2.0.140'
 }
 
 version = project.mod_version
 group = project.mod_group_id
+base { archivesName = "${project.mod_id}-${project.minecraft_version}-neoforge" }
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
-base {
-    archivesName = project.mod_id
+repositories {
+    maven { url = 'https://www.cursemaven.com'; content { includeGroup 'curse.maven' } }
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
- runs {
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            systemProperty 'forge.logging.console.level', 'debug'
-            modSource project.sourceSets.main
-        }
-        client {
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        }
-        server {
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-            programArgument '--nogui'
-        }
-        gameTestServer {
-            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        }
-        data {
+neoForge {
+    version = project.neo_version
+    runs {
+        configureEach { logLevel = org.slf4j.event.Level.DEBUG }
+        client { client() }
+        server { server(); programArgument '--nogui' }
+        gameTestServer { type = 'gameTestServer' }
+        serverData {
+            serverData()
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
+    }
+    mods {
+        "${project.mod_id}" { sourceSet(sourceSets.main) }
+    }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     implementation "net.neoforged:neoforge:${project.neo_version}"
-    implementation "software.bernie.geckolib:geckolib-neoforge-${project.minecraft_version}:${project.geckolib_version}"
-    compileOnly "mezz.jei:jei-${project.minecraft_version}-neoforge-api:${project.jei_version}"
-    runtimeOnly "mezz.jei:jei-${project.minecraft_version}-neoforge:${project.jei_version}"
-    compileOnly "curse.maven:aether-255308:${project.aether_file_id}"
-    runtimeOnly "curse.maven:aether-255308:${project.aether_file_id}"
-    compileOnly "curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}"
-    runtimeOnly "curse.maven:aether-dragon-1740349:${project.aether_dragon_file_id}"
-    compileOnly "curse.maven:owo-lib-532610:${project.owo_file_id}"
-    runtimeOnly "curse.maven:owo-lib-532610:${project.owo_file_id}"
-    compileOnly "org.sinytra.forgified-fabric-api:fabric-networking-api-v1:4.3.0+6db6dff919"
-    runtimeOnly "org.sinytra.forgified-fabric-api:fabric-networking-api-v1:4.3.0+6db6dff919"
+    implementation "curse.maven:geckolib-388172:7913641"
+    implementation "curse.maven:aether-ii-223796:${project.aether_ii_file_id}"
+    compileOnly "curse.maven:jei-238222:8771077"
+    runtimeOnly "curse.maven:jei-238222:8771077"
+    runtimeOnly files(project.aether_dragon_jar)
 }
 
-tasks.named('processResources', ProcessResources).configure {
+tasks.withType(ProcessResources).configureEach {
     def replaceProperties = [
-            minecraft_version: project.minecraft_version,
-            minecraft_version_range: project.minecraft_version_range,
-            neo_version: project.neo_version,
-            neo_version_range: project.neo_version_range,
-            loader_version_range: project.loader_version_range,
-            mod_id: project.mod_id,
-            mod_name: project.mod_name,
-            mod_license: project.mod_license,
-            mod_version: project.mod_version,
-            mod_authors: project.mod_authors,
-            mod_description: project.mod_description,
-            geckolib_version_range: project.geckolib_version_range
+        minecraft_version: project.minecraft_version,
+        minecraft_version_range: project.minecraft_version_range,
+        neo_version: project.neo_version,
+        neo_version_range: project.neo_version_range,
+        loader_version_range: project.loader_version_range,
+        mod_id: project.mod_id,
+        mod_name: project.mod_name,
+        mod_license: project.mod_license,
+        mod_version: project.mod_version,
+        mod_authors: project.mod_authors,
+        mod_description: project.mod_description,
+        geckolib_version_range: project.geckolib_version_range
     ]
     inputs.properties replaceProperties
-
-    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) { expand replaceProperties }
 }
 
 tasks.named('jar', Jar).configure {
     manifest {
         attributes([
-                'Specification-Title': project.mod_id,
-                'Specification-Vendor': project.mod_authors,
-                'Specification-Version': '1',
-                'Implementation-Title': project.name,
-                'Implementation-Version': project.jar.archiveVersion,
-                'Implementation-Vendor': project.mod_authors
+            'Specification-Title': project.mod_id,
+            'Specification-Vendor': project.mod_authors,
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': project.mod_authors
         ])
     }
 }
 
 publishing {
     publications {
-        register('mavenJava', MavenPublication) {
-            from components.java
-        }
+        register('mavenJava', MavenPublication) { from components.java }
     }
     repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
+        maven { url "file://${project.projectDir}/mcmodsrepo" }
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
+    options.release = 25
     options.encoding = 'UTF-8'
 }

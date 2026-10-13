@@ -32,13 +32,18 @@ public final class ModBlocks {
         };
         for (String id : ids) {
             ALL.put(id, BLOCKS.register(id, () -> id.equals("crystalitecapstone")
-                    ? new CrystaliteCapstoneBlock()
+                    ? new CrystaliteCapstoneBlock(properties(id))
                     : isSpecialSpawner(id)
-                    ? new SpecialSpawnerBlock(getSpawnerAction(id))
+                    ? new SpecialSpawnerBlock(getSpawnerAction(id), properties(id))
                     : id.equals("aureateleaves") || id.equals("labyrinthleaves")
-                    ? new Block(BlockBehaviour.Properties.of().mapColor(mapColor(id)).strength(1.5F).noOcclusion())
-                    : new Block(BlockBehaviour.Properties.of().mapColor(mapColor(id)).strength(1.5F))));
+                    ? new Block(properties(id).mapColor(mapColor(id)).strength(1.5F).noOcclusion())
+                    : new Block(properties(id).mapColor(mapColor(id)).strength(1.5F))));
         }
+    }
+
+    private static BlockBehaviour.Properties properties(String id) {
+        return BlockBehaviour.Properties.of().setId(net.minecraft.resources.ResourceKey.create(Registries.BLOCK,
+                net.minecraft.resources.Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, id)));
     }
 
     private static MapColor mapColor(String id) {

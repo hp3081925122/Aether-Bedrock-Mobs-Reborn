@@ -8,30 +8,36 @@ import java.util.function.Consumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 
-public final class ShadayArmorItem extends ArmorItem {
-    public ShadayArmorItem(Type type) {
-        super(ModArmorMaterials.SHADAY, type, new Item.Properties().rarity(Rarity.RARE).durability(type.getDurability(50)));
+public final class ShadayArmorItem extends Item {
+    private final ArmorType type;
+    public ShadayArmorItem(ArmorType type, Item.Properties properties) {
+        super(properties.humanoidArmor(ModArmorMaterials.SHADAY, type).rarity(Rarity.RARE));
+        this.type = type;
     }
 
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
+    public IClientItemExtensions clientExtensions() {
+        return new IClientItemExtensions() {
             @Override
-            public HumanoidModel<?> getHumanoidArmorModel(LivingEntity living, ItemStack stack, EquipmentSlot slot, HumanoidModel<?> defaultModel) {
-                ShadayArmorModel<LivingEntity> source = new ShadayArmorModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(ShadayArmorModel.LAYER_LOCATION));
+            public Identifier getArmorTexture(ItemStack stack, net.minecraft.client.resources.model.EquipmentClientInfo.LayerType layerType,
+                    net.minecraft.client.resources.model.EquipmentClientInfo.Layer layer, Identifier fallback) {
+                return Identifier.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "textures/entities/valkyrie_armor.png");
+            }
+            @Override
+            public net.minecraft.client.model.Model getHumanoidArmorModel(ItemStack stack, net.minecraft.client.resources.model.EquipmentClientInfo.LayerType layerType, net.minecraft.client.model.Model defaultModel) {
+                ShadayArmorModel source = new ShadayArmorModel(Minecraft.getInstance().getEntityModels().bakeLayer(ShadayArmorModel.LAYER_LOCATION));
                 ModelPart empty = new ModelPart(Collections.emptyList(), Collections.emptyMap());
                 Map<String, ModelPart> parts;
-                if (getType() == Type.HELMET) {
+                if (type == ArmorType.HELMET) {
                     parts = Map.of(
                             "head", source.head,
                             "hat", empty,
@@ -41,7 +47,7 @@ public final class ShadayArmorItem extends ArmorItem {
                             "right_leg", empty,
                             "left_leg", empty
                     );
-                } else if (getType() == Type.CHESTPLATE) {
+                } else if (type == ArmorType.CHESTPLATE) {
                     parts = Map.of(
                             "head", empty,
                             "hat", empty,
@@ -51,7 +57,7 @@ public final class ShadayArmorItem extends ArmorItem {
                             "right_leg", empty,
                             "left_leg", empty
                     );
-                } else if (getType() == Type.LEGGINGS) {
+                } else if (type == ArmorType.LEGGINGS) {
                     parts = Map.of(
                             "head", empty,
                             "hat", empty,
@@ -73,16 +79,11 @@ public final class ShadayArmorItem extends ArmorItem {
                     );
                 }
                 HumanoidModel<?> armorModel = new HumanoidModel<>(new ModelPart(Collections.emptyList(), parts));
-                armorModel.crouching = living.isShiftKeyDown();
-                armorModel.riding = defaultModel.riding;
-                armorModel.young = living.isBaby();
+
                 return armorModel;
             }
-        });
+        };
     }
 
-    @Override
-    public ResourceLocation getArmorTexture(ItemStack stack, net.minecraft.world.entity.Entity entity, EquipmentSlot slot, net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
-        return ResourceLocation.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "textures/entities/valkyrie_armor.png");
-    }
+
 }

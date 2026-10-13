@@ -6,19 +6,19 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 // 燔祭长矛投射物渲染：使用物品栏贴图，沿飞行方向摆放（十字交叉面片，绕枪身自转）
-public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProjectileEntity> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/item/pyre_spear.png");
+public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProjectileEntity, SkillRenderState> {
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/item/pyre_spear.png");
     // 贴图半边长；物品贴图中长矛沿对角线，矛尖在右上角
     private static final float HALF = 0.6F;
     // 整体向后偏移，让矛尖贴近实体位置
@@ -30,7 +30,21 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
     }
 
     @Override
-    public void render(RebornProjectileEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
+    public SkillRenderState createRenderState() { return new SkillRenderState(); }
+    @Override
+    public void extractRenderState(RebornProjectileEntity entity, SkillRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.geometry = new GeometryCapture();
+        extractGeometry(entity, entity.getYRot(), partialTick, new PoseStack(), state.geometry, state.lightCoords);
+    }
+    @Override
+    public void submit(SkillRenderState state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+            net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        super.submit(state, pose, collector, camera);
+        state.geometry.submit(pose, collector);
+    }
+
+    private void extractGeometry(RebornProjectileEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
         float yRot = Mth.lerp(partialTicks, entity.yRotO, entity.getYRot());
         float xRot = Mth.lerp(partialTicks, entity.xRotO, entity.getXRot());
         float age = entity.tickCount + partialTicks;
@@ -43,7 +57,7 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
             // 飞行时绕枪身自转
             poseStack.mulPose(Axis.XP.rotationDegrees(age * 24.0F));
         }
-        VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
+        VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(TEXTURE));
         for (int i = 0; i < 2; i++) {
             // 两片面片互成 90 度；面内旋转 -45 度，把贴图对角线上的长矛转到飞行方向
             poseStack.pushPose();
@@ -53,7 +67,7 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
             poseStack.popPose();
         }
         poseStack.popPose();
-        super.render(entity, yaw, partialTicks, poseStack, buffers, light);
+
     }
 
     // 单面四边形：x 从 x0 到 x1，y 从 y0 到 y1，贴图 u 随 x 递增
@@ -75,8 +89,7 @@ public final class PyreSpearProjectileRenderer extends EntityRenderer<RebornProj
         return true;
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(RebornProjectileEntity entity) {
+    public Identifier getTextureLocation(RebornProjectileEntity entity) {
         return TEXTURE;
     }
 }

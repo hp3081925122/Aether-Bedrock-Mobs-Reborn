@@ -1,21 +1,6 @@
 {
   "replace": false,
   "values": [
-    {
-      "id": "aether:skyroot_woodland",
-      "required": false
-    },
-    {
-      "id": "aether:skyroot_meadow",
-      "required": false
-    },
-    {
-      "id": "aether:skyroot_forest",
-      "required": false
-    },
-    {
-      "id": "aether:skyroot_grove",
-      "required": false
-    }
+    "#aether_ii:the_aether"
   ]
 }

@@ -1,7 +1,7 @@
 package com.aetherbedrockmobsreborn.item;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.world.item.TieredItem;
+
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Level;
@@ -22,15 +22,15 @@ import net.minecraft.ChatFormatting;
 
 import java.util.List;
 
-public final class SaltInstrumentItem extends TieredItem {
-    public SaltInstrumentItem() {
-        super(new AetherTier(300, 4.0F, 2.0F, 4, 2), new Item.Properties());
+public final class SaltInstrumentItem extends Item {
+    public SaltInstrumentItem(Item.Properties properties) {
+        super(properties.durability(300).enchantable(2).attributes(createAttributes()));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.aether_bedrock_mobs_reborn.saltinstrument").withStyle(ChatFormatting.AQUA));
-        super.appendHoverText(stack, context, tooltip, flag);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, net.minecraft.world.item.component.TooltipDisplay display, java.util.function.Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("tooltip.aether_bedrock_mobs_reborn.saltinstrument").withStyle(ChatFormatting.AQUA));
+        super.appendHoverText(stack, context, display, tooltip, flag);
     }
 
     @Override
@@ -45,22 +45,20 @@ public final class SaltInstrumentItem extends TieredItem {
     }
 
     @Override
-    public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+    public boolean canPerformAction(net.minecraft.world.item.ItemInstance stack, ItemAbility itemAbility) {
         return ItemAbilities.DEFAULT_AXE_ACTIONS.contains(itemAbility)
                 || ItemAbilities.DEFAULT_HOE_ACTIONS.contains(itemAbility)
                 || ItemAbilities.DEFAULT_SHOVEL_ACTIONS.contains(itemAbility)
-                || ItemAbilities.DEFAULT_PICKAXE_ACTIONS.contains(itemAbility)
-                || ItemAbilities.DEFAULT_SWORD_ACTIONS.contains(itemAbility);
+                || itemAbility == ItemAbilities.SWORD_SWEEP;
     }
 
-    @Override
-    public ItemAttributeModifiers getDefaultAttributeModifiers() {
-        return super.getDefaultAttributeModifiers()
+    private static ItemAttributeModifiers createAttributes() {
+        return ItemAttributeModifiers.EMPTY
                 .withModifierAdded(Attributes.ATTACK_DAMAGE,
-                        new AttributeModifier(ResourceLocation.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "saltinstrument_attack_damage"), 3.0D, AttributeModifier.Operation.ADD_VALUE),
+                        new AttributeModifier(Identifier.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "saltinstrument_attack_damage"), 3.0D, AttributeModifier.Operation.ADD_VALUE),
                         EquipmentSlotGroup.MAINHAND)
                 .withModifierAdded(Attributes.ATTACK_SPEED,
-                        new AttributeModifier(ResourceLocation.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "saltinstrument_attack_speed"), -3.0D, AttributeModifier.Operation.ADD_VALUE),
+                        new AttributeModifier(Identifier.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "saltinstrument_attack_speed"), -3.0D, AttributeModifier.Operation.ADD_VALUE),
                         EquipmentSlotGroup.MAINHAND);
     }
 
@@ -71,9 +69,8 @@ public final class SaltInstrumentItem extends TieredItem {
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+    public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         stack.hurtAndBreak(2, target, EquipmentSlot.MAINHAND);
-        return true;
     }
 }
 

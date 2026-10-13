@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "aether_bedrock_mobs_reborn:item/twinkler_spawn_egg",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -1252895
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -4423552
+      }
+    ]
+  }
+}

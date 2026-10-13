@@ -41,7 +41,7 @@ public class GolemSkillEntity extends Entity {
 
     // 生成晶体：pos 为地面位置，delay tick 后破土；silent 为真时不播放破土音效（成片生成时避免过吵）
     public static void spawn(ServerLevel level, LivingEntity owner, int kind, Vec3 pos, int delay, float scale, boolean silent) {
-        GolemSkillEntity entity = ModEntities.GOLEM_SKILL.get().create(level);
+        GolemSkillEntity entity = ModEntities.GOLEM_SKILL.get().create(level, net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
         if (entity == null) {
             return;
         }
@@ -51,8 +51,13 @@ public class GolemSkillEntity extends Entity {
         entity.ownerId = owner.getId();
         entity.silent = silent;
         entity.setPos(pos.x, pos.y, pos.z);
-        entity.setYRot(level.random.nextFloat() * 360.0F);
+        entity.setYRot(level.getRandom().nextFloat() * 360.0F);
         level.addFreshEntity(entity);
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel server, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        return false;
     }
 
     @Override
@@ -92,7 +97,7 @@ public class GolemSkillEntity extends Entity {
         int delay = getDelay();
         float scale = getScale();
         int end = delay + RISE + getHold();
-        if (level().isClientSide) {
+        if (level().isClientSide()) {
             if (this.tickCount == 1 && delay > 0) {
                 // 预警：青色收缩环，收到最小时破土
                 level().addAlwaysVisibleParticle(ModParticles.GOLEM_WARNING.get(), true, getX(), getY() + 0.1D, getZ(), 1.0D + scale * 0.8D, Math.max(4, delay), 0.0D);
@@ -146,7 +151,7 @@ public class GolemSkillEntity extends Entity {
             if (dx * dx + dz * dz > (radius + 0.4D) * (radius + 0.4D)) {
                 continue;
             }
-            if (living.hurt(skillDamage(), amount) && lift > 0.0D) {
+            if (living.hurtOrSimulate(skillDamage(), amount) && lift > 0.0D) {
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, lift, 0.0D));
             }
         }
@@ -183,7 +188,7 @@ public class GolemSkillEntity extends Entity {
                 }
                 if (getKind() == CORE) {
                     level().addAlwaysVisibleParticle(ModParticles.GOLEM_RING.get(), true, getX(), getY() + 0.15D, getZ(), 5.0D, 12.0D, 0.0D);
-                    level().addParticle(ParticleTypes.FLASH, getX(), getY() + 2.0D, getZ(), 0.0D, 0.0D, 0.0D);
+                    level().addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, -1), getX(), getY() + 2.0D, getZ(), 0.0D, 0.0D, 0.0D);
                 }
             }
             case 2 -> {
@@ -209,11 +214,11 @@ public class GolemSkillEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 
     @Override

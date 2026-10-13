@@ -84,12 +84,12 @@ final class SpiritCombat {
         return "animation.spirit." + ANIMATIONS[skill];
     }
 
-    void save(net.minecraft.nbt.CompoundTag tag) {
+    void save(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean(ENRAGE_TAG, this.enraged);
     }
 
-    void load(net.minecraft.nbt.CompoundTag tag) {
-        this.enraged = tag.getBoolean(ENRAGE_TAG);
+    void load(net.minecraft.world.level.storage.ValueInput tag) {
+        this.enraged = tag.getBooleanOr(ENRAGE_TAG, false);
     }
 
     void stop() {
@@ -249,7 +249,7 @@ final class SpiritCombat {
             if (distance > radius || (distance > 1.0D && flat.normalize().dot(forward) < -0.35D)) {
                 continue;
             }
-            if (living.hurt(source(), amount)) {
+            if (living.hurtOrSimulate(source(), amount)) {
                 landed = true;
                 Vec3 push = side.scale(0.3D).add(forward.scale(0.25D));
                 RebornMobEntity.applyBossKnockback(living, new Vec3(push.x, 0.15D, push.z));
@@ -302,7 +302,7 @@ final class SpiritCombat {
             if (hitOnce != null && !hitOnce.add(living.getId())) {
                 continue;
             }
-            if (living.hurt(source(), amount)) {
+            if (living.hurtOrSimulate(source(), amount)) {
                 RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, lift, 0.0D));
             }
         }
@@ -353,7 +353,7 @@ final class SpiritCombat {
                 if (!this.hits.add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), damage(1.2F))) {
+                if (living.hurtOrSimulate(source(), damage(1.2F))) {
                     Vec3 offset = living.position().subtract(this.spirit.position());
                     Vec3 side = new Vec3(-this.dashDir.z, 0.0D, this.dashDir.x);
                     if (offset.dot(side) < 0.0D) {
@@ -381,7 +381,7 @@ final class SpiritCombat {
                 double along = Mth.clamp((offset.x * path.x + offset.z * path.z) / lengthSqr, 0.0D, 1.0D);
                 double dx = offset.x - path.x * along;
                 double dz = offset.z - path.z * along;
-                if (dx * dx + dz * dz <= 2.0D * 2.0D && living.hurt(source(), damage(0.9F))) {
+                if (dx * dx + dz * dz <= 2.0D * 2.0D && living.hurtOrSimulate(source(), damage(0.9F))) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(0.0D, 0.35D, 0.0D));
                     living.hurtMarked = true;
                 }
@@ -455,7 +455,7 @@ final class SpiritCombat {
                 if (!this.novaHits.get(i).add(living.getId())) {
                     continue;
                 }
-                if (living.hurt(source(), damage(0.8F))) {
+                if (living.hurtOrSimulate(source(), damage(0.8F))) {
                     living.igniteForSeconds(3.0F);
                     double scale = 0.4D / Math.max(0.5D, distance);
                     RebornMobEntity.applyBossKnockback(living, new Vec3(dx * scale, 0.175D, dz * scale));

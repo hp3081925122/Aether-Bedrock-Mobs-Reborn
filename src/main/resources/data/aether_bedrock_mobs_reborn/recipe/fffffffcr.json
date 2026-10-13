@@ -2,33 +2,15 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {
-      "item": "aether_bedrock_mobs_reborn:citykey"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:citykey"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:citykey"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:pyrespear"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:citykey"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:saltinstrument"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:crystalitesword"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:dungeondagger"
-    },
-    {
-      "item": "aether_bedrock_mobs_reborn:spiritsword"
-    }
+    "aether_bedrock_mobs_reborn:citykey",
+    "aether_bedrock_mobs_reborn:citykey",
+    "aether_bedrock_mobs_reborn:citykey",
+    "aether_bedrock_mobs_reborn:pyrespear",
+    "aether_bedrock_mobs_reborn:citykey",
+    "aether_bedrock_mobs_reborn:saltinstrument",
+    "aether_bedrock_mobs_reborn:crystalitesword",
+    "aether_bedrock_mobs_reborn:dungeondagger",
+    "aether_bedrock_mobs_reborn:spiritsword"
   ],
   "result": {
     "count": 1,

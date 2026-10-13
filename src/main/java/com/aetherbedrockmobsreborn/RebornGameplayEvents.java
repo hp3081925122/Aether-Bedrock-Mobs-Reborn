@@ -55,7 +55,7 @@ public final class RebornGameplayEvents {
 
     @SubscribeEvent
     public static void onEntityJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide || !(event.getEntity() instanceof RebornMobEntity entity)) {
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof RebornMobEntity entity)) {
             return;
         }
         Consumer<RebornMobEntity> handler = JOIN_HANDLERS.get(entity.getIdPath());
@@ -67,7 +67,7 @@ public final class RebornGameplayEvents {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         Player player = event.getEntity();
-        if (player.level().isClientSide || player.tickCount % 20 != 0
+        if (player.level().isClientSide() || player.tickCount % 20 != 0
                 || !(player.level() instanceof ServerLevel server)) {
             return;
         }
@@ -93,7 +93,7 @@ public final class RebornGameplayEvents {
 
     @SubscribeEvent
     public static void onLivingHurt(LivingIncomingDamageEvent event) {
-        if (!(event.getEntity() instanceof RebornMobEntity entity) || entity.level().isClientSide) {
+        if (!(event.getEntity() instanceof RebornMobEntity entity) || entity.level().isClientSide()) {
             return;
         }
         Consumer<RebornMobEntity> handler = HURT_HANDLERS.get(entity.getIdPath());
@@ -103,7 +103,7 @@ public final class RebornGameplayEvents {
     }
 
     private static void handleGolemJoin(RebornMobEntity entity) {
-        if (!entity.getPersistentData().getBoolean("reborn_golem_initialized")) {
+        if (!entity.getPersistentData().getBooleanOr("reborn_golem_initialized", false)) {
             entity.getPersistentData().putBoolean("reborn_golem_initialized", true);
             entity.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 10, false, false));
             entity.invulnerableTime = 100;
@@ -112,7 +112,7 @@ public final class RebornGameplayEvents {
     }
 
     private static void handleMinionJoin(RebornMobEntity entity) {
-        if (!entity.getPersistentData().getBoolean("reborn_minion_initialized") && entity.level() instanceof ServerLevel server) {
+        if (!entity.getPersistentData().getBooleanOr("reborn_minion_initialized", false) && entity.level() instanceof ServerLevel server) {
             entity.getPersistentData().putBoolean("reborn_minion_initialized", true);
             entity.triggerAction("spawn");
             sendParticles(server, ModParticles.RUNESEFFECT.get(), entity, 6);
@@ -179,7 +179,7 @@ public final class RebornGameplayEvents {
 
     @SubscribeEvent
     public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
-        if (event.getEntity().level().isClientSide || event.getSlot() != EquipmentSlot.OFFHAND || !event.getTo().is(ModItems.ALL.get("spiritsword").get())) {
+        if (event.getEntity().level().isClientSide() || event.getSlot() != EquipmentSlot.OFFHAND || !event.getTo().is(ModItems.ALL.get("spiritsword").get())) {
             return;
         }
         LivingEntity entity = event.getEntity();
@@ -190,16 +190,16 @@ public final class RebornGameplayEvents {
                 player.drop(spiritSword, false);
             }
         } else {
-            entity.spawnAtLocation(spiritSword);
+            entity.spawnAtLocation((ServerLevel) entity.level(), spiritSword);
         }
     }
 
     @SubscribeEvent
     public static void onEntityStruckByLightning(EntityStruckByLightningEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof net.minecraft.world.entity.LivingEntity living && !entity.level().isClientSide && living.getMainHandItem().is(ModItems.ALL.get("crystalitesword").get())) {
+        if (entity instanceof net.minecraft.world.entity.LivingEntity living && !entity.level().isClientSide() && living.getMainHandItem().is(ModItems.ALL.get("crystalitesword").get())) {
             living.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 15, 4));
-            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 70, 1));
+            living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 70, 1));
         }
     }
 

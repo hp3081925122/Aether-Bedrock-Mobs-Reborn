@@ -79,12 +79,12 @@ final class ShulkerCombat {
         return "animation.elder_shulker." + ANIMATIONS[skill];
     }
 
-    void save(CompoundTag tag) {
+    void save(net.minecraft.world.level.storage.ValueOutput tag) {
         tag.putBoolean(ENRAGE_TAG, this.shulker.isShulkerEnraged());
     }
 
-    void load(CompoundTag tag) {
-        this.shulker.setBossEnraged(tag.getBoolean(ENRAGE_TAG));
+    void load(net.minecraft.world.level.storage.ValueInput tag) {
+        this.shulker.setBossEnraged(tag.getBooleanOr(ENRAGE_TAG, false));
     }
 
     void stop() {
@@ -295,7 +295,7 @@ final class ShulkerCombat {
             if (beamY < living.getY() - 0.2D || beamY > living.getY() + living.getBbHeight() + 0.2D) {
                 continue;
             }
-            if (living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 6.0F)) {
+            if (living.hurtOrSimulate(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 6.0F)) {
                 this.beamHits++;
                 living.igniteForSeconds(2.0F);
             }
@@ -367,7 +367,7 @@ final class ShulkerCombat {
             AABB box = new AABB(center, center).inflate(4.5D, 3.0D, 4.5D);
             for (LivingEntity living : server.getEntitiesOfClass(LivingEntity.class, box, this.shulker::canDragonSkillHit)) {
                 Vec3 offset = living.position().subtract(center);
-                if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurt(this.shulker.damageSources().mobAttack(this.shulker), 14.0F)) {
+                if (offset.x * offset.x + offset.z * offset.z <= 4.5D * 4.5D && living.hurtOrSimulate(this.shulker.damageSources().mobAttack(this.shulker), 14.0F)) {
                     RebornMobEntity.applyBossKnockback(living, new Vec3(offset.x * 0.075D, 0.5D, offset.z * 0.075D));
                     living.hurtMarked = true;
                 }
@@ -389,7 +389,7 @@ final class ShulkerCombat {
                 if (living.distanceTo(this.shulker) > 12.0F) {
                     continue;
                 }
-                living.hurt(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 4.0F);
+                living.hurtOrSimulate(this.shulker.damageSources().indirectMagic(this.shulker, this.shulker), 4.0F);
                 living.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 40, 1));
             }
             ModSounds.play(server, "shulker_pulse", this.shulker.getX(), this.shulker.getY() + 2.0D, this.shulker.getZ(), 3.0F, 1.0F);
@@ -586,7 +586,7 @@ final class ShulkerCombat {
             for (int i = 0; i < 30; i++) {
                 level.addParticle(ModParticles.SHULKER_SPARK.get(), pos.x, pos.y + 2.0D, pos.z, random.nextGaussian() * 0.4D, random.nextGaussian() * 0.3D, random.nextGaussian() * 0.4D);
             }
-            level.addParticle(ParticleTypes.FLASH, pos.x, pos.y + 2.0D, pos.z, 0.0D, 0.0D, 0.0D);
+            level.addParticle(net.minecraft.core.particles.ColorParticleOption.create(ParticleTypes.FLASH, -1), pos.x, pos.y + 2.0D, pos.z, 0.0D, 0.0D, 0.0D);
             return;
         }
         if (id == EVENT_ENRAGE) {

@@ -5,11 +5,11 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+
 import net.minecraft.core.particles.SimpleParticleType;
 
 // 飞散旋转的龙鳞碎片
-public class DragonShardParticle extends TextureSheetParticle {
+public class DragonShardParticle extends GeometryParticle {
     private final float spin;
     private final float baseSize;
 
@@ -44,13 +44,13 @@ public class DragonShardParticle extends TextureSheetParticle {
     }
 
     @Override
-    protected int getLightColor(float partialTicks) {
+    protected int getLightCoords(float partialTicks) {
         return 15728880;
     }
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     // 短寿命版本：细小颗粒一溅即逝，用于替代原版水花
@@ -62,9 +62,9 @@ public class DragonShardParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             DragonShardParticle particle = new DragonShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
-            particle.setLifetime(10 + level.random.nextInt(8));
+            particle.setLifetime(10 + level.getRandom().nextInt(8));
             return particle;
         }
     }
@@ -77,7 +77,7 @@ public class DragonShardParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new DragonShardParticle(level, x, y, z, xd, yd, zd, this.sprites);
         }
     }

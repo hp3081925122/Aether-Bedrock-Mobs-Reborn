@@ -1,30 +1,20 @@
 package com.aetherbedrockmobsreborn.registry;
 
-import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
+import java.util.Map;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-
-import java.util.EnumMap;
-import java.util.List;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.equipment.EquipmentAssets;
 
 public final class ModArmorMaterials {
-    public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS = DeferredRegister.create(Registries.ARMOR_MATERIAL, AetherBedrockMobsReborn.MOD_ID);
-    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> SHADAY = ARMOR_MATERIALS.register("shaday", () -> {
-        EnumMap<ArmorItem.Type, Integer> defense = new EnumMap<>(ArmorItem.Type.class);
-        defense.put(ArmorItem.Type.HELMET, 4);
-        defense.put(ArmorItem.Type.CHESTPLATE, 7);
-        defense.put(ArmorItem.Type.LEGGINGS, 9);
-        defense.put(ArmorItem.Type.BOOTS, 4);
-        return new ArmorMaterial(defense, 30, SoundEvents.ARMOR_EQUIP_GENERIC, () -> Ingredient.EMPTY,
-                List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "shaday"))), 4.0F, 0.1F);
-    });
-
-    private ModArmorMaterials() {
-    }
+    public static final ArmorMaterial SHADAY = new ArmorMaterial(50,
+            Map.of(ArmorType.HELMET, 4, ArmorType.CHESTPLATE, 7, ArmorType.LEGGINGS, 9, ArmorType.BOOTS, 4),
+            30, SoundEvents.ARMOR_EQUIP_GENERIC, 4.0F, 0.1F,
+            TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "no_repair")),
+            ResourceKey.create(EquipmentAssets.ROOT_ID, Identifier.fromNamespaceAndPath("aether_bedrock_mobs_reborn", "shaday")));
+    private ModArmorMaterials() {}
 }

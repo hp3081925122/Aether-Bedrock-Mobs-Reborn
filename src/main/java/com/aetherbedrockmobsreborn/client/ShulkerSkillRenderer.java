@@ -6,21 +6,21 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 // 远古潜影贝技能实体渲染：潜影弹为面向相机的发光圆盘，碎刃为沿速度旋转的十字面片，缠藤为三根摇摆的藤蔓
-public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
-    private static final ResourceLocation ORB = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_orb.png");
-    private static final ResourceLocation SHARD = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_shard.png");
-    private static final ResourceLocation VINE = ResourceLocation.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_vine.png");
+public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity, SkillRenderState> {
+    private static final Identifier ORB = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_orb.png");
+    private static final Identifier SHARD = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_shard.png");
+    private static final Identifier VINE = Identifier.fromNamespaceAndPath(AetherBedrockMobsReborn.MOD_ID, "textures/entity/shulker_skill/shulker_vine.png");
     private static final int FULL_BRIGHT = 15728880;
 
     public ShulkerSkillRenderer(EntityRendererProvider.Context context) {
@@ -28,7 +28,23 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
     }
 
     @Override
-    public void render(ShulkerSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
+    public SkillRenderState createRenderState() { return new SkillRenderState(); }
+
+    @Override
+    public void extractRenderState(ShulkerSkillEntity entity, SkillRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.geometry = new GeometryCapture();
+        extractGeometry(entity, entity.getYRot(), partialTick, new PoseStack(), state.geometry, state.lightCoords);
+    }
+
+    @Override
+    public void submit(SkillRenderState state, PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector,
+            net.minecraft.client.renderer.state.level.CameraRenderState camera) {
+        super.submit(state, pose, collector, camera);
+        state.geometry.submit(pose, collector);
+    }
+
+    private void extractGeometry(ShulkerSkillEntity entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffers, int light) {
         float age = entity.tickCount + partialTicks;
         switch (entity.getKind()) {
             case ShulkerSkillEntity.SHARD -> {
@@ -37,7 +53,7 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
                 poseStack.mulPose(Axis.YP.rotationDegrees(Mth.lerp(partialTicks, entity.yRotO, entity.getYRot())));
                 poseStack.mulPose(Axis.XP.rotationDegrees(-Mth.lerp(partialTicks, entity.xRotO, entity.getXRot()) + 90.0F));
                 poseStack.mulPose(Axis.YP.rotationDegrees(age * 30.0F));
-                VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(SHARD));
+                VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(SHARD));
                 for (int i = 0; i < 2; i++) {
                     poseStack.pushPose();
                     poseStack.mulPose(Axis.YP.rotationDegrees(i * 90.0F));
@@ -50,7 +66,7 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
                 float height = entity.getVineHeight(partialTicks);
                 if (height > 0.0F) {
                     // 缠藤：三根藤蔓围成一簇，从地下冒出并来回摇摆
-                    VertexConsumer consumer = buffers.getBuffer(RenderType.entityCutoutNoCull(VINE));
+                    VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityCutout(VINE));
                     for (int i = 0; i < 3; i++) {
                         poseStack.pushPose();
                         poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() * 29.0F + i * 120.0F));
@@ -68,14 +84,13 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
                 // 潜影弹：面向相机，自转并脉动
                 float size = 0.32F + 0.05F * Mth.sin(age * 0.7F);
                 poseStack.pushPose();
-                poseStack.mulPose(this.entityRenderDispatcher.cameraOrientation());
+                poseStack.mulPose(this.entityRenderDispatcher.camera.rotation());
                 poseStack.mulPose(Axis.ZP.rotationDegrees(age * 15.0F));
-                VertexConsumer consumer = buffers.getBuffer(RenderType.entityTranslucentEmissive(ORB));
+                VertexConsumer consumer = buffers.getBuffer(RenderTypes.entityTranslucentEmissive(ORB));
                 quad(consumer, poseStack, -size, size, -size, size, FULL_BRIGHT, 1.0F);
                 poseStack.popPose();
             }
         }
-        super.render(entity, yaw, partialTicks, poseStack, buffers, light);
     }
 
     private static final float VINE_LENGTH = 3.0F;
@@ -99,8 +114,7 @@ public class ShulkerSkillRenderer extends EntityRenderer<ShulkerSkillEntity> {
         return true;
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(ShulkerSkillEntity entity) {
+    public Identifier getTextureLocation(ShulkerSkillEntity entity) {
         return ORB;
     }
 }

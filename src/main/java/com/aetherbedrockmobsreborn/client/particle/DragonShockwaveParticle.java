@@ -7,13 +7,13 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 // 水平冲击波圆环，xd 为最大半径，yd 为持续 tick；预警模式下圆环向内收缩
-public class DragonShockwaveParticle extends TextureSheetParticle {
+public class DragonShockwaveParticle extends GeometryParticle {
     private final float maxRadius;
     private final boolean warning;
     // 匀速扩张：用于与判定同步的灵焰轮环
@@ -36,7 +36,7 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
     @Override
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
         // 计算相对相机的位置
-        Vec3 cam = camera.getPosition();
+        Vec3 cam = camera.position();
         float px = (float) (Mth.lerp(partialTicks, this.xo, this.x) - cam.x());
         float py = (float) (Mth.lerp(partialTicks, this.yo, this.y) - cam.y());
         float pz = (float) (Mth.lerp(partialTicks, this.zo, this.z) - cam.z());
@@ -76,8 +76,8 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
 
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
@@ -88,7 +88,7 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             DragonShockwaveParticle particle = new DragonShockwaveParticle(level, x, y, z, xd, yd, false, this.sprites);
             // zd 大于 0.5 时匀速扩张
             if (zd > 0.5D) {
@@ -107,7 +107,7 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new DragonShockwaveParticle(level, x, y, z, xd, yd, true, this.sprites);
         }
     }
@@ -121,7 +121,7 @@ public class DragonShockwaveParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             DragonShockwaveParticle particle = new DragonShockwaveParticle(level, x, y, z, xd, yd, true, this.sprites);
             if (zd > 0.5D) {
                 particle.setColor(1.0F, 0.85F, 0.35F);

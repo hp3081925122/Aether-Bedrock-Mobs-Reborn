@@ -7,13 +7,13 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.particle.TextureSheetParticle;
+
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 // 拳压冲击环：竖直圆环垂直于朝向，一边扩张一边向前推进；xd 为最终半径，yd 为朝向角度，zd 为每 tick 前进距离
-public class PunchRingParticle extends TextureSheetParticle {
+public class PunchRingParticle extends GeometryParticle {
     private final float radius;
     private final float yaw;
 
@@ -34,7 +34,7 @@ public class PunchRingParticle extends TextureSheetParticle {
 
     @Override
     public void render(VertexConsumer buffer, Camera camera, float partialTicks) {
-        Vec3 cam = camera.getPosition();
+        Vec3 cam = camera.position();
         float px = (float) (Mth.lerp(partialTicks, this.xo, this.x) - cam.x());
         float py = (float) (Mth.lerp(partialTicks, this.yo, this.y) - cam.y());
         float pz = (float) (Mth.lerp(partialTicks, this.zo, this.z) - cam.z());
@@ -64,8 +64,8 @@ public class PunchRingParticle extends TextureSheetParticle {
 
 
     @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+    public ParticleRenderType getGroup() {
+        return RebornParticleGroup.TYPE;
     }
 
     public static final class Provider implements ParticleProvider<SimpleParticleType> {
@@ -76,7 +76,7 @@ public class PunchRingParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd) {
+        public Particle createParticle(SimpleParticleType type, ClientLevel level, double x, double y, double z, double xd, double yd, double zd, net.minecraft.util.RandomSource random) {
             return new PunchRingParticle(level, x, y, z, xd, yd, zd, this.sprites);
         }
     }

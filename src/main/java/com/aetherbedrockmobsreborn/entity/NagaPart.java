@@ -1,5 +1,6 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -36,11 +37,11 @@ public final class NagaPart extends PartEntity<NagaEntity> {
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel server, DamageSource source, float amount) {
         if (!getParent().isAlive() || source.getEntity() == getParent()) {
             return false;
         }
-        boolean accepted = getParent().hurt(source, amount);
+        boolean accepted = getParent().hurtOrSimulate(source, amount);
         return accepted;
     }
 
@@ -49,14 +50,13 @@ public final class NagaPart extends PartEntity<NagaEntity> {
         return this == entity || getParent() == entity;
     }
 
-    @Override
-    public boolean isInvulnerableTo(DamageSource source) {
-        return getParent().isInvulnerableTo(source);
+    public boolean isInvulnerableTo(ServerLevel server, DamageSource source) {
+        return getParent().isInvulnerableTo(server, source);
     }
 
     @Override
-    public boolean canBeCollidedWith() {
-        return getParent().canBeCollidedWith();
+    public boolean canBeCollidedWith(Entity other) {
+        return getParent().canBeCollidedWith(other);
     }
 
     @Override
@@ -84,11 +84,11 @@ public final class NagaPart extends PartEntity<NagaEntity> {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
     }
 }
 
