@@ -50,3 +50,5 @@ Forge 模板的原许可证说明保留在 [LICENSE-Forge.txt](LICENSE-Forge.txt
 ## Boss 技能伤害配置
 
 五个本模组 Boss 的 36 个直接伤害结算项使用当前攻击力乘技能倍率。配置文件为 `aether_bedrock_mobs_reborn-boss-skills.toml`，默认位于实例的 `config/`。默认倍率保持原伤害水平，详细键、默认值和示例见 [技能倍率说明](docs/boss-skill-damage-multipliers.md)。
+
+天境巨龙地牢必须主手持终末之钥右键刷怪器召唤，靠近不再自动召唤。新旧地牢兼容路径及钥匙获取见 [钥匙召唤说明](docs/dragon-key-summoning.md)。
