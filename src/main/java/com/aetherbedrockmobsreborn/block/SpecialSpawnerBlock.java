@@ -1,5 +1,6 @@
 package com.aetherbedrockmobsreborn.block;
 
+import com.mojang.logging.LogUtils;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import net.minecraft.core.BlockPos;
@@ -65,11 +66,14 @@ public class SpecialSpawnerBlock extends Block {
         return action.equals("crystalite") || action.equals("elder") || action.equals("salt") || action.equals("labyrinth");
     }
 
-    private boolean activate(Level level, BlockPos pos, Player player) {
-        if (level.isClientSide) {
+    public boolean activate(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide || level.getBlockState(pos).getBlock() != this) {
             return false;
         }
-        if (action.equals("dragon") && player != null) {
+        if (action.equals("dragon")) {
+            if (player == null || player.isSpectator()) {
+                return false;
+            }
             RegistryObject<net.minecraft.world.item.Item> key = ModItems.ALL.get("finalkey");
             if (key == null || !player.getMainHandItem().is(key.get())) {
                 player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
@@ -117,6 +121,7 @@ public class SpecialSpawnerBlock extends Block {
             server.sendParticles(ModParticles.RUNESEFFECT.get(), pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, 16, 0.5D, 0.5D, 0.5D, 0.05D);
         }
         if (action.equals("dragon")) {
+            LogUtils.getLogger().debug("Activated Aether Dragon spawner using the Final Key at {}", pos);
             level.explode(null, pos.getX() + 0.5D, y, pos.getZ() + 0.5D, 0.0F, net.minecraft.world.level.Level.ExplosionInteraction.NONE);
         }
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
