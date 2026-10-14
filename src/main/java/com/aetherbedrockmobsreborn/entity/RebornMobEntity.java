@@ -104,6 +104,9 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     public RebornMobEntity(EntityType<? extends RebornMobEntity> type, Level level) {
         super(type, level);
+        if (!level.isClientSide && isBossEntity()) {
+            com.mojang.logging.LogUtils.getLogger().debug("Boss distance despawn protection enabled: type={} uuid={}", getIdPath(), getUUID());
+        }
         if (getIdPath().equals("buterfly") && !level.isClientSide) {
             this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
         }
@@ -571,6 +574,11 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
             case "twinkler" -> "aurora_quartz";
             default -> getIdPath();
         };
+    }
+
+    @Override
+    public boolean requiresCustomPersistence() {
+        return isBossEntity() || super.requiresCustomPersistence();
     }
 
     private boolean isBossEntity() {
