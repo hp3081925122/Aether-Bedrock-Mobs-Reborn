@@ -31,6 +31,11 @@ public final class SpiritSwordItem extends ShieldItem {
     }
 
     @Override
+    public EquipmentSlot getEquipmentSlot() {
+        return EquipmentSlot.MAINHAND;
+    }
+
+    @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
         return slot != EquipmentSlot.OFFHAND && super.canEquip(stack, slot, entity);
     }

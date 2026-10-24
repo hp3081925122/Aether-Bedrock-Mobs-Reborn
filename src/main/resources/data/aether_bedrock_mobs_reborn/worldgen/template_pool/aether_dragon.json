@@ -30,7 +30,7 @@
                     "predicate_type": "minecraft:always_true"
                   },
                   "output_state": {
-                    "Name": "aether_bedrock_mobs_reborn:dragonspawner",
+                    "Name": "aether_dragon:dragonspawner",
                     "Properties": {
                       "powered": "false"
                     }
@@ -45,9 +45,18 @@
                     "predicate_type": "minecraft:always_true"
                   },
                   "output_state": {
-                    "Name": "aether_bedrock_mobs_reborn:dragonspawner",
-                    "Properties": {
-                      "powered": "false"
+                    "Name": "minecraft:spawner"
+                  },
+                  "block_entity_modifier": {
+                    "type": "minecraft:append_static",
+                    "data": {
+                      "id": "minecraft:mob_spawner",
+                      "SpawnData": {
+                        "entity": {
+                          "id": "aether_bedrock_mobs_reborn:guardianangel"
+                        }
+                      },
+                      "SpawnPotentials": []
                     }
                   }
                 }

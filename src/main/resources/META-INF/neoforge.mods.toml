@@ -36,3 +36,9 @@ type="required"
 versionRange="[1.0.0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[mixins]]
+config="aether_bedrock_mobs_reborn.compat.mixins.json"
+
+[[mixins]]
+config="aether_bedrock_mobs_reborn.shared_content.mixins.json"

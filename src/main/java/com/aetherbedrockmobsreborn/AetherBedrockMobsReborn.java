@@ -4,7 +4,6 @@ import com.aetherbedrockmobsreborn.registry.ModBlocks;
 import com.aetherbedrockmobsreborn.registry.ModCreativeTabs;
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModItems;
-import com.aetherbedrockmobsreborn.registry.ModArmorMaterials;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
 import net.neoforged.bus.api.IEventBus;
@@ -22,7 +21,7 @@ public final class AetherBedrockMobsReborn {
     public AetherBedrockMobsReborn(IEventBus bus, net.neoforged.fml.ModContainer container) {
         container.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER,
                 com.aetherbedrockmobsreborn.config.BossSkillConfig.SPEC, MOD_ID + "-boss-skills.toml");
-        ModArmorMaterials.ARMOR_MATERIALS.register(bus);
+        com.aetherbedrockmobsreborn.registry.SharedContentMigration.registerAliases();
         ModBlocks.BLOCKS.register(bus);
         ModEntities.ENTITIES.register(bus);
         ModItems.ITEMS.register(bus);
