@@ -77,7 +77,7 @@ public final class SaltInstrumentItem extends TieredItem {
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        stack.hurtAndBreak(2, target, living -> living.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+        stack.hurtAndBreak(2, attacker, living -> living.broadcastBreakEvent(EquipmentSlot.MAINHAND));
         return true;
     }
 }

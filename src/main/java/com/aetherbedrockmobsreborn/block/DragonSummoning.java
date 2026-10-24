@@ -1,10 +1,16 @@
 package com.aetherbedrockmobsreborn.block;
 
-import com.aetherbedrockmobsreborn.registry.ModBlocks;
+import com.aetherbedrockmobsreborn.registry.ModItems;
+import com.aetherbedrockmobsreborn.registry.ModParticles;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -32,16 +38,10 @@ public final class DragonSummoning {
     }
 
     public static boolean isKeySpawner(BlockState state) {
-        return state.getBlock() == ModBlocks.ALL.get("dragonspawner").get();
+        return state.getBlock() == dragonSpawner();
     }
 
     public static boolean isAutomaticSpawner(Level level, BlockPos pos, BlockState state) {
-        if (externalSpawner == null) {
-            externalSpawner = BuiltInRegistries.BLOCK.getOptional(new net.minecraft.resources.ResourceLocation("aether_dragon", "dragonspawner")).orElse(null);
-        }
-        if (state.getBlock() == externalSpawner) {
-            return true;
-        }
         if (!state.is(Blocks.SPAWNER) || !(level.getBlockEntity(pos) instanceof SpawnerBlockEntity spawner)) {
             return false;
         }
@@ -55,7 +55,7 @@ public final class DragonSummoning {
         if (!isAutomaticSpawner(level, pos, state)) {
             return state;
         }
-        BlockState replacement = ModBlocks.ALL.get("dragonspawner").get().defaultBlockState();
+        BlockState replacement = dragonSpawner().defaultBlockState();
         if (state.hasProperty(BlockStateProperties.POWERED)) {
             replacement = replacement.setValue(BlockStateProperties.POWERED, state.getValue(BlockStateProperties.POWERED));
         }
@@ -91,5 +91,40 @@ public final class DragonSummoning {
                 }
             }
         }
+    }
+
+    private static Block dragonSpawner() {
+        if (externalSpawner == null) {
+            externalSpawner = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation("aether_dragon", "dragonspawner")).orElseThrow();
+        }
+        return externalSpawner;
+    }
+
+    public static boolean activateDragon(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide || !(level instanceof ServerLevel server) || player == null || player.isSpectator() || !isKeySpawner(level.getBlockState(pos))) {
+            return false;
+        }
+        if (!player.getMainHandItem().is(ModItems.ALL.get("finalkey").get())) {
+            player.displayClientMessage(Component.translatable("message.aether_bedrock_mobs_reborn.key_required"), true);
+            return false;
+        }
+        EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getOptional(new ResourceLocation("aether_dragon", "aetherdragon")).orElseThrow();
+        Entity entity = type.create(level);
+        if (entity == null) {
+            return false;
+        }
+        double y = pos.getY() + 10.0D;
+        entity.moveTo(pos.getX() + 0.5D, y, pos.getZ() + 0.5D, level.getRandom().nextFloat() * 360.0F, 0.0F);
+        if (!server.addFreshEntity(entity)) {
+            LogUtils.getLogger().warn("Spawner activation failed: could not add Aether Dragon at {}", pos);
+            return false;
+        }
+        server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + 0.5D, y, pos.getZ() + 0.5D, 5, 3.0D, 3.0D, 3.0D, 1.0D);
+        server.sendParticles(ModParticles.FIRE.get(), pos.getX() + 0.5D, y, pos.getZ() + 0.5D, 10, 3.0D, 3.0D, 3.0D, 1.0D);
+        server.sendParticles(ModParticles.RUNESEFFECT.get(), pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, 16, 0.5D, 0.5D, 0.5D, 0.05D);
+        server.explode(null, pos.getX() + 0.5D, y, pos.getZ() + 0.5D, 0.0F, Level.ExplosionInteraction.NONE);
+        server.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        LogUtils.getLogger().debug("Activated shared Aether Dragon spawner using the Final Key at {}", pos);
+        return true;
     }
 }

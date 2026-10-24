@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.aetherbedrockmobsreborn.mixin.sharedcontent",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "DragonSpawnerMixin",
+    "LegacyBlockHolderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

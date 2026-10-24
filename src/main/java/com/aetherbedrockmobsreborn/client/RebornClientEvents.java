@@ -1,7 +1,6 @@
 package com.aetherbedrockmobsreborn.client;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
-import com.aetherbedrockmobsreborn.client.model.ShadayArmorModel;
 import com.aetherbedrockmobsreborn.client.particle.DecalParticle;
 import com.aetherbedrockmobsreborn.client.particle.QuakeBlockParticle;
 import com.aetherbedrockmobsreborn.client.particle.ShardParticle;
@@ -67,11 +66,6 @@ public final class RebornClientEvents {
         event.registerEntityRenderer(ModEntities.CRAB_SKILL.get(), CrabSkillRenderer::new);
         // 远古潜影贝技能实体
         event.registerEntityRenderer(ModEntities.SHULKER_SKILL.get(), ShulkerSkillRenderer::new);
-    }
-
-    @SubscribeEvent
-    public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(ShadayArmorModel.LAYER_LOCATION, ShadayArmorModel::createBodyLayer);
     }
 
     @SubscribeEvent

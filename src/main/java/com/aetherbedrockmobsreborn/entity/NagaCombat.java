@@ -124,6 +124,18 @@ final class NagaCombat {
             }
         }
         int skill = this.naga.getNagaSkill();
+        if (target == null || !target.isAlive() || target.level() != this.naga.level()) {
+            if (skill != 0) {
+                com.mojang.logging.LogUtils.getLogger().debug(
+                    "Naga skill cancelled after target loss: uuid={} skill={} skillTicks={} target={} targetAlive={}",
+                    this.naga.getUUID(), skill, this.skillTicks,
+                    target == null ? "null" : target.getUUID(), target != null && target.isAlive());
+            }
+            stop();
+            this.naga.getNavigation().stop();
+            this.gap = this.enraged ? 10 : 18;
+            return;
+        }
         if (skill == 0) {
             tickIdle(target);
             return;
