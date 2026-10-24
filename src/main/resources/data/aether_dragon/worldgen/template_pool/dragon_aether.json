@@ -1,5 +1,5 @@
 {
-  "name": "aether_bedrock_mobs_reborn:aether_dragon",
+  "name": "aether_dragon:dragon_aether",
   "fallback": "minecraft:empty",
   "elements": [
     {
