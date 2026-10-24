@@ -1,4 +1,0 @@
-{
-  "structures": [{"structure": "aether_bedrock_mobs_reborn:aether_dragon", "weight": 1}],
-  "placement": {"type": "minecraft:random_spread", "spacing": 150, "separation": 65, "salt": 173253031}
-}

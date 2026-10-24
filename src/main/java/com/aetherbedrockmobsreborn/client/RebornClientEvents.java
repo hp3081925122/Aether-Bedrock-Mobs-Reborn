@@ -1,7 +1,6 @@
 package com.aetherbedrockmobsreborn.client;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
-import com.aetherbedrockmobsreborn.client.model.ShadayArmorModel;
 import com.aetherbedrockmobsreborn.client.particle.DecalParticle;
 import com.aetherbedrockmobsreborn.client.particle.QuakeBlockParticle;
 import com.aetherbedrockmobsreborn.client.particle.ShardParticle;
@@ -84,22 +83,9 @@ public final class RebornClientEvents {
     }
 
     @SubscribeEvent
-    public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(ShadayArmorModel.LAYER_LOCATION, ShadayArmorModel::createBodyLayer);
-    }
-
-    @SubscribeEvent
     public static void registerParticleGroups(net.neoforged.neoforge.client.event.RegisterParticleGroupsEvent event) {
         event.register(com.aetherbedrockmobsreborn.client.particle.RebornParticleGroup.TYPE,
                 com.aetherbedrockmobsreborn.client.particle.RebornParticleGroup::new);
-    }
-
-    @SubscribeEvent
-    public static void registerClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
-        for (var entry : com.aetherbedrockmobsreborn.registry.ModItems.ALL.values()) {
-            if (entry.get() instanceof com.aetherbedrockmobsreborn.item.ShadayArmorItem armor)
-                event.registerItem(armor.clientExtensions(), armor);
-        }
     }
 
     @SubscribeEvent
