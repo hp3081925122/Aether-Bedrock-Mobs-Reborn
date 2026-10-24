@@ -30,7 +30,7 @@ public final class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> BLOCK_TAB = TABS.register("aetherboss", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("item_group.aether_bedrock_mobs_reborn.aetherboss"))
-                    .icon(() -> ModItems.ALL.get("aureatebluehead").get().getDefaultInstance())
+                    .icon(() -> ModItems.ALL.get("crystalitebricks").get().getDefaultInstance())
                     .displayItems((parameters, output) -> ModItems.ALL.entrySet().stream()
                             .filter(entry -> entry.getValue().get() instanceof BlockItem)
                             .map(Map.Entry::getValue)

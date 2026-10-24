@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "aether_bedrock_mobs_reborn:shaday_helmet"
+      "item": "aether_dragon:shaday_helmet"
     },
     "title": {
       "translate": "advancements.shaday_armor.title"
@@ -21,7 +21,7 @@
         "items": [
           {
             "items": [
-              "aether_bedrock_mobs_reborn:shaday_helmet"
+              "aether_dragon:shaday_helmet"
             ],
             "count": {
               "min": 1,

@@ -23,6 +23,7 @@ public final class AetherBedrockMobsReborn {
         IEventBus bus = context.getModEventBus();
         context.registerConfig(net.minecraftforge.fml.config.ModConfig.Type.SERVER,
                 com.aetherbedrockmobsreborn.config.BossSkillConfig.SPEC, MOD_ID + "-boss-skills.toml");
+        com.aetherbedrockmobsreborn.registry.SharedContentMigration.registerAliases();
         ModBlocks.BLOCKS.register(bus);
         ModEntities.ENTITIES.register(bus);
         ModItems.ITEMS.register(bus);

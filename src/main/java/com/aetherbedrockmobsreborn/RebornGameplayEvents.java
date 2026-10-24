@@ -93,8 +93,8 @@ public final class RebornGameplayEvents {
             return;
         }
         state = DragonSummoning.convertAutomaticSpawner(server, pos, state);
-        if (DragonSummoning.isKeySpawner(state) && state.getBlock() instanceof SpecialSpawnerBlock spawner) {
-            spawner.activate(server, pos, event.getEntity());
+        if (DragonSummoning.isKeySpawner(state)) {
+            DragonSummoning.activateDragon(server, pos, event.getEntity());
         }
     }
 
