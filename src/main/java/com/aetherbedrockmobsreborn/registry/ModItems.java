@@ -6,7 +6,6 @@ import com.aetherbedrockmobsreborn.item.CrystaliteSwordItem;
 import com.aetherbedrockmobsreborn.item.DungeonDaggerItem;
 import com.aetherbedrockmobsreborn.item.PyreSpearItem;
 import com.aetherbedrockmobsreborn.item.SaltInstrumentItem;
-import com.aetherbedrockmobsreborn.item.ShadayArmorItem;
 import com.aetherbedrockmobsreborn.item.SpiritSwordItem;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.food.FoodProperties;
@@ -40,9 +39,6 @@ public final class ModItems {
         register("finalkey", properties -> new Item(properties.stacksTo(1).rarity(Rarity.EPIC)));
         register("pyrespear", PyreSpearItem::new);
         register("saltinstrument", SaltInstrumentItem::new);
-        register("shaday_helmet", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.HELMET, properties));
-        register("shaday_chestplate", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.CHESTPLATE, properties));
-        register("shaday_leggings", properties -> new ShadayArmorItem(net.minecraft.world.item.equipment.ArmorType.LEGGINGS, properties));
         register("spiritsword", SpiritSwordItem::new);
         String[] spawnEggs = {
                 "aether_naga", "buterfly",
