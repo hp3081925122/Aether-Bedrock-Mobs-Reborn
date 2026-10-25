@@ -12,6 +12,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -53,7 +54,17 @@ final class ShulkerCombat {
     private static final float BEAM_INITIAL_STEP = BEAM_TOTAL_DEGREES
             / (BEAM_SWEEP_TICKS * (1.0F + (BEAM_FINAL_SPEED_MULTIPLIER - 1.0F) * 0.5F));
     private static final double BEAM_RANGE = 18.0D;
+    // 光束倾角：开扫时按目标距离决定落地距离，近身时让光束在目标处压到胸口高度
+    private static final double BEAM_MIN_REACH = 1.0D;
+    private static final double BEAM_REACH_SCALE = 1.6D;
+    private static final double BEAM_AIM_HEIGHT = 1.2D;
+    // 近身：目标中心距离小于该值时偏向浮空力场与闭壳反击
+    private static final double CLOSE_RANGE = 5.0D;
     private static final double MOUTH_HEIGHT = 2.5D;
+    private static final double MOUTH_FORWARD = 1.3D;
+    // 光束蓄力后撤：目标近于该水平距离时背对目标滑开，每 tick 最多移动的距离
+    private static final double BEAM_RETREAT_DISTANCE = 8.0D;
+    private static final double BEAM_RETREAT_SPEED = 0.38D;
     // 相位跃迁：消失、转移、砸落 tick
     private static final int PHASE_VANISH = 14;
     private static final int PHASE_MOVE = 16;
@@ -69,6 +80,7 @@ final class ShulkerCombat {
     private int clientTicks;
     private int beamCandidates;
     private int beamHits;
+    private double beamReach = BEAM_RANGE;
 
     ShulkerCombat(RebornMobEntity shulker) {
         this.shulker = shulker;
@@ -120,7 +132,7 @@ final class ShulkerCombat {
 
     // 嘴部位置：头部正前方 1.3 格、离地 2.5 格
     private Vec3 mouth() {
-        return this.shulker.position().add(forward().scale(1.3D)).add(0.0D, MOUTH_HEIGHT, 0.0D);
+        return this.shulker.position().add(forward().scale(MOUTH_FORWARD)).add(0.0D, MOUTH_HEIGHT, 0.0D);
     }
 
     private double ground(double x, double z, double fromY) {
@@ -189,13 +201,24 @@ final class ShulkerCombat {
                 ready.add(PHASE);
                 ready.add(PHASE);
             }
+            boolean close = distance < CLOSE_RANGE;
             if (distance <= 12.0D && this.cooldowns[FIELD] <= 0) {
                 ready.add(FIELD);
+                if (close) {
+                    ready.add(FIELD);
+                    ready.add(FIELD);
+                }
             }
-            // 近期挨打时倾向闭壳反击
-            if (this.cooldowns[GUARD] <= 0 && this.shulker.tickCount - this.lastHurtTick < 40) {
-                ready.add(GUARD);
-                ready.add(GUARD);
+            // 近期挨打时倾向闭壳反击；被贴身时即使没挨打也会闭壳把人震开
+            if (this.cooldowns[GUARD] <= 0) {
+                if (this.shulker.tickCount - this.lastHurtTick < 40) {
+                    ready.add(GUARD);
+                    ready.add(GUARD);
+                }
+                if (close) {
+                    ready.add(GUARD);
+                    ready.add(GUARD);
+                }
             }
             if (!ready.isEmpty()) {
                 chosen = ready.get(this.shulker.getRandom().nextInt(ready.size()));
@@ -240,6 +263,9 @@ final class ShulkerCombat {
         if (t < BEAM_START) {
             this.shulker.faceBossTowards(target.getX(), target.getZ(), 10.0F);
         }
+        if (t >= 2 && t < BEAM_START) {
+            retreatForBeam(target);
+        }
         if (t == 2) {
             ModSounds.play(server, "shulker_beam_charge", this.shulker.getX(), this.shulker.getY() + 2.5D, this.shulker.getZ(), 2.0F, 1.0F);
         }
@@ -247,6 +273,9 @@ final class ShulkerCombat {
             this.shulker.setBossBeam(true);
             this.beamCandidates = 0;
             this.beamHits = 0;
+            double distance = Math.sqrt(Mth.square(target.getX() - this.shulker.getX()) + Mth.square(target.getZ() - this.shulker.getZ()));
+            double aimed = Math.max(0.0D, distance - MOUTH_FORWARD) / (1.0D - BEAM_AIM_HEIGHT / MOUTH_HEIGHT);
+            this.beamReach = Mth.clamp(Math.min(distance * BEAM_REACH_SCALE, aimed), BEAM_MIN_REACH, BEAM_RANGE);
             ModSounds.play(server, "shulker_beam_fire", this.shulker.getX(), this.shulker.getY() + 2.5D, this.shulker.getZ(), 3.0F, 1.0F);
         }
         if (t >= BEAM_START && t < BEAM_END) {
@@ -258,7 +287,7 @@ final class ShulkerCombat {
             this.shulker.yBodyRot = yaw;
             this.shulker.yHeadRot = yaw;
             Vec3 start = mouth();
-            Vec3 end = start.add(forward().scale(BEAM_RANGE)).subtract(0.0D, MOUTH_HEIGHT, 0.0D);
+            Vec3 end = start.add(forward().scale(this.beamReach)).subtract(0.0D, MOUTH_HEIGHT, 0.0D);
             BlockHitResult hit = server.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.shulker));
             if (hit.getType() != HitResult.Type.MISS) {
                 end = hit.getLocation();
@@ -268,12 +297,31 @@ final class ShulkerCombat {
             if (t % 10 == 0) {
                 ModSounds.play(server, "shulker_beam_loop", end.x, end.y, end.z, 1.5F, 1.0F);
             }
-            if (t == BEAM_END - 1) {
-            }
         }
         if (t == BEAM_END) {
             this.shulker.setBossBeam(false);
         }
+    }
+
+    // 光束蓄力后撤：目标贴得太近时光束会从头顶掠过，按距离背对目标滑开，后方是悬崖则停下
+    private void retreatForBeam(LivingEntity target) {
+        Vec3 away = new Vec3(this.shulker.getX() - target.getX(), 0.0D, this.shulker.getZ() - target.getZ());
+        double distance = away.length();
+        if (distance >= BEAM_RETREAT_DISTANCE) {
+            return;
+        }
+        Vec3 dir = forward().scale(-1.0D);
+        if (distance > 0.01D) {
+            dir = away.scale(1.0D / distance);
+        }
+        double step = Math.min(BEAM_RETREAT_SPEED, BEAM_RETREAT_DISTANCE - distance);
+        double edge = step + this.shulker.getBbWidth() * 0.5D;
+        double x = this.shulker.getX() + dir.x * edge;
+        double z = this.shulker.getZ() + dir.z * edge;
+        if (Double.isNaN(this.shulker.findGroundY(x, this.shulker.getY() + 1.0D, z, 4.0D, Double.NaN))) {
+            return;
+        }
+        this.shulker.move(MoverType.SELF, dir.scale(step));
     }
 
     // 光束伤害：光束斜向下扫，目标身体与光束所在高度重叠才算命中
@@ -490,6 +538,12 @@ final class ShulkerCombat {
                 Vec3 from = mouth.add(random.nextGaussian() * 2.0D, random.nextGaussian() * 2.0D, random.nextGaussian() * 2.0D);
                 Vec3 velocity = mouth.subtract(from).scale(0.18D);
                 level.addParticle(ModParticles.SHULKER_SPARK.get(), from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
+            }
+        }
+        if (skill == BEAM && t < BEAM_START && Math.abs(pos.x - this.shulker.xo) + Math.abs(pos.z - this.shulker.zo) > 0.03D) {
+            // 蓄力后撤：壳底擦地扬起尘土
+            for (int i = 0; i < 2; i++) {
+                level.addParticle(ParticleTypes.CLOUD, pos.x + random.nextGaussian() * 1.2D, pos.y + 0.1D, pos.z + random.nextGaussian() * 1.2D, 0.0D, 0.03D, 0.0D);
             }
         }
         if (skill == BEAM && this.shulker.isShulkerBeamActive()) {

@@ -829,6 +829,15 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
         return fallback;
     }
 
+    // 远古潜影贝不会被玩家或其他生物挤动，自身仍会把贴进来的实体推开
+    @Override
+    public boolean isPushable() {
+        if (getIdPath().equals("eldershulker")) {
+            return false;
+        }
+        return super.isPushable();
+    }
+
     boolean canBossSkillHit(LivingEntity entity) {
         return entity != this && entity.isAlive() && !(entity instanceof RebornMobEntity);
     }
