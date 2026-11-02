@@ -110,6 +110,12 @@ final class SpiritCombat {
 
     // 服务端每 tick：冷却、移动、选技能与执行时间轴
     void tick(LivingEntity target) {
+        // 目标可能在 GoalSelector 检查后被移除，先结束当前技能并避免空目标访问
+        if (target == null || !target.isAlive() || target.isRemoved()) {
+            com.mojang.logging.LogUtils.getLogger().debug("Skipping spirit combat tick without a live target: spirit={}", this.spirit.getUUID());
+            stop();
+            return;
+        }
         for (int i = 1; i < this.cooldowns.length; i++) {
             if (this.cooldowns[i] > 0) {
                 this.cooldowns[i]--;
