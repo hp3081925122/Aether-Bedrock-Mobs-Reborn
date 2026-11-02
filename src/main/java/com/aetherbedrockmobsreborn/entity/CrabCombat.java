@@ -2,6 +2,9 @@ package com.aetherbedrockmobsreborn.entity;
 
 import static com.aetherbedrockmobsreborn.config.BossSkillConfig.Skill.*;
 
+
+import com.mojang.logging.LogUtils;
+
 import com.aetherbedrockmobsreborn.registry.ModEntities;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
@@ -102,6 +105,12 @@ final class CrabCombat {
 
     // 服务端每 tick：冷却、移动、选技能与执行时间轴
     void tick(LivingEntity target) {
+        // 目标可能在 GoalSelector 检查后被移除，先结束当前技能并避免空目标访问
+        if (target == null || !target.isAlive() || target.isRemoved()) {
+            LogUtils.getLogger().debug("Skipping crab combat tick without a live target: crab={}", this.crab.getUUID());
+            stop();
+            return;
+        }
         for (int i = 1; i < this.cooldowns.length; i++) {
             if (this.cooldowns[i] > 0) {
                 this.cooldowns[i]--;
