@@ -1,5 +1,6 @@
 package com.aetherbedrockmobsreborn.entity;
 
+import com.aetherbedrockmobsreborn.config.BossSkillConfig;
 import com.aetherbedrockmobsreborn.registry.ModItems;
 import com.aetherbedrockmobsreborn.registry.ModSounds;
 import com.aetherbedrockmobsreborn.registry.ModParticles;
@@ -78,6 +79,9 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     }
 
     private static final String BUTTERFLY_VARIANT_TAG = "reborn_butterfly_variant";
+    // 标记是否已应用配置文件属性，确保仅应用一次且后续加载不再覆盖
+    private static final String CONFIG_ATTRIBUTES_APPLIED_TAG = "reborn_config_attributes_applied";
+    private boolean configAttributesApplied;
     private static final String[] BUTTERFLY_TEXTURES = {"black", "blue", "cloud", "cyan", "dark", "dark_blue", "gold", "green", "orange", "purple", "red_large", "yellow"};
     private static final EntityDataAccessor<Integer> BUTTERFLY_VARIANT = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> BOSS_ENRAGED = SynchedEntityData.defineId(RebornMobEntity.class, EntityDataSerializers.BOOLEAN);
@@ -104,13 +108,8 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
 
     public RebornMobEntity(EntityType<? extends RebornMobEntity> type, Level level) {
         super(type, level);
-        if (!level.isClientSide() && isBossEntity()) {
-            com.mojang.logging.LogUtils.getLogger().debug("Boss distance despawn protection enabled: type={} uuid={}", getIdPath(), getUUID());
-        }
         if (getIdPath().equals("buterfly") && !level.isClientSide()) {
             this.entityData.set(BUTTERFLY_VARIANT, this.random.nextInt(BUTTERFLY_TEXTURES.length));
-        }
-        if (getIdPath().equals("crystalitegolem")) {
         }
         if (isFlyingEntity()) {
             this.moveControl = new FlyingMoveControl(this, 10, true);
@@ -264,7 +263,37 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     @Override
     protected void customServerAiStep(ServerLevel server) {
         super.customServerAiStep(server);
+        applyConfiguredAttributesIfNeeded();
         updateBossBarProgress();
+    }
+
+    private void applyConfiguredAttributesIfNeeded() {
+        if (this.configAttributesApplied) {
+            return;
+        }
+        BossSkillConfig.MobAttributeValues values = BossSkillConfig.mobAttributes(getIdPath());
+        if (values == null) {
+            return;
+        }
+        this.configAttributesApplied = true;
+        float oldMaxHealth = getMaxHealth();
+        float oldHealth = getHealth();
+        var maxHealthAttr = getAttribute(Attributes.MAX_HEALTH);
+        if (maxHealthAttr != null) {
+            maxHealthAttr.setBaseValue(values.maxHealth());
+            float newMaxHealth = getMaxHealth();
+            if (oldHealth >= oldMaxHealth - 0.01F || oldHealth > newMaxHealth) {
+                setHealth(newMaxHealth);
+            }
+        }
+        var attackAttr = getAttribute(Attributes.ATTACK_DAMAGE);
+        if (attackAttr != null) {
+            attackAttr.setBaseValue(values.attackDamage());
+        }
+        var armorAttr = getAttribute(Attributes.ARMOR);
+        if (armorAttr != null) {
+            armorAttr.setBaseValue(values.armor());
+        }
     }
 
     @Override
@@ -341,6 +370,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     public void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput tag) {
         super.addAdditionalSaveData(tag);
         tag.putString("reborn_texture", getTextureName());
+        tag.putBoolean(CONFIG_ATTRIBUTES_APPLIED_TAG, this.configAttributesApplied);
         if (getIdPath().equals("buterfly")) {
             tag.putInt(BUTTERFLY_VARIANT_TAG, this.entityData.get(BUTTERFLY_VARIANT));
         }
@@ -365,6 +395,7 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     @Override
     public void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput tag) {
         super.readAdditionalSaveData(tag);
+        this.configAttributesApplied = tag.getBooleanOr(CONFIG_ATTRIBUTES_APPLIED_TAG, false);
         if (getIdPath().equals("buterfly") && tag.getInt(BUTTERFLY_VARIANT_TAG).isPresent()) {
             this.entityData.set(BUTTERFLY_VARIANT, Mth.clamp(tag.getIntOr(BUTTERFLY_VARIANT_TAG, 0), 0, BUTTERFLY_TEXTURES.length - 1));
         }
@@ -494,8 +525,6 @@ public class RebornMobEntity extends PathfinderMob implements GeoEntity {
     @Override
     public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
         if (isFlyingEntity()) {
-            if (!level().isClientSide() && getIdPath().equals("buterfly") && distance > 3.0F) {
-            }
             return false;
         }
         return super.causeFallDamage(distance, multiplier, source);

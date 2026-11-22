@@ -2,6 +2,7 @@ package com.aetherbedrockmobsreborn.registry;
 
 import com.aetherbedrockmobsreborn.AetherBedrockMobsReborn;
 import com.aetherbedrockmobsreborn.block.CrystaliteCapstoneBlock;
+import com.aetherbedrockmobsreborn.block.LabyrinthLeavesBlock;
 import com.aetherbedrockmobsreborn.block.SpecialSpawnerBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.MapColor;
@@ -34,7 +35,12 @@ public final class ModBlocks {
                     : isSpecialSpawner(id)
                     ? new SpecialSpawnerBlock(getSpawnerAction(id), properties(id))
                     : id.equals("aureateleaves") || id.equals("labyrinthleaves")
-                    ? new Block(properties(id).mapColor(mapColor(id)).strength(1.5F).noOcclusion())
+                    ? new LabyrinthLeavesBlock(properties(id)
+                            .mapColor(mapColor(id))
+                            .strength(1.5F)
+                            .noOcclusion()
+                            .isSuffocating((state, level, pos) -> false)
+                            .isViewBlocking((state, level, pos) -> false))
                     : new Block(properties(id).mapColor(mapColor(id)).strength(1.5F))));
         }
     }
