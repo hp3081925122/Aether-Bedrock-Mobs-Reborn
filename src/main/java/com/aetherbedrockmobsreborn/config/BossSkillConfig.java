@@ -2,9 +2,47 @@ package com.aetherbedrockmobsreborn.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class BossSkillConfig {
+    public record MobAttributeValues(double maxHealth, double attackDamage, double armor) {
+    }
+
+    private record MobAttributeConfig(ModConfigSpec.DoubleValue maxHealth,
+                                      ModConfigSpec.DoubleValue attackDamage,
+                                      ModConfigSpec.DoubleValue armor) {
+    }
+
+    public enum MobAttributePreset {
+        AETHER_NAGA("aether_naga", "天境娜迦", 350.0D, 6.0D, 0.1D),
+        SPIRIT("spirit", "灵魂", 300.0D, 11.0D, 0.3D),
+        SALT_CRAB_KING("saltcrabking", "盐蟹王", 250.0D, 15.0D, 0.2D),
+        ELDER_SHULKER("eldershulker", "远古潜影贝", 400.0D, 5.0D, 1.5D),
+        CRYSTALITE_GOLEM("crystalitegolem", "水晶石傀儡", 300.0D, 8.0D, 0.2D),
+        CRYSTALITE_MINION("crystaliteminion", "水晶石仆从", 20.0D, 5.0D, 0.0D),
+        MUTATED_CRITTER("mutatedcritter", "变异生物", 12.0D, 5.0D, 0.0D),
+        SALT_CRAB("saltcrab", "盐蟹", 6.0D, 3.0D, 0.0D),
+        GUARDIAN_ANGEL("guardianangel", "守护天使", 7.0D, 3.0D, 0.0D),
+        PERCIPITUS("percipitus", "悬崖鸟", 10.0D, 3.0D, 0.0D),
+        SHIMAENAGA("shimaenaga", "银喉长尾山雀", 10.0D, 3.0D, 0.0D),
+        BUTTERFLY("buterfly", "蝴蝶", 1.0D, 3.0D, 0.0D),
+        TWINKLER("twinkler", "闪光精灵", 1.0D, 3.0D, 0.0D);
+
+        private final String entityId;
+        private final String displayName;
+        private final double defaultMaxHealth;
+        private final double defaultAttackDamage;
+        private final double defaultArmor;
+
+        MobAttributePreset(String entityId, String displayName, double defaultMaxHealth, double defaultAttackDamage, double defaultArmor) {
+            this.entityId = entityId;
+            this.displayName = displayName;
+            this.defaultMaxHealth = defaultMaxHealth;
+            this.defaultAttackDamage = defaultAttackDamage;
+            this.defaultArmor = defaultArmor;
+        }
+    }
     public enum Skill {
         CRAB_PINCER("saltcrabking", "pincer", 12.0D / 15.0D, "蟹钳夹击"),
         CRAB_SLAM("saltcrabking", "slam", 15.0D / 15.0D, "重砸"),
@@ -57,10 +95,28 @@ public final class BossSkillConfig {
     }
 
     private static final Map<Skill, ModConfigSpec.DoubleValue> MULTIPLIERS = new EnumMap<>(Skill.class);
+    private static final Map<String, MobAttributeConfig> MOB_ATTRIBUTES = new LinkedHashMap<>();
     public static final ModConfigSpec SPEC;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        builder.comment("自定义生物基础属性配置；仅在实体首次应用配置时生效一次，后续加载不再覆盖，避免冲掉指令、KubeJS 或 buff 的调整。",
+                "Base attribute settings for custom mobs; applied only once per entity via NBT flag so reloads never overwrite commands, KubeJS, or buffs.").push("mob_attributes");
+        for (MobAttributePreset preset : MobAttributePreset.values()) {
+            builder.push(preset.entityId);
+            ModConfigSpec.DoubleValue maxHealth = builder.comment(preset.displayName + "最大生命值。",
+                    "Max health for " + preset.entityId + ".")
+                    .defineInRange("max_health", preset.defaultMaxHealth, 1.0D, Double.MAX_VALUE);
+            ModConfigSpec.DoubleValue attackDamage = builder.comment(preset.displayName + "基础攻击力；Boss 技能伤害也会以此为基数乘以倍率。",
+                    "Base attack damage for " + preset.entityId + "; boss skill damage also scales from this value.")
+                    .defineInRange("attack_damage", preset.defaultAttackDamage, 0.0D, Double.MAX_VALUE);
+            ModConfigSpec.DoubleValue armor = builder.comment(preset.displayName + "护甲值。",
+                    "Armor value for " + preset.entityId + ".")
+                    .defineInRange("armor", preset.defaultArmor, 0.0D, Double.MAX_VALUE);
+            MOB_ATTRIBUTES.put(preset.entityId, new MobAttributeConfig(maxHealth, attackDamage, armor));
+            builder.pop();
+        }
+        builder.pop();
         builder.comment("Boss 技能直接伤害 = 当前攻击力 × 对应技能倍率。",
                 "Boss direct skill damage = current attack damage multiplied by the corresponding skill multiplier.").push("boss_skill_multipliers");
         for (Skill skill : Skill.values()) {
@@ -79,5 +135,16 @@ public final class BossSkillConfig {
 
     public static double multiplier(Skill skill) {
         return MULTIPLIERS.get(skill).get();
+    }
+
+    public static MobAttributeValues mobAttributes(String entityId) {
+        if (!SPEC.isLoaded()) {
+            return null;
+        }
+        MobAttributeConfig config = MOB_ATTRIBUTES.get(entityId);
+        if (config == null) {
+            return null;
+        }
+        return new MobAttributeValues(config.maxHealth.get(), config.attackDamage.get(), config.armor.get());
     }
 }
